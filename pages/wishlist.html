@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist - Happy Groceries 🛒</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">🛒 Happy Groceries</a>
+            </div>
+            
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="categories.html" class="nav-link">Categories</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li><a href="cart.html" class="nav-link">Cart</a></li>
+                <li><a href="about.html" class="nav-link">About Us</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                
+                <a href="cart.html" class="cart-icon">
+                    🛒
+                    <span class="cart-counter" id="cartCounter">0</span>
+                </a>
+
+                <div class="auth-buttons" id="authButtons">
+                    <a href="login.html" class="btn-login">Login</a>
+                    <a href="signup.html" class="btn-signup">Sign Up</a>
+                </div>
+
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <button class="profile-btn" id="profileBtn">
+                        <span class="greeting">Welcome, <span id="userName">User</span>! 👋</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="#profile">👤 View Profile</a>
+                        <a href="#orders">📦 My Orders</a>
+                        <a href="wishlist.html">💖 Wishlist</a>
+                        <a href="#settings">⚙️ Settings</a>
+                        <hr>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <h1 class="section-title">💖 My Wishlist</h1>
+            <div id="wishlistContent"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Happy Groceries. Made with 💖</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/search.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWishlist();
+
+            function loadWishlist() {
+                const wishlistContent = document.getElementById('wishlistContent');
+                
+                if (!isUserLoggedIn()) {
+                    wishlistContent.innerHTML = `
+                        <div class="login-required">
+                            <div class="login-required-icon">🔒</div>
+                            <h2>Please login to view wishlist</h2>
+                            <p>You need to be logged in to see your wishlist</p>
+                            <a href="login.html" class="btn-primary" style="margin-top: 1rem;">Login</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const user = getCurrentUser();
+                const wishlistIds = user.wishlist || [];
+
+                if (wishlistIds.length === 0) {
+                    wishlistContent.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">💔</div>
+                            <h3>Your wishlist is empty</h3>
+                            <p>Start adding items you love!</p>
+                            <a href="shop.html" class="btn-primary" style="margin-top: 1rem;">Browse Products</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const wishlistProducts = wishlistIds.map(id => getProductById(id)).filter(p => p);
+
+                wishlistContent.innerHTML = `
+                    <div class="products-grid">
+                        ${wishlistProducts.map(product => `
+                            <div class="product-card">
+                                <button class="wishlist-btn active" data-product-id="${product.id}">
+                                    💖
+                                </button>
+                                <div class="product-image">${product.emoji}</div>
+                                <h3 class="product-name">${product.name}</h3>
+                                <span class="product-category">${product.category}</span>
+                                <div class="product-rating">${renderStars(product.rating)} (${product.rating})</div>
+                                <p class="product-price">₹${product.price}</p>
+                                <div class="product-actions">
+                                    <button class="btn-add-cart" data-product-id="${product.id}" style="width: 100%;">Add to Cart</button>
+                                </div>
+                                <button class="btn-remove" data-product-id="${product.id}" style="width: 100%; margin-top: 0.5rem;">Remove from Wishlist</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                attachWishlistEventListeners();
+            }
+
+            function attachWishlistEventListeners() {
+                document.querySelectorAll('.btn-add-cart').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.dataset.productId);
+                        const product = getProductById(productId);
+                        if (product) {
+                            addToCart(product, 1);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.btn-remove').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.dataset.productId);
+                        const product = getProductById(productId);
+                        if (confirm(`Remove ${product.name} from wishlist?`)) {
+                            updateUserWishlist(productId, false);
+                            showToast('Removed from wishlist');
+                            loadWishlist();
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.dataset.productId);
+                        const product = getProductById(productId);
+                        if (confirm(`Remove ${product.name} from wishlist?`)) {
+                            updateUserWishlist(productId, false);
+                            showToast('Removed from wishlist');
+                            loadWishlist();
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

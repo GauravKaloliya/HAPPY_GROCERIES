@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Happy Groceries 🛒</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">🛒 Happy Groceries</a>
+            </div>
+            
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="categories.html" class="nav-link">Categories</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li><a href="cart.html" class="nav-link">Cart</a></li>
+                <li><a href="about.html" class="nav-link active">About Us</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                
+                <a href="cart.html" class="cart-icon">
+                    🛒
+                    <span class="cart-counter" id="cartCounter">0</span>
+                </a>
+
+                <div class="auth-buttons" id="authButtons">
+                    <a href="login.html" class="btn-login">Login</a>
+                    <a href="signup.html" class="btn-signup">Sign Up</a>
+                </div>
+
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <button class="profile-btn" id="profileBtn">
+                        <span class="greeting">Welcome, <span id="userName">User</span>! 👋</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="#profile">👤 View Profile</a>
+                        <a href="#orders">📦 My Orders</a>
+                        <a href="wishlist.html">💖 Wishlist</a>
+                        <a href="#settings">⚙️ Settings</a>
+                        <hr>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <div class="about-section">
+                <h1>🏡 Our Story</h1>
+                <p>
+                    Welcome to Happy Groceries! We're not just another grocery store – we're your friendly neighborhood 
+                    companion on a mission to make grocery shopping delightful, convenient, and fun! 🎉
+                </p>
+                <p>
+                    Founded in 2024, Happy Groceries was born from a simple idea: fresh groceries should be accessible 
+                    to everyone, delivered with a smile, and sprinkled with a little bit of joy. We believe that food 
+                    shopping doesn't have to be a chore – it can be an experience you look forward to!
+                </p>
+                <p>
+                    From farm-fresh fruits 🍎 to crispy vegetables 🥕, creamy dairy 🥛 to delightful snacks 🍪, 
+                    we handpick every item with love and care. Our team works tirelessly to ensure that you get 
+                    the best quality products at the best prices, delivered right to your doorstep.
+                </p>
+
+                <h2>👥 Meet Our Team</h2>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <div class="team-avatar">👨‍🍳</div>
+                        <h4>Chef Bobby</h4>
+                        <p>Head of Quality</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-avatar">👩‍💼</div>
+                        <h4>Sarah</h4>
+                        <p>Customer Success</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-avatar">👨‍🚚</div>
+                        <h4>Mike</h4>
+                        <p>Delivery Hero</p>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-avatar">👩‍🌾</div>
+                        <h4>Emma</h4>
+                        <p>Farm Relations</p>
+                    </div>
+                </div>
+
+                <div class="contact-info">
+                    <h2>📞 Contact Us</h2>
+                    <p>📧 Email: hello@happygroceries.com</p>
+                    <p>📱 Phone: +91 9876543210</p>
+                    <p>📍 Address: 123 Happy Street, Grocery Town, GT 12345</p>
+                </div>
+
+                <div class="social-icons">
+                    <a href="#" class="social-icon">📷</a>
+                    <a href="#" class="social-icon">📘</a>
+                    <a href="#" class="social-icon">🐦</a>
+                </div>
+
+                <h2>💌 Get in Touch</h2>
+                <form id="contactForm" style="max-width: 600px; margin: 2rem auto;">
+                    <div class="form-group">
+                        <label for="contactName">Name *</label>
+                        <input type="text" id="contactName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactEmail">Email *</label>
+                        <input type="email" id="contactEmail" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contactMessage">Message *</label>
+                        <textarea id="contactMessage" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Send Message</button>
+                </form>
+
+                <div id="contactSuccess" style="display: none; text-align: center; padding: 2rem; background: var(--primary-green); border-radius: var(--border-radius); margin-top: 1rem;">
+                    <h3>Thank you! We'll get back to you 💌</h3>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Happy Groceries. Made with 💖</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/search.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactForm = document.getElementById('contactForm');
+            const contactSuccess = document.getElementById('contactSuccess');
+
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const name = document.getElementById('contactName').value;
+                const email = document.getElementById('contactEmail').value;
+                const message = document.getElementById('contactMessage').value;
+
+                if (!name || !email || !message) {
+                    showToast('Please fill in all fields');
+                    return;
+                }
+
+                contactForm.style.display = 'none';
+                contactSuccess.style.display = 'block';
+
+                showToast('Message sent successfully! 💌');
+            });
+        });
+    </script>
+</body>
+</html>
