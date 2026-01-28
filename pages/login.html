@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Happy Groceries 🛒</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">🛒 Happy Groceries</a>
+            </div>
+            
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="categories.html" class="nav-link">Categories</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li><a href="cart.html" class="nav-link">Cart</a></li>
+                <li><a href="about.html" class="nav-link">About Us</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                
+                <a href="cart.html" class="cart-icon">
+                    🛒
+                    <span class="cart-counter" id="cartCounter">0</span>
+                </a>
+
+                <div class="auth-buttons" id="authButtons">
+                    <a href="login.html" class="btn-login">Login</a>
+                    <a href="signup.html" class="btn-signup">Sign Up</a>
+                </div>
+
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <button class="profile-btn" id="profileBtn">
+                        <span class="greeting">Welcome, <span id="userName">User</span>! 👋</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="#profile">👤 View Profile</a>
+                        <a href="#orders">📦 My Orders</a>
+                        <a href="wishlist.html">💖 Wishlist</a>
+                        <a href="#settings">⚙️ Settings</a>
+                        <hr>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="auth-container">
+        <h2 class="auth-title">Welcome Back! 👋</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="phone">Phone Number *</label>
+                <input type="tel" id="phone" name="phone" placeholder="Enter 10-digit phone number" required maxlength="10">
+                <span class="error-message" id="phoneError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password *</label>
+                <div class="password-toggle">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" class="toggle-password-btn" id="togglePassword">👁️</button>
+                </div>
+                <span class="error-message" id="passwordError"></span>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="rememberMe" name="rememberMe">
+                <label for="rememberMe">Remember me</label>
+            </div>
+
+            <button type="submit" class="btn-submit" id="loginBtn">Login</button>
+
+            <div class="auth-link">
+                <a href="#" style="color: var(--text-dark); display: block; margin-bottom: 1rem;">Forgot Password?</a>
+                Don't have an account? <a href="signup.html">Sign Up</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/search.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isUserLoggedIn()) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            const loginForm = document.getElementById('loginForm');
+            const phoneInput = document.getElementById('phone');
+            const passwordInput = document.getElementById('password');
+            const phoneError = document.getElementById('phoneError');
+            const passwordError = document.getElementById('passwordError');
+            const togglePasswordBtn = document.getElementById('togglePassword');
+
+            phoneInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\D/g, '');
+            });
+
+            togglePasswordBtn.addEventListener('click', function() {
+                const type = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = type;
+                togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
+            });
+
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                phoneError.classList.remove('show');
+                passwordError.classList.remove('show');
+
+                const phone = phoneInput.value.trim();
+                const password = passwordInput.value;
+
+                if (!validatePhone(phone)) {
+                    phoneError.textContent = 'Phone number must be 10 digits';
+                    phoneError.classList.add('show');
+                    return;
+                }
+
+                if (!password) {
+                    passwordError.textContent = 'Password is required';
+                    passwordError.classList.add('show');
+                    return;
+                }
+
+                const result = loginUser(phone, password);
+
+                if (result.success) {
+                    showToast('Login successful! 🎉');
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 1000);
+                } else {
+                    passwordError.textContent = result.error;
+                    passwordError.classList.add('show');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

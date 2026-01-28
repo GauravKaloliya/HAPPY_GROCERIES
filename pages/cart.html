@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart - Happy Groceries 🛒</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">🛒 Happy Groceries</a>
+            </div>
+            
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="categories.html" class="nav-link">Categories</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li><a href="cart.html" class="nav-link active">Cart</a></li>
+                <li><a href="about.html" class="nav-link">About Us</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                
+                <a href="cart.html" class="cart-icon">
+                    🛒
+                    <span class="cart-counter" id="cartCounter">0</span>
+                </a>
+
+                <div class="auth-buttons" id="authButtons">
+                    <a href="login.html" class="btn-login">Login</a>
+                    <a href="signup.html" class="btn-signup">Sign Up</a>
+                </div>
+
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <button class="profile-btn" id="profileBtn">
+                        <span class="greeting">Welcome, <span id="userName">User</span>! 👋</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="#profile">👤 View Profile</a>
+                        <a href="#orders">📦 My Orders</a>
+                        <a href="wishlist.html">💖 Wishlist</a>
+                        <a href="#settings">⚙️ Settings</a>
+                        <hr>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="cart-container">
+            <h1 class="section-title">🛒 Your Cart</h1>
+
+            <div id="cartContent"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Happy Groceries. Made with 💖</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/search.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCart();
+
+            function loadCart() {
+                const cart = getCart();
+                const cartContent = document.getElementById('cartContent');
+
+                if (cart.length === 0) {
+                    cartContent.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🧺</div>
+                            <h3>Your cart is empty</h3>
+                            <p>Add some delicious items to get started!</p>
+                            <a href="shop.html" class="btn-primary" style="margin-top: 1rem;">Start Shopping</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const subtotal = calculateSubtotal();
+                const tax = calculateTax(subtotal);
+                const total = calculateTotal();
+
+                cartContent.innerHTML = `
+                    <div class="cart-items">
+                        ${cart.map(item => `
+                            <div class="cart-item">
+                                <div class="cart-item-image">${item.emoji}</div>
+                                <div class="cart-item-details">
+                                    <h3>${item.name}</h3>
+                                    <p class="cart-item-price">₹${item.price} each</p>
+                                    <div class="cart-item-actions">
+                                        <div class="quantity-controls">
+                                            <button class="qty-btn qty-decrease" data-product-id="${item.id}">−</button>
+                                            <input type="number" class="qty-input" value="${item.quantity}" min="1" max="99" data-product-id="${item.id}">
+                                            <button class="qty-btn qty-increase" data-product-id="${item.id}">+</button>
+                                        </div>
+                                        <button class="btn-remove" data-product-id="${item.id}">Remove</button>
+                                    </div>
+                                </div>
+                                <div class="cart-item-subtotal">
+                                    <strong>₹${item.price * item.quantity}</strong>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="cart-summary">
+                        <h3>Order Summary</h3>
+                        <div class="summary-row">
+                            <span>Subtotal:</span>
+                            <span>₹${subtotal.toFixed(2)}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax (8%):</span>
+                            <span>₹${tax.toFixed(2)}</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total:</span>
+                            <span>₹${total.toFixed(2)}</span>
+                        </div>
+                        <div class="cart-actions">
+                            <a href="shop.html" class="btn-secondary">Continue Shopping</a>
+                            <a href="checkout.html" class="btn-primary">Proceed to Checkout</a>
+                        </div>
+                    </div>
+                `;
+
+                attachCartEventListeners();
+            }
+
+            function attachCartEventListeners() {
+                document.querySelectorAll('.qty-decrease').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.dataset.productId);
+                        const input = document.querySelector(`.qty-input[data-product-id="${productId}"]`);
+                        let quantity = parseInt(input.value);
+                        if (quantity > 1) {
+                            updateQuantity(productId, quantity - 1);
+                            loadCart();
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.qty-increase').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.dataset.productId);
+                        const input = document.querySelector(`.qty-input[data-product-id="${productId}"]`);
+                        let quantity = parseInt(input.value);
+                        if (quantity < 99) {
+                            updateQuantity(productId, quantity + 1);
+                            loadCart();
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.qty-input').forEach(input => {
+                    input.addEventListener('change', function() {
+                        const productId = parseInt(this.dataset.productId);
+                        let quantity = parseInt(this.value);
+                        if (isNaN(quantity) || quantity < 1) {
+                            quantity = 1;
+                        } else if (quantity > 99) {
+                            quantity = 99;
+                        }
+                        updateQuantity(productId, quantity);
+                        loadCart();
+                    });
+                });
+
+                document.querySelectorAll('.btn-remove').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = parseInt(this.dataset.productId);
+                        const cart = getCart();
+                        const item = cart.find(i => i.id === productId);
+                        if (confirm(`Remove ${item.name} from cart?`)) {
+                            removeFromCart(productId);
+                            showToast('Item removed from cart');
+                            loadCart();
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
