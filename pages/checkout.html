@@ -164,7 +164,7 @@
                                         <span class="delivery-option-text">
                                             <strong>Standard Delivery</strong>
                                             ${delivery === 0 ? '<span class="free-delivery-tag">FREE</span>' : `<span>₹${delivery.toFixed(2)}</span>`}
-                                            <small>3-5 business days</small>
+                                            <small id="standardDeliveryTime">${getEstimatedDeliveryText(cart, false)}</small>
                                         </span>
                                     </label>
                                     <label class="delivery-option">
@@ -172,7 +172,7 @@
                                         <span class="delivery-option-text">
                                             <strong>Express Delivery</strong>
                                             <span>₹${getDeliveryCharge().express.toFixed(2)}</span>
-                                            <small>1-2 business days</small>
+                                            <small id="expressDeliveryTime">${getEstimatedDeliveryText(cart, true)}</small>
                                         </span>
                                     </label>
                                 </div>
@@ -288,7 +288,9 @@
                 setAppliedCoupon(null);
 
                 document.getElementById('orderNumber').textContent = savedOrder.id;
-                document.getElementById('deliveryDate').textContent = savedOrder.estimatedDelivery;
+                const deliveryMinutes = isExpress ? calculateDeliveryMinutes(cart, true) : calculateDeliveryMinutes(cart, false);
+                const deliveryTime = formatDeliveryTime(deliveryMinutes);
+                document.getElementById('deliveryDate').textContent = isExpress ? `Express delivery: ${deliveryMinutes} minutes (by ${deliveryTime})` : `Standard delivery: ${deliveryMinutes} minutes (by ${deliveryTime})`;
                 document.getElementById('successModal').classList.add('show');
             });
 

@@ -111,6 +111,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 150);
 });
 
+// Helper function to calculate discounted price
+function calculateDiscountedPrice(originalPrice, discountPercent) {
+    return originalPrice * (1 - discountPercent / 100);
+}
+
 function getProductIdFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const idParam = params.get('id');
@@ -186,13 +191,23 @@ function renderProduct(product, root) {
     const isWishlisted = isInWishlist(product.id);
     const stockInfo = getStockInfo(product);
     const categoryBg = typeof getCategoryColor === 'function' ? getCategoryColor(product.category) : 'var(--primary-blue)';
+    
+    // Calculate discount information
+    const hasDiscount = product.discountPercent && product.discountPercent > 0;
+    const discountedPrice = hasDiscount ? calculateDiscountedPrice(product.price, product.discountPercent) : product.price;
+    const savings = hasDiscount ? product.price - discountedPrice : 0;
 
     root.innerHTML = `
         <div class="product-details-wrapper">
             <div class="product-details-card">
                 <div class="product-details-grid">
-                    <div>
+                    <div class="product-image-section">
                         <div class="product-details-image">${product.emoji}</div>
+                        ${hasDiscount ? `
+                            <div class="discount-badge">
+                                <span class="discount-percentage">${product.discountPercent}% OFF</span>
+                            </div>
+                        ` : ''}
                     </div>
 
                     <div>
@@ -209,7 +224,17 @@ function renderProduct(product, root) {
                             ${typeof product.reviewsCount === 'number' ? `<span style="color: var(--text-dark);"> • ${product.reviewsCount} reviews</span>` : ''}
                         </div>
 
-                        <div class="product-details-price">₹${product.price}</div>
+                        <div class="product-details-price-section">
+                            ${hasDiscount ? `
+                                <div class="price-with-discount">
+                                    <span class="original-price">₹${product.price}</span>
+                                    <span class="discounted-price">₹${discountedPrice.toFixed(0)}</span>
+                                </div>
+                                <div class="savings-amount">You save ₹${savings.toFixed(0)}!</div>
+                            ` : `
+                                <div class="product-details-price">₹${product.price}</div>
+                            `}
+                        </div>
 
                         <div class="product-details-description">
                             <h3 style="margin-bottom: 0.5rem;">Details</h3>
