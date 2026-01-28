@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Happy Groceries 🛒</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">🛒 Happy Groceries</a>
+            </div>
+            
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="categories.html" class="nav-link">Categories</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li><a href="cart.html" class="nav-link">Cart</a></li>
+                <li><a href="about.html" class="nav-link">About Us</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                
+                <a href="cart.html" class="cart-icon">
+                    🛒
+                    <span class="cart-counter" id="cartCounter">0</span>
+                </a>
+
+                <div class="auth-buttons" id="authButtons">
+                    <a href="login.html" class="btn-login">Login</a>
+                    <a href="signup.html" class="btn-signup">Sign Up</a>
+                </div>
+
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <button class="profile-btn" id="profileBtn">
+                        <span class="greeting">Welcome, <span id="userName">User</span>! 👋</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="profile.html" class="active">👤 View Profile</a>
+                        <a href="orders.html">📦 My Orders</a>
+                        <a href="wishlist.html">💖 Wishlist</a>
+                        <a href="settings.html">⚙️ Settings</a>
+                        <hr>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <h1 class="section-title">👤 My Profile</h1>
+            
+            <div class="profile-container">
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="profile-avatar" id="profileAvatar">
+                            <span id="avatarInitial">U</span>
+                        </div>
+                        <div class="profile-info">
+                            <h2 id="displayName">User Name</h2>
+                            <p class="profile-meta">Member since <span id="displayJoinDate">January 2024</span></p>
+                        </div>
+                    </div>
+
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <span class="detail-label">📞 Phone:</span>
+                            <span class="detail-value" id="displayPhone">+91 XXXXX XXXXX</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">📧 Email:</span>
+                            <span class="detail-value" id="displayEmail">user@example.com</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">📦 Orders:</span>
+                            <span class="detail-value" id="displayOrderCount">0</span>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <button class="btn-primary" id="editProfileBtn">✏️ Edit Profile</button>
+                    </div>
+                </div>
+
+                <div class="profile-summary">
+                    <div class="summary-card">
+                        <span class="summary-icon">📦</span>
+                        <div class="summary-content">
+                            <h3>Total Orders</h3>
+                            <p class="summary-value" id="totalOrders">0</p>
+                        </div>
+                        <a href="orders.html" class="summary-link">View Orders →</a>
+                    </div>
+
+                    <div class="summary-card">
+                        <span class="summary-icon">💖</span>
+                        <div class="summary-content">
+                            <h3>Wishlist Items</h3>
+                            <p class="summary-value" id="wishlistCount">0</p>
+                        </div>
+                        <a href="wishlist.html" class="summary-link">View Wishlist →</a>
+                    </div>
+
+                    <div class="summary-card">
+                        <span class="summary-icon">⚙️</span>
+                        <div class="summary-content">
+                            <h3>Account Settings</h3>
+                            <p>Manage preferences</p>
+                        </div>
+                        <a href="settings.html" class="summary-link">Go to Settings →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-icon">✏️</div>
+            <h2>Edit Profile</h2>
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="editName">Name *</label>
+                    <input type="text" id="editName" name="name" placeholder="Enter your name" required>
+                    <span class="error-message" id="nameError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="editPhone">Phone Number *</label>
+                    <input type="tel" id="editPhone" name="phone" placeholder="Enter 10-digit phone number" required maxlength="10">
+                    <span class="error-message" id="phoneError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="editEmail">Email</label>
+                    <input type="email" id="editEmail" name="email" placeholder="Enter your email">
+                    <span class="error-message" id="emailError"></span>
+                </div>
+
+                <button type="submit" class="btn-primary btn-full">Save Changes</button>
+                <button type="button" class="btn-secondary btn-full" id="cancelEditBtn">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Happy Groceries. Made with 💖</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/search.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!isUserLoggedIn()) {
+                showToast('Please login to view your profile');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+                return;
+            }
+
+            const user = getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            loadProfileData(user);
+
+            const editProfileBtn = document.getElementById('editProfileBtn');
+            const editModal = document.getElementById('editModal');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const editProfileForm = document.getElementById('editProfileForm');
+
+            editProfileBtn.addEventListener('click', function() {
+                document.getElementById('editName').value = user.name;
+                document.getElementById('editPhone').value = user.phone;
+                document.getElementById('editEmail').value = user.email || '';
+                editModal.style.display = 'flex';
+            });
+
+            cancelEditBtn.addEventListener('click', function() {
+                editModal.style.display = 'none';
+                clearErrors();
+            });
+
+            editModal.addEventListener('click', function(e) {
+                if (e.target === editModal) {
+                    editModal.style.display = 'none';
+                    clearErrors();
+                }
+            });
+
+            document.getElementById('editPhone').addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\D/g, '');
+            });
+
+            editProfileForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                clearErrors();
+
+                const name = document.getElementById('editName').value.trim();
+                const phone = document.getElementById('editPhone').value.trim();
+                const email = document.getElementById('editEmail').value.trim();
+
+                if (!validateName(name)) {
+                    showError('nameError', 'Name must be at least 3 characters');
+                    return;
+                }
+
+                if (!validatePhone(phone)) {
+                    showError('phoneError', 'Phone number must be 10 digits');
+                    return;
+                }
+
+                if (email && !validateEmail(email)) {
+                    showError('emailError', 'Invalid email format');
+                    return;
+                }
+
+                const users = getAllUsers();
+                const userIndex = users.findIndex(u => u.id === user.id);
+
+                if (userIndex !== -1) {
+                    users[userIndex].name = name;
+                    users[userIndex].phone = phone;
+                    users[userIndex].email = email;
+                    localStorage.setItem('happyGroceries_users', JSON.stringify(users));
+
+                    showToast('Profile updated successfully! ✅');
+                    editModal.style.display = 'none';
+
+                    const updatedUser = getCurrentUser();
+                    loadProfileData(updatedUser);
+
+                    document.getElementById('userName').textContent = name.split(' ')[0];
+                }
+            });
+
+            function loadProfileData(user) {
+                document.getElementById('displayName').textContent = user.name;
+                document.getElementById('displayPhone').textContent = '+91 ' + formatPhone(user.phone);
+                document.getElementById('displayEmail').textContent = user.email || 'Not provided';
+                
+                const joinDate = new Date(user.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                document.getElementById('displayJoinDate').textContent = joinDate;
+
+                document.getElementById('avatarInitial').textContent = user.name.charAt(0).toUpperCase();
+                document.getElementById('avatarInitial').style.background = getAvatarColor(user.name);
+
+                const orderCount = user.orders ? user.orders.length : 0;
+                document.getElementById('displayOrderCount').textContent = orderCount;
+                document.getElementById('totalOrders').textContent = orderCount;
+
+                const wishlistCount = user.wishlist ? user.wishlist.length : 0;
+                document.getElementById('wishlistCount').textContent = wishlistCount;
+            }
+
+            function formatPhone(phone) {
+                return phone.replace(/(\d{5})(\d{5})/, '$1 $2');
+            }
+
+            function getAvatarColor(name) {
+                const colors = ['var(--primary-pink)', 'var(--primary-blue)', 'var(--primary-green)', 'var(--primary-yellow)', 'var(--primary-orange)'];
+                const index = name.charCodeAt(0) % colors.length;
+                return colors[index];
+            }
+
+            function showError(elementId, message) {
+                const errorElement = document.getElementById(elementId);
+                errorElement.textContent = message;
+                errorElement.classList.add('show');
+            }
+
+            function clearErrors() {
+                document.querySelectorAll('.error-message').forEach(el => {
+                    el.textContent = '';
+                    el.classList.remove('show');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

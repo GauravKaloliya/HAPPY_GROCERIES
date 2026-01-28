@@ -184,3 +184,19 @@ function addOrder(order) {
 
     return order;
 }
+
+function updateUserProfile(updates) {
+    const user = getCurrentUser();
+    if (!user) return false;
+
+    const users = getAllUsers();
+    const userIndex = users.findIndex(u => u.id === user.id);
+
+    if (userIndex !== -1) {
+        Object.assign(users[userIndex], updates);
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(users));
+        return true;
+    }
+
+    return false;
+}
