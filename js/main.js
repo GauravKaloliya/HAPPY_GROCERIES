@@ -115,51 +115,55 @@ function loadFeaturedProducts() {
     attachProductCardListeners();
 }
 
+function getCategoryColor(category) {
+    switch (category) {
+        case 'Fruits':
+            return 'var(--primary-pink)';
+        case 'Vegetables':
+            return 'var(--primary-green)';
+        case 'Dairy':
+            return 'var(--primary-blue)';
+        case 'Snacks':
+            return 'var(--primary-yellow)';
+        case 'Beverages':
+            return 'var(--primary-orange)';
+        default:
+            return 'var(--primary-blue)';
+    }
+}
+
+function getProductDetailsHref(productId) {
+    const currentPath = window.location.pathname;
+    const inPagesDir = currentPath.includes('/pages/');
+    const basePath = inPagesDir ? '' : 'pages/';
+    return `${basePath}product-details.html?id=${productId}`;
+}
+
 function createProductCard(product) {
     const isWishlisted = isInWishlist(product.id);
     const heartIcon = isWishlisted ? '💖' : '🤍';
-    
+    const detailsHref = getProductDetailsHref(product.id);
+
     return `
         <div class="product-card" data-product-id="${product.id}">
-            <button class="wishlist-btn ${isWishlisted ? 'active' : ''}" data-product-id="${product.id}">
+            <button class="wishlist-btn ${isWishlisted ? 'active' : ''}" data-product-id="${product.id}" aria-label="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}">
                 ${heartIcon}
             </button>
-            <div class="product-image">${product.emoji}</div>
-            <h3 class="product-name">${product.name}</h3>
-            <span class="product-category">${product.category}</span>
-            <div class="product-rating">${renderStars(product.rating)} (${product.rating})</div>
-            <p class="product-price">₹${product.price}</p>
-            <div class="product-actions">
-                <div class="quantity-controls">
-                    <button class="qty-btn qty-decrease" data-product-id="${product.id}">−</button>
-                    <input type="number" class="qty-input" value="1" min="1" max="99" data-product-id="${product.id}">
-                    <button class="qty-btn qty-increase" data-product-id="${product.id}">+</button>
-                </div>
-                <button class="btn-add-cart" data-product-id="${product.id}">Add to Cart</button>
-            </div>
+            <a class="product-card-link" href="${detailsHref}" aria-label="View details for ${product.name}">
+                <div class="product-image">${product.emoji}</div>
+                <h3 class="product-name">${product.name}</h3>
+                <span class="product-category" style="background: ${getCategoryColor(product.category)};">${product.category}</span>
+                <div class="product-rating">${renderStars(product.rating)} (${product.rating})</div>
+                <p class="product-price">₹${product.price}</p>
+                <p class="product-card-cta">View Details →</p>
+            </a>
         </div>
     `;
 }
 
 function attachProductCardListeners() {
-    document.querySelectorAll('.btn-add-cart').forEach(btn => {
-        btn.addEventListener('click', handleAddToCart);
-    });
-    
-    document.querySelectorAll('.qty-decrease').forEach(btn => {
-        btn.addEventListener('click', handleQuantityDecrease);
-    });
-    
-    document.querySelectorAll('.qty-increase').forEach(btn => {
-        btn.addEventListener('click', handleQuantityIncrease);
-    });
-    
     document.querySelectorAll('.wishlist-btn').forEach(btn => {
         btn.addEventListener('click', handleWishlistToggle);
-    });
-    
-    document.querySelectorAll('.qty-input').forEach(input => {
-        input.addEventListener('input', handleQuantityInput);
     });
 }
 

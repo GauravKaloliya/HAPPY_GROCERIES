@@ -24,7 +24,7 @@ function addToCart(product, quantity = 1) {
     }
 
     saveCart(cart);
-    showToast(`Added ${product.name} to cart 🛒`);
+    showToast('Added to cart 🛒');
     return true;
 }
 
