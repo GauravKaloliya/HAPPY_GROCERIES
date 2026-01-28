@@ -119,17 +119,17 @@
                     <div class="products-grid">
                         ${wishlistProducts.map(product => `
                             <div class="product-card">
-                                <button class="wishlist-btn active" data-product-id="${product.id}">
+                                <button class="wishlist-btn active" data-product-id="${product.id}" aria-label="Remove from wishlist">
                                     💖
                                 </button>
-                                <div class="product-image">${product.emoji}</div>
-                                <h3 class="product-name">${product.name}</h3>
-                                <span class="product-category">${product.category}</span>
-                                <div class="product-rating">${renderStars(product.rating)} (${product.rating})</div>
-                                <p class="product-price">₹${product.price}</p>
-                                <div class="product-actions">
-                                    <button class="btn-add-cart" data-product-id="${product.id}" style="width: 100%;">Add to Cart</button>
-                                </div>
+                                <a class="product-card-link" href="product-details.html?id=${product.id}" aria-label="View details for ${product.name}">
+                                    <div class="product-image">${product.emoji}</div>
+                                    <h3 class="product-name">${product.name}</h3>
+                                    <span class="product-category" style="background: ${typeof getCategoryColor === 'function' ? getCategoryColor(product.category) : 'var(--primary-blue)'};">${product.category}</span>
+                                    <div class="product-rating">${renderStars(product.rating)} (${product.rating})</div>
+                                    <p class="product-price">₹${product.price}</p>
+                                    <p class="product-card-cta">View Details →</p>
+                                </a>
                                 <button class="btn-remove" data-product-id="${product.id}" style="width: 100%; margin-top: 0.5rem;">Remove from Wishlist</button>
                             </div>
                         `).join('')}
@@ -140,16 +140,6 @@
             }
 
             function attachWishlistEventListeners() {
-                document.querySelectorAll('.btn-add-cart').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const productId = parseInt(this.dataset.productId);
-                        const product = getProductById(productId);
-                        if (product) {
-                            addToCart(product, 1);
-                        }
-                    });
-                });
-
                 document.querySelectorAll('.btn-remove').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const productId = parseInt(this.dataset.productId);
