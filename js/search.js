@@ -8,6 +8,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 128,
         stock: 25,
+        discountPercent: 15,
         description: "Crisp, juicy apples packed with fiber and natural sweetness. Perfect for snacking, salads, and fresh juice."
     },
     {
@@ -19,6 +20,7 @@ const products = [
         rating: 4.2,
         reviewsCount: 94,
         stock: 40,
+        discountPercent: 20,
         description: "Naturally sweet bananas rich in potassium. Great for smoothies, breakfast bowls, and quick energy."
     },
     {
@@ -30,6 +32,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 76,
         stock: 30,
+        discountPercent: 18,
         description: "Fresh oranges bursting with vitamin C. Enjoy as a snack or squeeze for a refreshing juice."
     },
     {
@@ -41,6 +44,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 62,
         stock: 18,
+        discountPercent: 25,
         description: "Sweet, seedless grapes that are perfect for snacking and fruit platters. Chill for extra freshness."
     },
     {
@@ -52,6 +56,7 @@ const products = [
         rating: 4.8,
         reviewsCount: 141,
         stock: 10,
+        discountPercent: 30,
         description: "Bright, fragrant strawberries with a sweet-tart taste. Best for desserts, toppings, and smoothies."
     },
     {
@@ -63,6 +68,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 58,
         stock: 12,
+        discountPercent: 12,
         description: "Refreshing watermelon with a high water content—great for summer hydration and fruit salads."
     },
 
@@ -75,6 +81,7 @@ const products = [
         rating: 4.0,
         reviewsCount: 44,
         stock: 35,
+        discountPercent: 20,
         description: "Crunchy carrots rich in beta-carotene. Ideal for salads, soups, and healthy snacking."
     },
     {
@@ -86,6 +93,7 @@ const products = [
         rating: 4.1,
         reviewsCount: 52,
         stock: 28,
+        discountPercent: 15,
         description: "Juicy tomatoes that add flavor to curries, sandwiches, and salads. A kitchen staple!"
     },
     {
@@ -97,6 +105,7 @@ const products = [
         rating: 4.2,
         reviewsCount: 39,
         stock: 16,
+        discountPercent: 18,
         description: "Fresh broccoli florets loaded with nutrients. Steam, stir-fry, or roast for a delicious side."
     },
     {
@@ -108,6 +117,7 @@ const products = [
         rating: 3.9,
         reviewsCount: 31,
         stock: 22,
+        discountPercent: 22,
         description: "Cool and crisp cucumbers—perfect for salads, raita, and refreshing hydration."
     },
     {
@@ -119,6 +129,7 @@ const products = [
         rating: 4.0,
         reviewsCount: 67,
         stock: 50,
+        discountPercent: 10,
         description: "Versatile potatoes for curries, fries, and snacks. A must-have for everyday cooking."
     },
     {
@@ -130,6 +141,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 46,
         stock: 20,
+        discountPercent: 16,
         description: "Sweet corn that's great boiled, grilled, or tossed into soups and salads for extra crunch."
     },
 
@@ -142,6 +154,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 110,
         stock: 24,
+        discountPercent: 10,
         description: "Fresh, creamy milk—perfect for tea, coffee, cereals, and everyday nutrition."
     },
     {
@@ -153,6 +166,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 88,
         stock: 14,
+        discountPercent: 15,
         description: "Rich and flavorful cheese that melts beautifully. Great for sandwiches, pasta, and snacks."
     },
     {
@@ -164,6 +178,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 73,
         stock: 9,
+        discountPercent: 8,
         description: "Creamy butter for spreading, baking, and cooking. Adds a delicious richness to any dish."
     },
     {
@@ -175,6 +190,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 66,
         stock: 18,
+        discountPercent: 12,
         description: "Smooth yogurt that's great for breakfast, smoothies, and homemade raita."
     },
 
@@ -187,6 +203,7 @@ const products = [
         rating: 4.8,
         reviewsCount: 152,
         stock: 32,
+        discountPercent: 25,
         description: "Crunchy cookies with a delightful sweetness—perfect with tea, coffee, or as a quick treat."
     },
     {
@@ -198,6 +215,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 97,
         stock: 45,
+        discountPercent: 20,
         description: "Crispy, salty chips for movie nights and snack cravings. Enjoy the crunch!"
     },
     {
@@ -209,6 +227,7 @@ const products = [
         rating: 4.9,
         reviewsCount: 210,
         stock: 27,
+        discountPercent: 30,
         description: "Smooth, indulgent chocolate to satisfy your sweet tooth. Great for gifting and desserts."
     },
     {
@@ -220,6 +239,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 54,
         stock: 38,
+        discountPercent: 35,
         description: "Light and fluffy popcorn—perfect for binge-watching and quick snacking."
     },
 
@@ -232,6 +252,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 61,
         stock: 20,
+        discountPercent: 15,
         description: "Refreshing orange juice with a citrusy punch. Serve chilled for the best taste."
     },
     {
@@ -243,6 +264,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 139,
         stock: 15,
+        discountPercent: 20,
         description: "Aromatic coffee to kickstart your day. Enjoy hot, iced, or with your favorite milk."
     },
     {
@@ -254,6 +276,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 103,
         stock: 22,
+        discountPercent: 18,
         description: "Comforting tea for every mood. Brew strong or light—your perfect cup awaits."
     },
     {
@@ -265,6 +288,7 @@ const products = [
         rating: 3.8,
         reviewsCount: 29,
         stock: 0,
+        discountPercent: 0,
         description: "Classic fizzy soda—cool and refreshing. Best served chilled with ice."
     },
     {
@@ -276,6 +300,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 115,
         stock: 20,
+        discountPercent: 25,
         description: "Sweet and juicy Alphonso mangoes, known as the king of fruits."
     },
     {
@@ -287,6 +312,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 82,
         stock: 15,
+        discountPercent: 20,
         description: "Tropical pineapples with a sweet and tangy flavor. Great for desserts and juices."
     },
     {
@@ -298,6 +324,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 64,
         stock: 25,
+        discountPercent: 0,
         description: "Tangy and vitamin-rich kiwis with a unique flavor and vibrant green flesh."
     },
     {
@@ -309,6 +336,7 @@ const products = [
         rating: 4.2,
         reviewsCount: 45,
         stock: 18,
+        discountPercent: 18,
         description: "Ripe and sweet papayas, perfect for a healthy breakfast or snack."
     },
     {
@@ -320,6 +348,7 @@ const products = [
         rating: 4.1,
         reviewsCount: 38,
         stock: 30,
+        discountPercent: 22,
         description: "Fresh pink guavas, crunchy and full of vitamin C. Great with a pinch of salt and chili."
     },
     {
@@ -331,6 +360,7 @@ const products = [
         rating: 4.8,
         reviewsCount: 92,
         stock: 12,
+        discountPercent: 0,
         description: "Juicy red pomegranate pearls, packed with antioxidants and sweet-tart flavor."
     },
     {
@@ -342,6 +372,7 @@ const products = [
         rating: 4.9,
         reviewsCount: 156,
         stock: 10,
+        discountPercent: 0,
         description: "Premium fresh blueberries, perfect for smoothies, pancakes, or healthy snacking."
     },
     {
@@ -353,6 +384,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 53,
         stock: 14,
+        discountPercent: 0,
         description: "Soft and sweet peaches with a delicate aroma. Ideal for desserts and salads."
     },
     {
@@ -364,6 +396,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 124,
         stock: 8,
+        discountPercent: 0,
         description: "Sweet red cherries, a perfect seasonal treat for snacking or baking."
     },
     {
@@ -375,6 +408,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 89,
         stock: 12,
+        discountPercent: 0,
         description: "Creamy ripe avocados, perfect for toast, salads, and healthy fats."
     },
     {
@@ -386,6 +420,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 78,
         stock: 40,
+        discountPercent: 15,
         description: "Fresh green spinach leaves, nutrient-dense and versatile for cooking."
     },
     {
@@ -397,6 +432,7 @@ const products = [
         rating: 4.1,
         reviewsCount: 42,
         stock: 22,
+        discountPercent: 18,
         description: "Fresh white cauliflower florets, great for curries, roasting, or stir-frying."
     },
     {
@@ -408,6 +444,7 @@ const products = [
         rating: 4.0,
         reviewsCount: 35,
         stock: 25,
+        discountPercent: 20,
         description: "Crunchy green cabbage, perfect for salads, slaws, and stir-fries."
     },
     {
@@ -419,6 +456,7 @@ const products = [
         rating: 4.2,
         reviewsCount: 160,
         stock: 100,
+        discountPercent: 10,
         description: "Essential red onions for every kitchen. Adds flavor and crunch to any dish."
     },
     {
@@ -430,6 +468,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 95,
         stock: 60,
+        discountPercent: 12,
         description: "Pungent and flavorful garlic cloves, a must-have for seasoning and health."
     },
     {
@@ -441,6 +480,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 67,
         stock: 15,
+        discountPercent: 15,
         description: "Vibrant and crunchy bell peppers, perfect for stir-fries, salads, and stuffing."
     },
     {
@@ -452,6 +492,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 48,
         stock: 30,
+        discountPercent: 18,
         description: "Nutritious sweet potatoes, great for roasting, mashing, or as a healthy snack."
     },
     {
@@ -463,6 +504,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 52,
         stock: 20,
+        discountPercent: 20,
         description: "Fresh green peas, sweet and tender. Ideal for curries, pulao, and side dishes."
     },
     {
@@ -474,6 +516,7 @@ const products = [
         rating: 4.2,
         reviewsCount: 41,
         stock: 25,
+        discountPercent: 16,
         description: "Fresh green beans, crunchy and nutritious. Great for stir-frying and steaming."
     },
     {
@@ -485,6 +528,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 84,
         stock: 12,
+        discountPercent: 0,
         description: "Fresh button mushrooms, earthy and savory. Perfect for pasta, pizzas, and stir-fries."
     },
     {
@@ -496,6 +540,7 @@ const products = [
         rating: 4.8,
         reviewsCount: 142,
         stock: 18,
+        discountPercent: 12,
         description: "Fresh and soft cottage cheese (paneer), a versatile protein for Indian dishes."
     },
     {
@@ -507,6 +552,7 @@ const products = [
         rating: 4.9,
         reviewsCount: 215,
         stock: 15,
+        discountPercent: 10,
         description: "Pure cow ghee, aromatic and rich. Perfect for cooking and adding flavor to meals."
     },
     {
@@ -518,6 +564,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 188,
         stock: 10,
+        discountPercent: 15,
         description: "Creamy vanilla ice cream, the perfect dessert to satisfy your sweet cravings."
     },
     {
@@ -529,6 +576,7 @@ const products = [
         rating: 4.2,
         reviewsCount: 63,
         stock: 40,
+        discountPercent: 8,
         description: "Refreshing and cooling buttermilk, great for digestion and summer heat."
     },
     {
@@ -540,6 +588,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 76,
         stock: 25,
+        discountPercent: 12,
         description: "Delicious fruit-flavored yogurt, a healthy and tasty snack for any time."
     },
     {
@@ -551,6 +600,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 45,
         stock: 12,
+        discountPercent: 0,
         description: "Light and fluffy whipped cream, perfect for topping desserts and fruits."
     },
     {
@@ -562,6 +612,7 @@ const products = [
         rating: 4.1,
         reviewsCount: 32,
         stock: 15,
+        discountPercent: 0,
         description: "Thick and tangy sour cream, ideal for dips, baked potatoes, and tacos."
     },
     {
@@ -573,6 +624,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 87,
         stock: 20,
+        discountPercent: 10,
         description: "Sweetened condensed milk, a key ingredient for many delicious desserts."
     },
     {
@@ -584,6 +636,7 @@ const products = [
         rating: 4.0,
         reviewsCount: 42,
         stock: 18,
+        discountPercent: 15,
         description: "Nutritious plant-based soya milk, a great dairy alternative for health-conscious users."
     },
     {
@@ -595,6 +648,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 59,
         stock: 14,
+        discountPercent: 0,
         description: "Creamy almond milk, a delicious and healthy non-dairy milk alternative."
     },
     {
@@ -606,6 +660,7 @@ const products = [
         rating: 4.8,
         reviewsCount: 134,
         stock: 30,
+        discountPercent: 15,
         description: "Premium roasted almonds, a crunchy and nutritious snack packed with vitamin E."
     },
     {
@@ -617,6 +672,7 @@ const products = [
         rating: 4.9,
         reviewsCount: 122,
         stock: 25,
+        discountPercent: 18,
         description: "Creamy and delicious cashew nuts, perfect for snacking or adding to desserts."
     },
     {
@@ -628,6 +684,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 88,
         stock: 20,
+        discountPercent: 20,
         description: "Healthy walnuts, rich in omega-3 fatty acids. Great for brain health and snacking."
     },
     {
@@ -639,6 +696,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 67,
         stock: 35,
+        discountPercent: 22,
         description: "Sweet and chewy raisins, a natural energy booster for your day."
     },
     {
@@ -650,6 +708,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 91,
         stock: 15,
+        discountPercent: 25,
         description: "Crunchy granola with nuts and honey, perfect for a healthy breakfast or snack."
     },
     {
@@ -661,6 +720,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 73,
         stock: 20,
+        discountPercent: 20,
         description: "A mix of nuts, seeds, and dried fruits for sustained energy on the go."
     },
     {
@@ -672,6 +732,7 @@ const products = [
         rating: 4.2,
         reviewsCount: 54,
         stock: 40,
+        discountPercent: 30,
         description: "Classic salted pretzels, a crunchy and satisfying snack for any time."
     },
     {
@@ -683,6 +744,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 86,
         stock: 30,
+        discountPercent: 25,
         description: "Crispy corn nachos, perfect with cheese dip or salsa for movie nights."
     },
     {
@@ -694,6 +756,7 @@ const products = [
         rating: 4.1,
         reviewsCount: 102,
         stock: 50,
+        discountPercent: 15,
         description: "Roasted and salted peanuts, a classic and affordable high-protein snack."
     },
     {
@@ -705,6 +768,7 @@ const products = [
         rating: 4.8,
         reviewsCount: 115,
         stock: 18,
+        discountPercent: 0,
         description: "Delicious roasted pistachios, fun to crack and full of nutrients."
     },
     {
@@ -716,6 +780,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 94,
         stock: 25,
+        discountPercent: 18,
         description: "Sweet and thick mango nectar, made from the finest ripe mangoes."
     },
     {
@@ -727,6 +792,7 @@ const products = [
         rating: 4.5,
         reviewsCount: 78,
         stock: 22,
+        discountPercent: 15,
         description: "Clear and refreshing apple juice, naturally sweet and full of flavor."
     },
     {
@@ -738,6 +804,7 @@ const products = [
         rating: 4.4,
         reviewsCount: 52,
         stock: 15,
+        discountPercent: 0,
         description: "Tart and refreshing cranberry juice, great on its own or as a mixer."
     },
     {
@@ -749,6 +816,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 145,
         stock: 30,
+        discountPercent: 20,
         description: "Healthy green tea leaves, rich in antioxidants for a revitalizing break."
     },
     {
@@ -760,6 +828,7 @@ const products = [
         rating: 4.1,
         reviewsCount: 63,
         stock: 40,
+        discountPercent: 25,
         description: "Instant energy boost to keep you going through your busy day."
     },
     {
@@ -771,6 +840,7 @@ const products = [
         rating: 4.9,
         reviewsCount: 112,
         stock: 50,
+        discountPercent: 12,
         description: "Natural and refreshing coconut water, perfect for hydration and electrolytes."
     },
     {
@@ -782,6 +852,7 @@ const products = [
         rating: 4.8,
         reviewsCount: 89,
         stock: 12,
+        discountPercent: 20,
         description: "Delicious mixed fruit smoothie, a healthy and filling drink for any time."
     },
     {
@@ -793,6 +864,7 @@ const products = [
         rating: 4.7,
         reviewsCount: 134,
         stock: 15,
+        discountPercent: 18,
         description: "Thick and creamy chocolate milkshake, a classic treat for all ages."
     },
     {
@@ -804,6 +876,7 @@ const products = [
         rating: 4.3,
         reviewsCount: 72,
         stock: 45,
+        discountPercent: 15,
         description: "Zesty and refreshing lemonade, the perfect thirst quencher on a hot day."
     },
     {
@@ -815,6 +888,7 @@ const products = [
         rating: 4.6,
         reviewsCount: 121,
         stock: 20,
+        discountPercent: 10,
         description: "Rich and comforting hot chocolate, perfect for cozy evenings."
     }
 ];
@@ -906,4 +980,190 @@ function renderStars(rating) {
     }
 
     return stars;
+}
+
+const coupons = [
+    {
+        code: "WELCOME10",
+        discount: 100,
+        type: "fixed",
+        minOrderValue: 500,
+        maxDiscount: null,
+        expiryDate: "2025-12-31",
+        usageLimit: 1000,
+        usedCount: 0,
+        active: true,
+        description: "₹100 off for new users (min ₹500)"
+    },
+    {
+        code: "SAVE20",
+        discount: 20,
+        type: "percentage",
+        minOrderValue: 1000,
+        maxDiscount: 500,
+        expiryDate: "2025-06-30",
+        usageLimit: 500,
+        usedCount: 0,
+        active: true,
+        description: "20% off (max ₹500, min ₹1000)"
+    },
+    {
+        code: "FRESH15",
+        discount: 150,
+        type: "fixed",
+        minOrderValue: 300,
+        maxDiscount: null,
+        expiryDate: "2025-12-31",
+        usageLimit: 800,
+        usedCount: 0,
+        active: true,
+        description: "₹150 off on fruits/vegetables (min ₹300)",
+        applicableCategories: ["Fruits", "Vegetables"]
+    },
+    {
+        code: "DAIRY50",
+        discount: 50,
+        type: "fixed",
+        minOrderValue: 200,
+        maxDiscount: null,
+        expiryDate: "2025-12-31",
+        usageLimit: 600,
+        usedCount: 0,
+        active: true,
+        description: "₹50 off on dairy products (min ₹200)",
+        applicableCategories: ["Dairy"]
+    },
+    {
+        code: "WEEKEND30",
+        discount: 30,
+        type: "percentage",
+        minOrderValue: 1500,
+        maxDiscount: 800,
+        expiryDate: "2025-12-31",
+        usageLimit: 300,
+        usedCount: 0,
+        active: true,
+        description: "30% off on weekends (max ₹800, min ₹1500)"
+    },
+    {
+        code: "BULK100",
+        discount: 100,
+        type: "fixed",
+        minOrderValue: 2000,
+        maxDiscount: null,
+        expiryDate: "2025-12-31",
+        usageLimit: 400,
+        usedCount: 0,
+        active: true,
+        description: "₹100 off on orders over ₹2000"
+    }
+];
+
+function getAllCoupons() {
+    const storedCoupons = localStorage.getItem('happyGroceries_coupons');
+    if (storedCoupons) {
+        return JSON.parse(storedCoupons);
+    }
+    localStorage.setItem('happyGroceries_coupons', JSON.stringify(coupons));
+    return [...coupons];
+}
+
+function getAppliedCoupon() {
+    const applied = localStorage.getItem('happyGroceries_appliedCoupon');
+    return applied ? JSON.parse(applied) : null;
+}
+
+function setAppliedCoupon(coupon) {
+    if (coupon) {
+        localStorage.setItem('happyGroceries_appliedCoupon', JSON.stringify(coupon));
+    } else {
+        localStorage.removeItem('happyGroceries_appliedCoupon');
+    }
+}
+
+function getDeliveryCharge() {
+    return {
+        standard: 50,
+        express: 100,
+        freeThreshold: 500
+    };
+}
+
+function calculateDiscountedPrice(price, discountPercent) {
+    if (!discountPercent || discountPercent === 0) {
+        return price;
+    }
+    return price - (price * discountPercent / 100);
+}
+
+function getProductEffectivePrice(product) {
+    if (product.discountPercent && product.discountPercent > 0) {
+        return calculateDiscountedPrice(product.price, product.discountPercent);
+    }
+    return product.price;
+}
+
+function validateCoupon(code, cartTotal, cartItems = []) {
+    const coupons = getAllCoupons();
+    const coupon = coupons.find(c => c.code.toUpperCase() === code.toUpperCase());
+    
+    if (!coupon) {
+        return { valid: false, message: "Invalid coupon code" };
+    }
+    
+    if (!coupon.active) {
+        return { valid: false, message: "This coupon is not active" };
+    }
+    
+    const today = new Date();
+    const expiryDate = new Date(coupon.expiryDate);
+    if (today > expiryDate) {
+        return { valid: false, message: "This coupon has expired" };
+    }
+    
+    if (coupon.usedCount >= coupon.usageLimit) {
+        return { valid: false, message: "Coupon usage limit reached" };
+    }
+    
+    if (cartTotal < coupon.minOrderValue) {
+        return { valid: false, message: `Minimum order value ₹${coupon.minOrderValue} required` };
+    }
+    
+    if (coupon.applicableCategories) {
+        const hasApplicableItem = cartItems.some(item => 
+            coupon.applicableCategories.includes(item.category)
+        );
+        if (!hasApplicableItem) {
+            return { valid: false, message: `Coupon only applicable to ${coupon.applicableCategories.join(', ')}` };
+        }
+    }
+    
+    return { valid: true, coupon };
+}
+
+function calculateCouponDiscount(coupon, cartTotal) {
+    if (!coupon) return 0;
+    
+    if (coupon.type === 'fixed') {
+        return coupon.discount;
+    } else if (coupon.type === 'percentage') {
+        const discount = cartTotal * (coupon.discount / 100);
+        return coupon.maxDiscount ? Math.min(discount, coupon.maxDiscount) : discount;
+    }
+    
+    return 0;
+}
+
+function isWeekend() {
+    const today = new Date();
+    const day = today.getDay();
+    return day === 0 || day === 6;
+}
+
+function getCouponsForCategory(category) {
+    const coupons = getAllCoupons();
+    return coupons.filter(c => 
+        c.active && 
+        (!c.applicableCategories || c.applicableCategories.includes(category))
+    );
 }
