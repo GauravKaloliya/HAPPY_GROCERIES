@@ -1,7 +1,7 @@
 const AUTH_STORAGE_KEY = 'happyGroceries_users';
 const SESSION_STORAGE_KEY = 'happyGroceries_session';
 
-function hashPassword(password) {
+function hashPasswordLegacy(password) {
     let hash = 0;
     for (let i = 0; i < password.length; i++) {
         const char = password.charCodeAt(i);
@@ -9,6 +9,12 @@ function hashPassword(password) {
         hash = hash & hash;
     }
     return hash.toString(36);
+}
+
+function checkPasswordHashFormat(storedPassword) {
+    if (typeof storedPassword !== 'string') return null;
+    if (storedPassword.startsWith('sha256$')) return 'secure';
+    return 'legacy';
 }
 
 function getAllUsers() {
@@ -28,63 +34,116 @@ function findUserByPhone(phone) {
 }
 
 function validatePhone(phone) {
+    if (typeof HGValidation !== 'undefined' && HGValidation.validatePhone) {
+        return HGValidation.validatePhone(phone);
+    }
     const phoneRegex = /^\d{10}$/;
     return phoneRegex.test(phone);
 }
 
 function validateEmail(email) {
     if (!email) return true;
+    if (typeof HGValidation !== 'undefined' && HGValidation.validateEmail) {
+        return HGValidation.validateEmail(email);
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
-function validatePassword(password) {
-    return password.length >= 6;
+function validatePassword(password, options) {
+    if (typeof HGValidation !== 'undefined' && HGValidation.validatePassword) {
+        if (options && options.enforceStrong) {
+            return HGValidation.validatePassword(password);
+        }
+        return password && password.length >= 6;
+    }
+    return password && password.length >= 6;
 }
 
 function validateName(name) {
-    return name.length >= 3;
+    if (typeof HGValidation !== 'undefined' && HGValidation.validateName) {
+        return HGValidation.validateName(name);
+    }
+    return name && name.length >= 3;
 }
 
-function registerUser(name, phone, email, password) {
-    if (!validateName(name)) {
-        return { success: false, error: 'Name must be at least 3 characters' };
+function registerUser(name, phone, email, password, csrfToken) {
+    const providedToken = csrfToken || (typeof HGValidation !== 'undefined' && HGValidation.getCSRFToken ? HGValidation.getCSRFToken() : sessionStorage.getItem('csrf_token'));
+    if (typeof HGValidation !== 'undefined' && HGValidation.validateCSRFToken) {
+        if (!HGValidation.validateCSRFToken(providedToken)) {
+            return { success: false, error: 'Security check failed. Please refresh and try again.' };
+        }
     }
 
-    if (!validatePhone(phone)) {
+    if (typeof HGValidation !== 'undefined' && HGValidation.checkRateLimit) {
+        const rateCheck = HGValidation.checkRateLimit('register', phone);
+        if (!rateCheck.allowed) {
+            return { success: false, error: rateCheck.message };
+        }
+    }
+
+    const safeName = (typeof HGValidation !== 'undefined' && HGValidation.sanitizeInput) ? HGValidation.sanitizeInput(name) : (name || '').trim();
+    const safeEmail = (typeof HGValidation !== 'undefined' && HGValidation.sanitizeInput) ? HGValidation.sanitizeInput(email || '') : (email || '').trim();
+    const safePhone = (phone || '').replace(/\D/g, '');
+
+    if (!validateName(safeName)) {
+        return { success: false, error: 'Name must be 3-50 characters and contain only letters/numbers/spaces' };
+    }
+
+    if (!validatePhone(safePhone)) {
         return { success: false, error: 'Phone number must be 10 digits' };
     }
 
-    if (email && !validateEmail(email)) {
+    if (safeEmail && !validateEmail(safeEmail)) {
         return { success: false, error: 'Invalid email format' };
     }
 
-    if (!validatePassword(password)) {
-        return { success: false, error: 'Password must be at least 6 characters' };
+    if (!validatePassword(password, { enforceStrong: true })) {
+        return { success: false, error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character' };
     }
 
-    if (findUserByPhone(phone)) {
+    if (findUserByPhone(safePhone)) {
         return { success: false, error: 'Phone number already registered' };
     }
 
+    const hashedPassword = (typeof HGSecurity !== 'undefined' && HGSecurity.hashPassword)
+        ? HGSecurity.hashPassword(password)
+        : hashPasswordLegacy(password);
+
     const user = {
         id: Date.now().toString(),
-        name,
-        phone,
-        email: email || '',
-        password: hashPassword(password),
+        name: safeName,
+        phone: safePhone,
+        email: safeEmail || '',
+        password: hashedPassword,
         createdAt: new Date().toISOString(),
         orders: [],
         wishlist: []
     };
 
     saveUser(user);
-    createSession(user);
+
+    if (typeof HGSession !== 'undefined' && HGSession.createSession) {
+        HGSession.createSession(user);
+    } else {
+        createSession(user);
+    }
+
+    if (typeof HGValidation !== 'undefined' && HGValidation.resetRateLimit) {
+        HGValidation.resetRateLimit('register', phone);
+    }
 
     return { success: true, user };
 }
 
 function loginUser(phone, password) {
+    if (typeof HGValidation !== 'undefined' && HGValidation.checkRateLimit) {
+        const rateCheck = HGValidation.checkRateLimit('login', phone);
+        if (!rateCheck.allowed) {
+            return { success: false, error: rateCheck.message };
+        }
+    }
+
     if (!validatePhone(phone)) {
         return { success: false, error: 'Invalid phone number' };
     }
@@ -94,11 +153,39 @@ function loginUser(phone, password) {
         return { success: false, error: 'User not found' };
     }
 
-    if (user.password !== hashPassword(password)) {
+    const hashFormat = checkPasswordHashFormat(user.password);
+    let passwordMatch = false;
+
+    if (hashFormat === 'secure' && typeof HGSecurity !== 'undefined' && HGSecurity.verifyPassword) {
+        passwordMatch = HGSecurity.verifyPassword(password, user.password);
+    } else if (hashFormat === 'legacy') {
+        passwordMatch = user.password === hashPasswordLegacy(password);
+
+        if (passwordMatch && typeof HGSecurity !== 'undefined' && HGSecurity.hashPassword) {
+            user.password = HGSecurity.hashPassword(password);
+            const users = getAllUsers();
+            const userIndex = users.findIndex(u => u.id === user.id);
+            if (userIndex !== -1) {
+                users[userIndex] = user;
+                localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(users));
+            }
+        }
+    }
+
+    if (!passwordMatch) {
         return { success: false, error: 'Invalid password' };
     }
 
-    createSession(user);
+    if (typeof HGSession !== 'undefined' && HGSession.createSession) {
+        HGSession.createSession(user);
+    } else {
+        createSession(user);
+    }
+
+    if (typeof HGValidation !== 'undefined' && HGValidation.resetRateLimit) {
+        HGValidation.resetRateLimit('login', phone);
+    }
+
     return { success: true, user };
 }
 
@@ -114,6 +201,12 @@ function createSession(user) {
 }
 
 function getCurrentUser() {
+    if (typeof HGSession !== 'undefined' && HGSession.validateSession) {
+        if (!HGSession.validateSession()) {
+            return null;
+        }
+    }
+
     const session = localStorage.getItem(SESSION_STORAGE_KEY);
     if (!session) return null;
 
@@ -123,15 +216,25 @@ function getCurrentUser() {
 }
 
 function isUserLoggedIn() {
+    if (typeof HGSession !== 'undefined' && HGSession.validateSession) {
+        return HGSession.validateSession();
+    }
     return getCurrentUser() !== null;
 }
 
 function logoutUser() {
-    localStorage.removeItem(SESSION_STORAGE_KEY);
+    if (typeof HGSession !== 'undefined' && HGSession.endSession) {
+        HGSession.endSession();
+    } else {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
     window.location.href = '/index.html';
 }
 
 function getPasswordStrength(password) {
+    if (typeof HGValidation !== 'undefined' && HGValidation.getPasswordStrength) {
+        return HGValidation.getPasswordStrength(password);
+    }
     if (password.length < 6) return 'weak';
     if (password.length < 10) return 'medium';
     return 'strong';
@@ -171,7 +274,6 @@ function addOrder(order) {
     order.date = new Date().toISOString();
     order.status = 'processing';
 
-    // Calculate estimated delivery time in minutes
     const cart = order.items || [];
     const isExpress = order.delivery > 0 && order.delivery === getDeliveryCharge().express;
     const deliveryMinutes = calculateDeliveryMinutes(cart, isExpress);
@@ -181,7 +283,6 @@ function addOrder(order) {
         `Express delivery: ${deliveryMinutes} minutes (by ${deliveryTime})` :
         `Standard delivery: ${deliveryMinutes} minutes (by ${deliveryTime})`;
 
-    // Mark coupon as used if one was applied
     const appliedCoupon = getAppliedCoupon();
     if (appliedCoupon) {
         markCouponAsUsed(appliedCoupon.code);
