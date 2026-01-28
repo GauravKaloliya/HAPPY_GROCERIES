@@ -1007,6 +1007,24 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 0.5rem;
 }
 
+.cart-item-price .original-price {
+    text-decoration: line-through;
+    opacity: 0.7;
+    font-weight: 500;
+    margin-right: 0.5rem;
+}
+
+.item-discount-badge {
+    background: linear-gradient(135deg, #ff4757, #ff3742);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    margin-left: 0.5rem;
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
 .cart-item-actions {
     display: flex;
     align-items: center;
@@ -1048,6 +1066,113 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--primary-pink);
     padding-top: 1rem;
     border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.coupon-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-light);
+    border-radius: var(--border-radius);
+}
+
+.coupon-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#couponInput {
+    flex: 1;
+    padding: 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    font-family: 'Nunito', sans-serif;
+}
+
+#couponInput:focus {
+    outline: none;
+    border-color: var(--primary-pink);
+    box-shadow: 0 0 0 3px rgba(255, 179, 217, 0.1);
+}
+
+.btn-coupon {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary-pink);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: 'Nunito', sans-serif;
+}
+
+.btn-coupon:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.coupon-message {
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    margin-top: 0.5rem;
+}
+
+.coupon-message.error {
+    background: #ffe6e6;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+.coupon-message.success {
+    background: #e8f5e8;
+    color: #388e3c;
+    border: 1px solid #c8e6c9;
+}
+
+.applied-coupon-info {
+    background: var(--primary-green);
+    color: var(--text-dark);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    margin-top: 0.5rem;
+    animation: successPulse 1s ease-in-out;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.summary-row.discount-row {
+    color: var(--primary-green);
+    font-weight: 600;
+}
+
+.coupon-discount-row {
+    color: var(--primary-green);
+    font-weight: 600;
+    animation: discountApplied 0.5s ease-in-out;
+}
+
+@keyframes discountApplied {
+    from {
+        background-color: rgba(200, 230, 201, 0.3);
+    }
+    to {
+        background-color: transparent;
+    }
 }
 
 .cart-actions {
@@ -1874,6 +1999,10 @@ h1, h2, h3, h4, h5, h6 {
     align-items: start;
 }
 
+.product-image-section {
+    position: relative;
+}
+
 .product-details-image {
     width: 100%;
     height: 320px;
@@ -1883,6 +2012,200 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 7rem;
     background: var(--bg-light);
     border-radius: var(--border-radius);
+}
+
+.discount-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: linear-gradient(135deg, #ff4757, #ff3742);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+    animation: pulse-badge 2s ease-in-out infinite;
+    z-index: 2;
+}
+
+.discount-percentage {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pulse-badge {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 16px rgba(255, 71, 87, 0.6);
+    }
+}
+
+.product-details-price-section {
+    margin: 1rem 0;
+}
+
+.price-with-discount {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.original-price {
+    font-size: 1.5rem;
+    color: var(--text-dark);
+    opacity: 0.7;
+    text-decoration: line-through;
+    font-weight: 500;
+}
+
+.discounted-price {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary-pink);
+    text-shadow: 0 2px 4px rgba(255, 179, 217, 0.3);
+}
+
+.savings-amount {
+    background: var(--primary-green);
+    color: var(--text-dark);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    display: inline-block;
+    animation: savingsGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes savingsGlow {
+    from {
+        box-shadow: 0 2px 8px rgba(200, 230, 201, 0.4);
+    }
+    to {
+        box-shadow: 0 4px 12px rgba(200, 230, 201, 0.8);
+    }
+}
+
+/* Festival and Offer Badge Animations */
+.floating-festivals,
+.floating-offers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.festival-badge,
+.offer-badge {
+    position: absolute;
+    padding: 0.75rem 1.25rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: var(--transition);
+    animation-duration: 4s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+}
+
+.festival-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.offer-badge {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.festival-float {
+    animation-name: festivalFloat;
+}
+
+@keyframes festivalFloat {
+    0%, 100% {
+        transform: translateY(0px) translateX(0px) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-10px) translateX(5px) rotate(1deg);
+    }
+    50% {
+        transform: translateY(-20px) translateX(-5px) rotate(-1deg);
+    }
+    75% {
+        transform: translateY(-10px) translateX(3px) rotate(0.5deg);
+    }
+}
+
+.offer-pulse {
+    animation-name: offerPulse;
+}
+
+@keyframes offerPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+    }
+}
+
+.badge-bounce {
+    animation-name: badgeBounce;
+}
+
+@keyframes badgeBounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+.festival-badge:hover,
+.offer-badge:hover {
+    transform: scale(1.1) translateY(-5px);
+    animation-play-state: paused;
+}
+
+/* Mobile responsiveness for floating badges */
+@media (max-width: 768px) {
+    .festival-badge,
+    .offer-badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .floating-festivals,
+    .floating-offers {
+        display: none; /* Hide on mobile to avoid clutter */
+    }
+}
+
+@media (max-width: 480px) {
+    .festival-badge,
+    .offer-badge {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.8rem;
+    }
 }
 
 .product-details-name {

@@ -171,9 +171,21 @@ function addOrder(order) {
     order.date = new Date().toISOString();
     order.status = 'processing';
 
-    const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 3);
-    order.estimatedDelivery = estimatedDelivery.toDateString();
+    // Calculate estimated delivery time in minutes
+    const cart = order.items || [];
+    const isExpress = order.delivery > 0 && order.delivery === getDeliveryCharge().express;
+    const deliveryMinutes = calculateDeliveryMinutes(cart, isExpress);
+    const deliveryTime = formatDeliveryTime(deliveryMinutes);
+    
+    order.estimatedDelivery = isExpress ? 
+        `Express delivery: ${deliveryMinutes} minutes (by ${deliveryTime})` :
+        `Standard delivery: ${deliveryMinutes} minutes (by ${deliveryTime})`;
+
+    // Mark coupon as used if one was applied
+    const appliedCoupon = getAppliedCoupon();
+    if (appliedCoupon) {
+        markCouponAsUsed(appliedCoupon.code);
+    }
 
     user.orders.push(order);
 
