@@ -13,7 +13,7 @@
             <div class="nav-logo">
                 <a href="../index.html">🛒 Happy Groceries</a>
             </div>
-            
+
             <div class="hamburger" id="hamburger">
                 <span></span>
                 <span></span>
@@ -25,6 +25,7 @@
                 <li><a href="categories.html" class="nav-link">Categories</a></li>
                 <li><a href="shop.html" class="nav-link">Shop</a></li>
                 <li><a href="cart.html" class="nav-link">Cart</a></li>
+                <li><a href="offers.html" class="nav-link">🎉 Offers</a></li>
                 <li><a href="about.html" class="nav-link">About Us</a></li>
             </ul>
 
@@ -32,7 +33,7 @@
                 <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
                     <span class="theme-icon">🌙</span>
                 </button>
-                
+
                 <a href="cart.html" class="cart-icon">
                     🛒
                     <span class="cart-counter" id="cartCounter">0</span>
@@ -122,8 +123,12 @@
 
             const user = getCurrentUser();
             const subtotal = calculateSubtotal();
+            const originalSubtotal = calculateSubtotalWithOriginalPrice();
             const tax = calculateTax(subtotal);
+            const delivery = calculateDeliveryCharge(subtotal);
+            const couponDiscount = calculateCouponDiscount();
             const total = calculateTotal();
+            const appliedCoupon = getAppliedCoupon();
 
             checkoutContent.innerHTML = `
                 <div class="checkout-container">
@@ -151,41 +156,94 @@
                                 <span class="error-message" id="addressError"></span>
                             </div>
 
+                            <div class="form-group">
+                                <label>Delivery Type *</label>
+                                <div class="delivery-options">
+                                    <label class="delivery-option">
+                                        <input type="radio" name="delivery" value="standard" ${delivery === 0 ? 'disabled' : ''} checked>
+                                        <span class="delivery-option-text">
+                                            <strong>Standard Delivery</strong>
+                                            ${delivery === 0 ? '<span class="free-delivery-tag">FREE</span>' : `<span>₹${delivery.toFixed(2)}</span>`}
+                                            <small>3-5 business days</small>
+                                        </span>
+                                    </label>
+                                    <label class="delivery-option">
+                                        <input type="radio" name="delivery" value="express" ${subtotal >= 500 ? '' : ''}>
+                                        <span class="delivery-option-text">
+                                            <strong>Express Delivery</strong>
+                                            <span>₹${getDeliveryCharge().express.toFixed(2)}</span>
+                                            <small>1-2 business days</small>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn-submit">Place Order</button>
                         </form>
                     </div>
 
                     <div class="order-summary">
                         <h2>Order Summary</h2>
-                        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
-                            ${cart.map(item => `
+                        <div class="coupon-section">
+                            <div class="coupon-input-wrapper">
+                                <input type="text" id="couponInput" placeholder="Enter coupon code" ${appliedCoupon ? 'value="' + appliedCoupon.code + '"' : ''}>
+                                <button id="applyCouponBtn" class="btn-coupon">${appliedCoupon ? 'Remove' : 'Apply'}</button>
+                            </div>
+                            <div id="couponMessage" class="coupon-message"></div>
+                            ${appliedCoupon ? `<div class="applied-coupon-info">🎉 ${appliedCoupon.description}</div>` : ''}
+                        </div>
+                        <div style="max-height: 250px; overflow-y: auto; margin-bottom: 1rem;">
+                            ${cart.map(item => {
+                                const hasDiscount = item.discountPercent && item.discountPercent > 0;
+                                const effectivePrice = hasDiscount ? calculateDiscountedPrice(item.price, item.discountPercent) : item.price;
+                                return `
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(0,0,0,0.1);">
                                     <div>
                                         <strong>${item.name}</strong><br>
-                                        <small>₹${item.price} × ${item.quantity}</small>
+                                        ${hasDiscount ? `<small><span class="original-price">₹${item.price}</span> × ${item.quantity}</small>` : `<small>₹${item.price} × ${item.quantity}</small>`}
                                     </div>
-                                    <div><strong>₹${item.price * item.quantity}</strong></div>
+                                    <div><strong>₹${(effectivePrice * item.quantity).toFixed(0)}</strong></div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                         <div class="summary-row">
                             <span>Subtotal:</span>
                             <span>₹${subtotal.toFixed(2)}</span>
                         </div>
+                        ${originalSubtotal > subtotal ? `
+                        <div class="summary-row discount-row">
+                            <span>Item Discounts:</span>
+                            <span>-₹${(originalSubtotal - subtotal).toFixed(2)}</span>
+                        </div>
+                        ` : ''}
                         <div class="summary-row">
                             <span>Tax (8%):</span>
                             <span>₹${tax.toFixed(2)}</span>
                         </div>
+                        <div class="summary-row">
+                            <span>Delivery:</span>
+                            <span id="deliveryCharge">${delivery === 0 ? '<span class="free-delivery">FREE</span>' : '₹' + delivery.toFixed(2)}</span>
+                        </div>
+                        ${couponDiscount > 0 ? `
+                        <div class="summary-row coupon-discount-row">
+                            <span>Coupon Discount:</span>
+                            <span>-₹${couponDiscount.toFixed(2)}</span>
+                        </div>
+                        ` : ''}
                         <div class="summary-row total">
                             <span>Total:</span>
-                            <span>₹${total.toFixed(2)}</span>
+                            <span id="totalAmount">₹${total.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
             `;
 
+            setupCouponHandler();
+            setupDeliveryOptionHandler();
+
             const checkoutForm = document.getElementById('checkoutForm');
             const addressError = document.getElementById('addressError');
+            const deliveryRadios = document.querySelectorAll('input[name="delivery"]');
 
             checkoutForm.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -209,6 +267,10 @@
                     return;
                 }
 
+                const selectedDelivery = Array.from(deliveryRadios).find(r => r.checked);
+                const isExpress = selectedDelivery && selectedDelivery.value === 'express';
+                const finalTotal = calculateTotal(isExpress);
+
                 const order = {
                     items: cart,
                     name,
@@ -217,10 +279,13 @@
                     address,
                     subtotal,
                     tax,
-                    total
+                    delivery: calculateDeliveryCharge(subtotal, isExpress),
+                    couponDiscount: calculateCouponDiscount(),
+                    total: finalTotal
                 };
 
                 const savedOrder = addOrder(order);
+                setAppliedCoupon(null);
 
                 document.getElementById('orderNumber').textContent = savedOrder.id;
                 document.getElementById('deliveryDate').textContent = savedOrder.estimatedDelivery;
@@ -233,6 +298,73 @@
                 window.location.href = '../index.html';
             });
         });
+
+        function setupCouponHandler() {
+            const couponInput = document.getElementById('couponInput');
+            const applyBtn = document.getElementById('applyCouponBtn');
+            const couponMessage = document.getElementById('couponMessage');
+            const appliedCoupon = getAppliedCoupon();
+
+            if (applyBtn && appliedCoupon) {
+                applyBtn.addEventListener('click', function() {
+                    setAppliedCoupon(null);
+                    showToast('Coupon removed');
+                    location.reload();
+                });
+            } else if (applyBtn) {
+                applyBtn.addEventListener('click', function() {
+                    const code = couponInput.value.trim();
+                    if (!code) {
+                        couponMessage.textContent = 'Please enter a coupon code';
+                        couponMessage.className = 'coupon-message error';
+                        return;
+                    }
+
+                    const cart = getCart();
+                    const cartTotal = calculateSubtotal();
+                    const validation = validateCoupon(code, cartTotal, cart);
+
+                    if (validation.valid) {
+                        setAppliedCoupon(validation.coupon);
+                        showToast('Coupon applied successfully! 🎉');
+                        location.reload();
+                    } else {
+                        couponMessage.textContent = validation.message;
+                        couponMessage.className = 'coupon-message error';
+                        setTimeout(() => {
+                            couponMessage.textContent = '';
+                            couponMessage.className = 'coupon-message';
+                        }, 3000);
+                    }
+                });
+
+                couponInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        applyBtn.click();
+                    }
+                });
+            }
+        }
+
+        function setupDeliveryOptionHandler() {
+            const deliveryRadios = document.querySelectorAll('input[name="delivery"]');
+            const subtotal = calculateSubtotal();
+            const deliveryChargeSpan = document.getElementById('deliveryCharge');
+            const totalAmountSpan = document.getElementById('totalAmount');
+            const tax = calculateTax(subtotal);
+            const couponDiscount = calculateCouponDiscount();
+
+            deliveryRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const isExpress = this.value === 'express';
+                    const newDelivery = calculateDeliveryCharge(subtotal, isExpress);
+                    const newTotal = subtotal + tax + newDelivery - couponDiscount;
+
+                    deliveryChargeSpan.innerHTML = newDelivery === 0 ? '<span class="free-delivery">FREE</span>' : '₹' + newDelivery.toFixed(2);
+                    totalAmountSpan.textContent = '₹' + newTotal.toFixed(2);
+                });
+            });
+        }
     </script>
 </body>
 </html>

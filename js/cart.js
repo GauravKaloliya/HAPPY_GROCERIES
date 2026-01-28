@@ -58,6 +58,14 @@ function clearCart() {
 
 function calculateSubtotal() {
     const cart = getCart();
+    return cart.reduce((total, item) => {
+        const price = getProductEffectivePrice(item);
+        return total + (price * item.quantity);
+    }, 0);
+}
+
+function calculateSubtotalWithOriginalPrice() {
+    const cart = getCart();
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 }
 
@@ -65,10 +73,31 @@ function calculateTax(subtotal) {
     return subtotal * 0.08;
 }
 
-function calculateTotal() {
+function calculateDeliveryCharge(subtotal, expressDelivery = false) {
+    const deliveryConfig = getDeliveryCharge();
+    
+    if (subtotal >= deliveryConfig.freeThreshold) {
+        return 0;
+    }
+    
+    return expressDelivery ? deliveryConfig.express : deliveryConfig.standard;
+}
+
+function calculateCouponDiscount() {
+    const appliedCoupon = getAppliedCoupon();
+    if (!appliedCoupon) return 0;
+    
+    const subtotal = calculateSubtotal();
+    return calculateCouponDiscount(appliedCoupon, subtotal);
+}
+
+function calculateTotal(expressDelivery = false) {
     const subtotal = calculateSubtotal();
     const tax = calculateTax(subtotal);
-    return subtotal + tax;
+    const delivery = calculateDeliveryCharge(subtotal, expressDelivery);
+    const couponDiscount = calculateCouponDiscount();
+    
+    return subtotal + tax + delivery - couponDiscount;
 }
 
 function getCartCount() {

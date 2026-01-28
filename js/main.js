@@ -143,18 +143,34 @@ function createProductCard(product) {
     const isWishlisted = isInWishlist(product.id);
     const heartIcon = isWishlisted ? '💖' : '🤍';
     const detailsHref = getProductDetailsHref(product.id);
+    const hasDiscount = product.discountPercent && product.discountPercent > 0;
+    const discountedPrice = hasDiscount ? calculateDiscountedPrice(product.price, product.discountPercent) : product.price;
+
+    let priceHtml = '';
+    if (hasDiscount) {
+        priceHtml = `
+            <div class="product-price-wrapper">
+                <p class="product-price-original">₹${product.price}</p>
+                <p class="product-price">₹${discountedPrice.toFixed(0)}</p>
+                <span class="discount-badge">${product.discountPercent}% OFF</span>
+            </div>
+        `;
+    } else {
+        priceHtml = `<p class="product-price">₹${product.price}</p>`;
+    }
 
     return `
-        <div class="product-card" data-product-id="${product.id}">
+        <div class="product-card ${hasDiscount ? 'on-sale' : ''}" data-product-id="${product.id}">
             <button class="wishlist-btn ${isWishlisted ? 'active' : ''}" data-product-id="${product.id}" aria-label="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}">
                 ${heartIcon}
             </button>
             <a class="product-card-link" href="${detailsHref}" aria-label="View details for ${product.name}">
+                ${hasDiscount ? '<span class="sale-badge">SALE</span>' : ''}
                 <div class="product-image">${product.emoji}</div>
                 <h3 class="product-name">${product.name}</h3>
                 <span class="product-category" style="background: ${getCategoryColor(product.category)};">${product.category}</span>
                 <div class="product-rating">${renderStars(product.rating)} (${product.rating})</div>
-                <p class="product-price">₹${product.price}</p>
+                ${priceHtml}
                 <p class="product-card-cta">View Details →</p>
             </a>
         </div>

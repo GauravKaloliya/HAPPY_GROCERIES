@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offers & Coupons - Happy Groceries 🛒</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">🛒 Happy Groceries</a>
+            </div>
+
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="categories.html" class="nav-link">Categories</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li><a href="cart.html" class="nav-link">Cart</a></li>
+                <li><a href="offers.html" class="nav-link active">Offers</a></li>
+                <li><a href="about.html" class="nav-link">About Us</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+
+                <a href="cart.html" class="cart-icon">
+                    🛒
+                    <span class="cart-counter" id="cartCounter">0</span>
+                </a>
+
+                <div class="auth-buttons" id="authButtons">
+                    <a href="login.html" class="btn-login">Login</a>
+                    <a href="signup.html" class="btn-signup">Sign Up</a>
+                </div>
+
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <button class="profile-btn" id="profileBtn">
+                        <span class="greeting">Welcome, <span id="userName">User</span>! 👋</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="profile.html">👤 View Profile</a>
+                        <a href="orders.html">📦 My Orders</a>
+                        <a href="wishlist.html">💖 Wishlist</a>
+                        <a href="settings.html">⚙️ Settings</a>
+                        <hr>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <h1 class="section-title">🎉 Offers & Coupons</h1>
+
+            <div class="offers-container">
+                <div class="offers-header">
+                    <p>Save big on your groceries! Apply these coupons at checkout and enjoy amazing discounts.</p>
+                </div>
+
+                <div id="couponsList"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Happy Groceries. Made with 💖</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/search.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCoupons();
+        });
+
+        function loadCoupons() {
+            const couponsList = document.getElementById('couponsList');
+            const allCoupons = getAllCoupons();
+
+            const activeCoupons = allCoupons.filter(c => c.active);
+
+            couponsList.innerHTML = activeCoupons.map(coupon => {
+                const categoryText = coupon.applicableCategories 
+                    ? `Applicable to: ${coupon.applicableCategories.join(', ')}` 
+                    : 'Applicable to: All products';
+
+                const weekendOnly = coupon.code === 'WEEKEND30' 
+                    ? '<span class="weekend-tag">Weekend Only</span>' 
+                    : '';
+
+                return `
+                <div class="coupon-card">
+                    <div class="coupon-header">
+                        <h3 class="coupon-code">${coupon.code}</h3>
+                        ${weekendOnly}
+                    </div>
+                    <div class="coupon-body">
+                        <p class="coupon-description">${coupon.description}</p>
+                        <p class="coupon-details">${categoryText}</p>
+                        <div class="coupon-info">
+                            <span class="coupon-info-item">
+                                <strong>Minimum Order:</strong> ₹${coupon.minOrderValue}
+                            </span>
+                            ${coupon.type === 'percentage' ? `
+                            <span class="coupon-info-item">
+                                <strong>Max Discount:</strong> ₹${coupon.maxDiscount}
+                            </span>
+                            ` : ''}
+                            <span class="coupon-info-item">
+                                <strong>Expires:</strong> ${new Date(coupon.expiryDate).toLocaleDateString()}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="coupon-footer">
+                        <button class="btn-copy-coupon" data-code="${coupon.code}">
+                            Copy Code
+                        </button>
+                    </div>
+                </div>
+            `}).join('');
+
+            setupCouponButtons();
+        }
+
+        function setupCouponButtons() {
+            document.querySelectorAll('.btn-copy-coupon').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const code = this.dataset.code;
+                    navigator.clipboard.writeText(code).then(() => {
+                        showToast(`Coupon ${code} copied to clipboard! 📋`);
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = 'Copy Code';
+                        }, 2000);
+                    }).catch(err => {
+                        showToast('Failed to copy code');
+                    });
+                });
+            });
+        }
+    </script>
+</body>
+</html>
