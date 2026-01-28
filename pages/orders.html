@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - Happy Groceries 🛒</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">🛒 Happy Groceries</a>
+            </div>
+            
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="../index.html" class="nav-link">Home</a></li>
+                <li><a href="categories.html" class="nav-link">Categories</a></li>
+                <li><a href="shop.html" class="nav-link">Shop</a></li>
+                <li><a href="cart.html" class="nav-link">Cart</a></li>
+                <li><a href="about.html" class="nav-link">About Us</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                
+                <a href="cart.html" class="cart-icon">
+                    🛒
+                    <span class="cart-counter" id="cartCounter">0</span>
+                </a>
+
+                <div class="auth-buttons" id="authButtons">
+                    <a href="login.html" class="btn-login">Login</a>
+                    <a href="signup.html" class="btn-signup">Sign Up</a>
+                </div>
+
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <button class="profile-btn" id="profileBtn">
+                        <span class="greeting">Welcome, <span id="userName">User</span>! 👋</span>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="profile.html">👤 View Profile</a>
+                        <a href="orders.html" class="active">📦 My Orders</a>
+                        <a href="wishlist.html">💖 Wishlist</a>
+                        <a href="settings.html">⚙️ Settings</a>
+                        <hr>
+                        <a href="#" id="logoutBtn">🚪 Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <a href="profile.html" class="back-link">← Back to Profile</a>
+            <h1 class="section-title">📦 My Orders</h1>
+            
+            <div class="orders-container" id="ordersContainer">
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Happy Groceries. Made with 💖</p>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/search.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!isUserLoggedIn()) {
+                showToast('Please login to view your orders');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+                return;
+            }
+
+            const user = getCurrentUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            loadOrders(user);
+        });
+
+        function loadOrders(user) {
+            const ordersContainer = document.getElementById('ordersContainer');
+            const orders = user.orders || [];
+
+            if (orders.length === 0) {
+                ordersContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>No orders yet</h3>
+                        <p>You haven't placed any orders yet. Start shopping now!</p>
+                        <a href="shop.html" class="btn-primary" style="margin-top: 1rem;">Shop Now</a>
+                    </div>
+                `;
+                return;
+            }
+
+            ordersContainer.innerHTML = orders.map(order => createOrderCard(order)).join('');
+            attachOrderListeners();
+        }
+
+        function createOrderCard(order) {
+            const orderDate = new Date(order.date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const statusClass = order.status ? order.status.toLowerCase() : 'processing';
+            const statusDisplay = order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Processing';
+
+            const itemsHtml = order.items.map(item => `
+                <div class="order-item">
+                    <div>
+                        <span class="order-item-name">${item.name}</span>
+                        <span class="order-item-qty">x${item.quantity}</span>
+                    </div>
+                    <span class="order-item-price">₹${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            return `
+                <div class="order-card" data-order-id="${order.id}">
+                    <div class="order-header">
+                        <div>
+                            <span class="order-id">${order.id}</span>
+                            <span class="order-date">${orderDate}</span>
+                        </div>
+                        <span class="order-status ${statusClass}">${statusDisplay}</span>
+                    </div>
+                    <button class="toggle-order-btn">
+                        <span>View Details</span>
+                        <span class="arrow">▼</span>
+                    </button>
+                    <div class="order-body">
+                        <div class="order-items">
+                            ${itemsHtml}
+                        </div>
+                        <div class="order-footer">
+                            <div>
+                                <div style="margin-bottom: 0.5rem;">
+                                    <strong>Subtotal:</strong> ₹${order.subtotal.toFixed(2)}
+                                </div>
+                                <div style="margin-bottom: 0.5rem;">
+                                    <strong>Tax (8%):</strong> ₹${order.tax.toFixed(2)}
+                                </div>
+                                <div class="order-total">
+                                    Total: ₹${order.total.toFixed(2)}
+                                </div>
+                            </div>
+                            <div>
+                                ${order.estimatedDelivery ? `
+                                    <div class="order-delivery">
+                                        🚚 Est. Delivery: ${order.estimatedDelivery}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function attachOrderListeners() {
+            document.querySelectorAll('.toggle-order-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const orderCard = this.closest('.order-card');
+                    const orderBody = orderCard.querySelector('.order-body');
+                    const arrow = this.querySelector('.arrow');
+                    const span = this.querySelector('span:first-child');
+
+                    this.classList.toggle('active');
+                    orderBody.classList.toggle('active');
+                    span.textContent = this.classList.contains('active') ? 'Hide Details' : 'View Details';
+                });
+            });
+        }
+    </script>
+</body>
+</html>
