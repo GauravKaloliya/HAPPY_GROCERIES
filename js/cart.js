@@ -18,7 +18,7 @@ const AVAILABLE_COUPONS = [
         description: '15% off on fruits & vegetables',
         type: 'category',
         value: 15,
-        category: ['Fruits', 'Vegetables'],
+        applicableCategories: ['Fruits', 'Vegetables'],
         minOrderValue: 200,
         maxDiscount: 75,
         active: true,
@@ -40,7 +40,7 @@ const AVAILABLE_COUPONS = [
         description: '10% off on dairy products',
         type: 'category',
         value: 10,
-        category: ['Dairy'],
+        applicableCategories: ['Dairy'],
         minOrderValue: 150,
         maxDiscount: 50,
         active: true,
@@ -51,7 +51,7 @@ const AVAILABLE_COUPONS = [
         description: '₹25 off snacks orders',
         type: 'fixed',
         value: 25,
-        category: ['Snacks'],
+        applicableCategories: ['Snacks'],
         minOrderValue: 100,
         maxDiscount: 25,
         active: true,
@@ -208,16 +208,22 @@ function getUsedCoupons() {
 }
 
 function markCouponAsUsed(code) {
+    const normalizedCode = (code || '').toUpperCase();
+    if (!normalizedCode) return;
+
     const used = getUsedCoupons();
-    if (!used.includes(code)) {
-        used.push(code);
+    if (!used.includes(normalizedCode)) {
+        used.push(normalizedCode);
         localStorage.setItem(USED_COUPONS_KEY, JSON.stringify(used));
     }
 }
 
 function isCouponUsed(code) {
+    const normalizedCode = (code || '').toUpperCase();
+    if (!normalizedCode) return false;
+
     const used = getUsedCoupons();
-    return used.includes(code);
+    return used.includes(normalizedCode);
 }
 
 function getCouponByCode(code) {
@@ -231,37 +237,47 @@ function isCouponExpired(coupon) {
     return today > expiry;
 }
 
+function getAllCoupons() {
+    return AVAILABLE_COUPONS;
+}
+
+function getCouponApplicableCategories(coupon) {
+    if (!coupon) return null;
+    return coupon.applicableCategories || coupon.category || null;
+}
+
 function validateCoupon(code, cartTotal, cart) {
     const coupon = getCouponByCode(code);
-    
+
     if (!coupon) {
         return { valid: false, message: 'Invalid coupon code' };
     }
-    
+
     if (!coupon.active) {
         return { valid: false, message: 'This coupon is no longer active' };
     }
-    
+
     if (isCouponExpired(coupon)) {
         return { valid: false, message: 'This coupon has expired' };
     }
-    
+
     if (isCouponUsed(coupon.code)) {
         return { valid: false, message: 'This coupon has already been used' };
     }
-    
+
     if (cartTotal < coupon.minOrderValue) {
         return { valid: false, message: `Minimum order value of ₹${coupon.minOrderValue} required` };
     }
-    
+
     // Check category-specific coupons
-    if (coupon.type === 'category' && coupon.category) {
-        const hasMatchingCategory = cart.some(item => coupon.category.includes(item.category));
+    const applicableCategories = getCouponApplicableCategories(coupon);
+    if (coupon.type === 'category' && Array.isArray(applicableCategories) && applicableCategories.length > 0) {
+        const hasMatchingCategory = cart.some(item => applicableCategories.includes(item.category));
         if (!hasMatchingCategory) {
-            return { valid: false, message: `This coupon is only valid for: ${coupon.category.join(', ')}` };
+            return { valid: false, message: `This coupon is only valid for: ${applicableCategories.join(', ')}` };
         }
     }
-    
+
     // Check first order only
     if (coupon.firstOrderOnly) {
         const user = getCurrentUser();
@@ -269,7 +285,7 @@ function validateCoupon(code, cartTotal, cart) {
             return { valid: false, message: 'This coupon is only valid for first-time customers' };
         }
     }
-    
+
     return { valid: true, coupon, message: 'Coupon is valid' };
 }
 
@@ -284,13 +300,16 @@ function calculateCouponDiscountAmount(coupon, cartTotal, cart) {
         discountAmount = (cartTotal * coupon.value) / 100;
     } else if (coupon.type === 'category') {
         // Calculate discount only for items in specified categories
-        const categoryTotal = cart
-            .filter(item => coupon.category.includes(item.category))
-            .reduce((total, item) => {
-                const price = getProductEffectivePrice(item);
-                return total + (price * item.quantity);
-            }, 0);
-        discountAmount = (categoryTotal * coupon.value) / 100;
+        const applicableCategories = getCouponApplicableCategories(coupon);
+        if (Array.isArray(applicableCategories) && applicableCategories.length > 0) {
+            const categoryTotal = cart
+                .filter(item => applicableCategories.includes(item.category))
+                .reduce((total, item) => {
+                    const price = getProductEffectivePrice(item);
+                    return total + (price * item.quantity);
+                }, 0);
+            discountAmount = (categoryTotal * coupon.value) / 100;
+        }
     }
     
     // Apply max discount cap
@@ -393,8 +412,9 @@ function getOfferEligibilityStatus(coupon, cartTotal, cart) {
     const shortfall = coupon.minOrderValue - cartTotal;
     if (shortfall <= 0) {
         // Check category match for category-specific coupons
-        if (coupon.type === 'category' && coupon.category) {
-            const hasMatchingCategory = cart.some(item => coupon.category.includes(item.category));
+        const applicableCategories = getCouponApplicableCategories(coupon);
+        if (coupon.type === 'category' && Array.isArray(applicableCategories) && applicableCategories.length > 0) {
+            const hasMatchingCategory = cart.some(item => applicableCategories.includes(item.category));
             if (hasMatchingCategory) {
                 return 'applicable';
             } else {
@@ -435,10 +455,11 @@ function getEligibilityReason(coupon, cartTotal, cart) {
         return `Add ₹${shortfall} more to qualify for this offer`;
     }
     
-    if (coupon.type === 'category' && coupon.category) {
-        const hasMatchingCategory = cart.some(item => coupon.category.includes(item.category));
+    const applicableCategories = getCouponApplicableCategories(coupon);
+    if (coupon.type === 'category' && Array.isArray(applicableCategories) && applicableCategories.length > 0) {
+        const hasMatchingCategory = cart.some(item => applicableCategories.includes(item.category));
         if (!hasMatchingCategory) {
-            return `This coupon requires items from: ${coupon.category.join(', ')}`;
+            return `This coupon requires items from: ${applicableCategories.join(', ')}`;
         }
     }
     
@@ -454,8 +475,9 @@ function calculateRelevanceScore(coupon, cart, cartTotal) {
     else if (eligibility === 'almost') score += 15;
     
     // Higher score for category matches
-    if (coupon.type === 'category' && coupon.category) {
-        const matchingItems = cart.filter(item => coupon.category.includes(item.category));
+    const applicableCategories = getCouponApplicableCategories(coupon);
+    if (coupon.type === 'category' && Array.isArray(applicableCategories) && applicableCategories.length > 0) {
+        const matchingItems = cart.filter(item => applicableCategories.includes(item.category));
         if (matchingItems.length > 0) {
             score += 20;
             // Bonus for high percentage of cart items matching
@@ -485,6 +507,53 @@ function calculateDaysUntilExpiry(expiryDate) {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     return Math.max(diffDays, 0);
+}
+
+function getSuggestedCoupons(cartTotal, cart) {
+    const appliedCoupon = getAppliedCoupon();
+    
+    return AVAILABLE_COUPONS.map(coupon => {
+        const eligibility = getOfferEligibilityStatus(coupon, cartTotal, cart);
+        const potentialDiscount = calculateCouponDiscountAmount(coupon, cartTotal, cart);
+        const relevanceScore = calculateRelevanceScore(coupon, cart, cartTotal);
+        const daysUntilExpiry = calculateDaysUntilExpiry(coupon.expiryDate);
+        const isApplied = appliedCoupon && appliedCoupon.code === coupon.code;
+        const isUsed = isCouponUsed(coupon.code);
+        const eligibilityReason = getEligibilityReason(coupon, cartTotal, cart);
+        const applicableCategories = getCouponApplicableCategories(coupon);
+        
+        // Calculate amount needed to unlock offer
+        const amountNeeded = Math.max(0, coupon.minOrderValue - cartTotal);
+        const percentageToGo = amountNeeded > 0 ? (amountNeeded / coupon.minOrderValue) * 100 : 0;
+        
+        return {
+            code: coupon.code,
+            description: coupon.description,
+            type: coupon.type,
+            value: coupon.value,
+            minOrderValue: coupon.minOrderValue,
+            maxDiscount: coupon.maxDiscount,
+            applicableCategories: applicableCategories,
+            eligibility: eligibility,
+            potentialDiscount: potentialDiscount,
+            relevanceScore: relevanceScore,
+            daysUntilExpiry: daysUntilExpiry,
+            isApplied: isApplied,
+            isUsed: isUsed,
+            eligibilityReason: eligibilityReason,
+            amountNeeded: amountNeeded,
+            percentageToGo: percentageToGo
+        };
+    }).sort((a, b) => {
+        // Sort by relevance and potential savings
+        if (a.eligibility === 'applicable' && b.eligibility !== 'applicable') return -1;
+        if (b.eligibility === 'applicable' && a.eligibility !== 'applicable') return 1;
+        if (a.eligibility === 'almost' && b.eligibility === 'not_applicable') return -1;
+        if (b.eligibility === 'almost' && a.eligibility === 'not_applicable') return 1;
+        
+        // Within same eligibility, sort by potential discount
+        return b.potentialDiscount - a.potentialDiscount;
+    });
 }
 
 function getSmartOfferRecommendation(cartTotal, cart) {
@@ -533,22 +602,27 @@ function applyOfferFromCart(couponCode) {
     const cart = getCart();
     const cartTotal = calculateSubtotal();
     const validation = validateCoupon(couponCode, cartTotal, cart);
-    
+
     if (validation.valid) {
         setAppliedCoupon(validation.coupon);
-        // Don't mark as used here - only mark as used when order is completed
-        return { 
-            success: true, 
+        markCouponAsUsed(couponCode);
+
+        const discount = calculateCouponDiscountAmount(validation.coupon, cartTotal, cart);
+        showToast(`Coupon ${couponCode} applied!`);
+
+        return {
+            success: true,
             coupon: validation.coupon,
-            discount: calculateCouponDiscountAmount(validation.coupon, cartTotal, cart),
-            newTotal: cartTotal - calculateCouponDiscountAmount(validation.coupon, cartTotal, cart)
-        };
-    } else {
-        return { 
-            success: false, 
-            message: validation.message 
+            discount,
+            newTotal: cartTotal - discount
         };
     }
+
+    showToast(`Error: ${validation.message}`);
+    return {
+        success: false,
+        message: validation.message
+    };
 }
 
 function removeOfferFromCart() {
