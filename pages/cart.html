@@ -151,6 +151,13 @@
                         `}).join('')}
                     </div>
 
+                    <div class="offers-suggestion-section" id="offersSection">
+                        <h3>💡 Recommended Offers</h3>
+                        <div class="offers-grid" id="offersGrid">
+                            ${renderOffersSection()}
+                        </div>
+                    </div>
+
                     <div class="cart-summary">
                         <h3>Order Summary</h3>
                         <div class="coupon-section">
@@ -195,6 +202,82 @@
                         </div>
                     </div>
                 `;
+
+                function renderOffersSection() {
+                    const suggestions = getSuggestedCoupons(subtotal, cart);
+                    const maxOffers = 3; // Show top 3 offers
+                    const topOffers = suggestions.slice(0, maxOffers);
+                    
+                    if (topOffers.length === 0) {
+                        return '<div class="no-offers-message">No offers available for your current cart</div>';
+                    }
+                    
+                    return topOffers.map(offer => renderOfferCard(offer)).join('');
+                }
+
+                function renderOfferCard(offer) {
+                    const statusConfig = getOfferStatusConfig(offer);
+                    const badgeClass = `offer-badge ${offer.eligibility}`;
+                    const cardClass = `offer-card ${offer.eligibility} ${offer.isApplied ? 'applied' : ''} ${offer.isUsed ? 'used' : ''}`;
+                    
+                    return `
+                        <div class="${cardClass}" data-offer-code="${offer.code}">
+                            <div class="offer-header">
+                                <span class="${badgeClass}">${statusConfig.icon} ${statusConfig.text}</span>
+                                ${offer.daysUntilExpiry <= 7 ? `<span class="expiry-badge">${offer.daysUntilExpiry}d left</span>` : ''}
+                            </div>
+                            <div class="offer-content">
+                                <h4>${offer.code}</h4>
+                                <p class="offer-description">${offer.description}</p>
+                                ${offer.applicableCategories ? `<div class="offer-categories">For: ${offer.applicableCategories.join(', ')}</div>` : ''}
+                                ${offer.potentialDiscount > 0 ? `
+                                    <div class="offer-savings">
+                                        <span class="savings-amount">Save ₹${offer.potentialDiscount.toFixed(0)}</span>
+                                    </div>
+                                ` : ''}
+                                ${offer.eligibility === 'almost' ? `
+                                    <div class="offer-progress">
+                                        <div class="progress-text">Add ₹${offer.amountNeeded} more to unlock</div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: ${Math.max(0, 100 - offer.percentageToGo)}%"></div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                ${offer.eligibility === 'not_applicable' && offer.eligibilityReason ? `
+                                    <div class="offer-reason">${offer.eligibilityReason}</div>
+                                ` : ''}
+                            </div>
+                            <div class="offer-actions">
+                                ${offer.isApplied ? `
+                                    <button class="btn-remove-offer" onclick="removeAppliedOffer('${offer.code}')">Remove</button>
+                                ` : offer.eligibility === 'applicable' ? `
+                                    <button class="btn-apply-offer" onclick="applyOfferFromCartUI('${offer.code}')">Apply Now</button>
+                                ` : offer.eligibility === 'almost' ? `
+                                    <button class="btn-add-more" onclick="showAddMoreMessage(${offer.amountNeeded})">Add More</button>
+                                ` : `
+                                    <button class="btn-locked" disabled>Locked</button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                function getOfferStatusConfig(offer) {
+                    switch (offer.eligibility) {
+                        case 'applicable':
+                            return { icon: '✅', text: 'Ready to Apply' };
+                        case 'almost':
+                            return { icon: '⚠️', text: 'Almost There!' };
+                        case 'not_applicable':
+                            if (offer.isUsed) {
+                                return { icon: '🎯', text: 'Already Used' };
+                            } else {
+                                return { icon: '🔒', text: 'Locked' };
+                            }
+                        default:
+                            return { icon: '❌', text: 'Not Available' };
+                    }
+                }
 
                 setupCouponHandler();
                 attachCartEventListeners();
@@ -300,6 +383,115 @@
                 });
             }
         });
+    </script>
+
+    <script>
+        // Global functions for offer interactions
+        function applyOfferFromCartUI(couponCode) {
+            const result = applyOfferFromCart(couponCode);
+            if (result.success) {
+                showToast(`Saved ₹${result.discount.toFixed(0)} with ${couponCode}! 🎉`);
+                loadCart(); // Refresh the cart to show updated totals
+            } else {
+                showToast(result.message || 'Failed to apply coupon');
+            }
+        }
+
+        function removeAppliedOffer(couponCode) {
+            const result = removeOfferFromCart();
+            if (result.success) {
+                showToast('Coupon removed');
+                loadCart(); // Refresh the cart to show updated totals
+            } else {
+                showToast(result.message || 'Failed to remove coupon');
+            }
+        }
+
+        function showAddMoreMessage(amountNeeded) {
+            showToast(`Add ₹${amountNeeded} more to unlock this offer! 🛒`);
+        }
+
+        // Update offers section when cart changes
+        function updateOffersSection() {
+            const offersSection = document.getElementById('offersSection');
+            const offersGrid = document.getElementById('offersGrid');
+            
+            if (offersSection && offersGrid) {
+                const cart = getCart();
+                const subtotal = calculateSubtotal();
+                const suggestions = getSuggestedCoupons(subtotal, cart);
+                const maxOffers = 3;
+                const topOffers = suggestions.slice(0, maxOffers);
+                
+                if (topOffers.length === 0) {
+                    offersGrid.innerHTML = '<div class="no-offers-message">No offers available for your current cart</div>';
+                } else {
+                    offersGrid.innerHTML = topOffers.map(offer => {
+                        const statusConfig = getOfferStatusConfig(offer);
+                        const badgeClass = `offer-badge ${offer.eligibility}`;
+                        const cardClass = `offer-card ${offer.eligibility} ${offer.isApplied ? 'applied' : ''} ${offer.isUsed ? 'used' : ''}`;
+                        
+                        return `
+                            <div class="${cardClass}" data-offer-code="${offer.code}">
+                                <div class="offer-header">
+                                    <span class="${badgeClass}">${statusConfig.icon} ${statusConfig.text}</span>
+                                    ${offer.daysUntilExpiry <= 7 ? `<span class="expiry-badge">${offer.daysUntilExpiry}d left</span>` : ''}
+                                </div>
+                                <div class="offer-content">
+                                    <h4>${offer.code}</h4>
+                                    <p class="offer-description">${offer.description}</p>
+                                    ${offer.applicableCategories ? `<div class="offer-categories">For: ${offer.applicableCategories.join(', ')}</div>` : ''}
+                                    ${offer.potentialDiscount > 0 ? `
+                                        <div class="offer-savings">
+                                            <span class="savings-amount">Save ₹${offer.potentialDiscount.toFixed(0)}</span>
+                                        </div>
+                                    ` : ''}
+                                    ${offer.eligibility === 'almost' ? `
+                                        <div class="offer-progress">
+                                            <div class="progress-text">Add ₹${offer.amountNeeded} more to unlock</div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: ${Math.max(0, 100 - offer.percentageToGo)}%"></div>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+                                    ${offer.eligibility === 'not_applicable' && offer.eligibilityReason ? `
+                                        <div class="offer-reason">${offer.eligibilityReason}</div>
+                                    ` : ''}
+                                </div>
+                                <div class="offer-actions">
+                                    ${offer.isApplied ? `
+                                        <button class="btn-remove-offer" onclick="removeAppliedOffer('${offer.code}')">Remove</button>
+                                    ` : offer.eligibility === 'applicable' ? `
+                                        <button class="btn-apply-offer" onclick="applyOfferFromCartUI('${offer.code}')">Apply Now</button>
+                                    ` : offer.eligibility === 'almost' ? `
+                                        <button class="btn-add-more" onclick="showAddMoreMessage(${offer.amountNeeded})">Add More</button>
+                                    ` : `
+                                        <button class="btn-locked" disabled>Locked</button>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        function getOfferStatusConfig(offer) {
+            switch (offer.eligibility) {
+                case 'applicable':
+                    return { icon: '✅', text: 'Ready to Apply' };
+                case 'almost':
+                    return { icon: '⚠️', text: 'Almost There!' };
+                case 'not_applicable':
+                    if (offer.isUsed) {
+                        return { icon: '🎯', text: 'Already Used' };
+                    } else {
+                        return { icon: '🔒', text: 'Locked' };
+                    }
+                default:
+                    return { icon: '❌', text: 'Not Available' };
+            }
+        }
     </script>
 </body>
 </html>

@@ -372,35 +372,197 @@ function getDeliveryCharge() {
     };
 }
 
-function getSuggestedCoupons(cartTotal, cart) {
-    const suggestions = [];
+// Helper functions for offer suggestions
+function getOfferEligibilityStatus(coupon, cartTotal, cart) {
+    if (!coupon.active || isCouponExpired(coupon)) {
+        return 'not_applicable';
+    }
     
-    AVAILABLE_COUPONS.forEach(coupon => {
-        if (!coupon.active || isCouponExpired(coupon) || isCouponUsed(coupon.code)) {
-            return;
+    if (coupon.firstOrderOnly) {
+        const user = getCurrentUser();
+        if (user && user.orders && user.orders.length > 0) {
+            return 'not_applicable';
         }
-        
-        if (cartTotal >= coupon.minOrderValue) {
-            // Check category match for category-specific coupons
-            if (coupon.type === 'category' && coupon.category) {
-                const hasMatchingCategory = cart.some(item => coupon.category.includes(item.category));
-                if (hasMatchingCategory) {
-                    const discountAmount = calculateCouponDiscountAmount(coupon, cartTotal, cart);
-                    suggestions.push({
-                        ...coupon,
-                        potentialDiscount: discountAmount
-                    });
-                }
+    }
+    
+    if (isCouponUsed(coupon.code)) {
+        return 'not_applicable';
+    }
+    
+    // Check minimum order value
+    const shortfall = coupon.minOrderValue - cartTotal;
+    if (shortfall <= 0) {
+        // Check category match for category-specific coupons
+        if (coupon.type === 'category' && coupon.category) {
+            const hasMatchingCategory = cart.some(item => coupon.category.includes(item.category));
+            if (hasMatchingCategory) {
+                return 'applicable';
             } else {
-                const discountAmount = calculateCouponDiscountAmount(coupon, cartTotal, cart);
-                suggestions.push({
-                    ...coupon,
-                    potentialDiscount: discountAmount
-                });
+                return 'not_applicable';
             }
         }
+        return 'applicable';
+    } else if (shortfall <= 100) {
+        // Within ₹100 of minimum - consider as "almost applicable"
+        return 'almost';
+    } else {
+        return 'not_applicable';
+    }
+}
+
+function getEligibilityReason(coupon, cartTotal, cart) {
+    if (!coupon.active) {
+        return 'This coupon is no longer active';
+    }
+    
+    if (isCouponExpired(coupon)) {
+        return 'This coupon has expired';
+    }
+    
+    if (isCouponUsed(coupon.code)) {
+        return 'This coupon has already been used';
+    }
+    
+    if (coupon.firstOrderOnly) {
+        const user = getCurrentUser();
+        if (user && user.orders && user.orders.length > 0) {
+            return 'This coupon is only valid for first-time customers';
+        }
+    }
+    
+    if (cartTotal < coupon.minOrderValue) {
+        const shortfall = coupon.minOrderValue - cartTotal;
+        return `Add ₹${shortfall} more to qualify for this offer`;
+    }
+    
+    if (coupon.type === 'category' && coupon.category) {
+        const hasMatchingCategory = cart.some(item => coupon.category.includes(item.category));
+        if (!hasMatchingCategory) {
+            return `This coupon requires items from: ${coupon.category.join(', ')}`;
+        }
+    }
+    
+    return 'Not eligible for this offer';
+}
+
+function calculateRelevanceScore(coupon, cart, cartTotal) {
+    let score = 50; // Base score
+    
+    // Higher score for applicable offers
+    const eligibility = getOfferEligibilityStatus(coupon, cartTotal, cart);
+    if (eligibility === 'applicable') score += 30;
+    else if (eligibility === 'almost') score += 15;
+    
+    // Higher score for category matches
+    if (coupon.type === 'category' && coupon.category) {
+        const matchingItems = cart.filter(item => coupon.category.includes(item.category));
+        if (matchingItems.length > 0) {
+            score += 20;
+            // Bonus for high percentage of cart items matching
+            const matchPercentage = (matchingItems.length / cart.length) * 100;
+            score += Math.min(matchPercentage, 20);
+        }
+    }
+    
+    // Higher score for higher discount amounts
+    const potentialDiscount = calculateCouponDiscountAmount(coupon, cartTotal, cart);
+    const discountRatio = potentialDiscount / cartTotal;
+    score += Math.min(discountRatio * 100, 25);
+    
+    // Lower score for soon-to-expire offers (urgency)
+    const daysLeft = calculateDaysUntilExpiry(coupon.expiryDate);
+    if (daysLeft <= 7) score += 10;
+    
+    return Math.min(Math.max(score, 0), 100);
+}
+
+function calculateDaysUntilExpiry(expiryDate) {
+    if (!expiryDate) return 999;
+    
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(diffDays, 0);
+}
+
+function getSmartOfferRecommendation(cartTotal, cart) {
+    const suggestions = getSuggestedCoupons(cartTotal, cart);
+    
+    // Find top applicable recommendation
+    const applicableOffers = suggestions.filter(offer => offer.eligibility === 'applicable' && !offer.isApplied);
+    
+    if (applicableOffers.length === 0) {
+        // No applicable offers, find the best alternative
+        const bestOffer = suggestions.find(offer => !offer.isUsed) || suggestions[0];
+        return {
+            topRecommendation: bestOffer,
+            alternatives: suggestions.slice(1, 3),
+            explanation: bestOffer ? generateRecommendationExplanation(bestOffer, cartTotal) : "No offers available for your current cart"
+        };
+    }
+    
+    // Choose the best applicable offer (highest savings and relevance)
+    const topOffer = applicableOffers.reduce((best, current) => {
+        const currentScore = (current.potentialDiscount * 0.6) + (current.relevanceScore * 0.4);
+        const bestScore = (best.potentialDiscount * 0.6) + (best.relevanceScore * 0.4);
+        return currentScore > bestScore ? current : best;
     });
     
-    // Sort by highest potential discount
-    return suggestions.sort((a, b) => b.potentialDiscount - a.potentialDiscount);
+    return {
+        topRecommendation: topOffer,
+        alternatives: applicableOffers.slice(1, 3),
+        explanation: generateRecommendationExplanation(topOffer, cartTotal)
+    };
+}
+
+function generateRecommendationExplanation(offer, cartTotal) {
+    if (!offer) return "No offers available";
+    
+    if (offer.eligibility === 'applicable') {
+        return `We recommend ${offer.code} - you'll save ₹${offer.potentialDiscount.toFixed(0)} on this order!`;
+    } else if (offer.eligibility === 'almost') {
+        return `Add ₹${offer.amountNeeded} more to unlock ${offer.code} and save ₹${offer.potentialDiscount.toFixed(0)}!`;
+    } else {
+        return `${offer.code} requires ${offer.eligibilityReason}`;
+    }
+}
+
+function applyOfferFromCart(couponCode) {
+    const cart = getCart();
+    const cartTotal = calculateSubtotal();
+    const validation = validateCoupon(couponCode, cartTotal, cart);
+    
+    if (validation.valid) {
+        setAppliedCoupon(validation.coupon);
+        // Don't mark as used here - only mark as used when order is completed
+        return { 
+            success: true, 
+            coupon: validation.coupon,
+            discount: calculateCouponDiscountAmount(validation.coupon, cartTotal, cart),
+            newTotal: cartTotal - calculateCouponDiscountAmount(validation.coupon, cartTotal, cart)
+        };
+    } else {
+        return { 
+            success: false, 
+            message: validation.message 
+        };
+    }
+}
+
+function removeOfferFromCart() {
+    const appliedCoupon = getAppliedCoupon();
+    if (appliedCoupon) {
+        setAppliedCoupon(null);
+        return { 
+            success: true, 
+            coupon: appliedCoupon,
+            message: 'Coupon removed successfully'
+        };
+    }
+    return { 
+        success: false, 
+        message: 'No coupon to remove' 
+    };
 }

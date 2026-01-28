@@ -1181,6 +1181,307 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 2rem;
 }
 
+/* Offers Suggestion Section Styles */
+.offers-suggestion-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--bg-white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.offers-suggestion-section h3 {
+    margin-bottom: 1.5rem;
+    color: var(--text-dark);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.offers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.offer-card {
+    background: var(--bg-light);
+    border: 2px solid transparent;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.offer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.offer-card.applicable {
+    border-color: var(--primary-green);
+    background: linear-gradient(135deg, rgba(200, 230, 201, 0.1), rgba(200, 230, 201, 0.05));
+}
+
+.offer-card.almost {
+    border-color: var(--primary-yellow);
+    background: linear-gradient(135deg, rgba(255, 236, 179, 0.1), rgba(255, 236, 179, 0.05));
+}
+
+.offer-card.not-applicable {
+    border-color: #ddd;
+    background: linear-gradient(135deg, rgba(220, 220, 220, 0.1), rgba(220, 220, 220, 0.05));
+}
+
+.offer-card.applied {
+    border-color: var(--primary-blue);
+    background: linear-gradient(135deg, rgba(179, 229, 252, 0.1), rgba(179, 229, 252, 0.05));
+    animation: appliedPulse 2s ease-in-out infinite;
+}
+
+.offer-card.used {
+    border-color: #ccc;
+    background: linear-gradient(135deg, rgba(200, 200, 200, 0.1), rgba(200, 200, 200, 0.05));
+    opacity: 0.7;
+}
+
+@keyframes appliedPulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(179, 229, 252, 0.3);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(179, 229, 252, 0.5);
+    }
+}
+
+.offer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.offer-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.offer-badge.applicable {
+    background: var(--primary-green);
+    color: var(--text-dark);
+}
+
+.offer-badge.almost {
+    background: var(--primary-yellow);
+    color: var(--text-dark);
+}
+
+.offer-badge.not-applicable {
+    background: #ddd;
+    color: #666;
+}
+
+.offer-badge.applied {
+    background: var(--primary-blue);
+    color: var(--text-dark);
+}
+
+.offer-badge.used {
+    background: #ccc;
+    color: #666;
+}
+
+.expiry-badge {
+    background: #ff4757;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    animation: expiryBlink 1s ease-in-out infinite alternate;
+}
+
+@keyframes expiryBlink {
+    from { opacity: 1; }
+    to { opacity: 0.7; }
+}
+
+.offer-content h4 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.offer-description {
+    color: var(--text-dark);
+    margin-bottom: 0.8rem;
+    line-height: 1.4;
+}
+
+.offer-categories {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.8rem;
+    font-style: italic;
+}
+
+.offer-savings {
+    margin: 1rem 0;
+}
+
+.savings-amount {
+    background: var(--primary-green);
+    color: var(--text-dark);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    display: inline-block;
+    animation: savingsGlow 1.5s ease-in-out infinite alternate;
+}
+
+.offer-progress {
+    margin: 1rem 0;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(200, 200, 200, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-yellow), var(--primary-orange));
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.offer-reason {
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+    margin: 0.5rem 0;
+}
+
+.offer-actions {
+    margin-top: 1rem;
+}
+
+.btn-apply-offer,
+.btn-remove-offer,
+.btn-add-more,
+.btn-locked {
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.95rem;
+}
+
+.btn-apply-offer {
+    background: var(--primary-green);
+    color: var(--text-dark);
+}
+
+.btn-apply-offer:hover {
+    background: #a5d6a7;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(200, 230, 201, 0.4);
+}
+
+.btn-remove-offer {
+    background: var(--primary-orange);
+    color: var(--text-dark);
+}
+
+.btn-remove-offer:hover {
+    background: #ffb74d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 217, 179, 0.4);
+}
+
+.btn-add-more {
+    background: var(--primary-yellow);
+    color: var(--text-dark);
+}
+
+.btn-add-more:hover {
+    background: #ffe082;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 236, 179, 0.4);
+}
+
+.btn-locked {
+    background: #ddd;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.no-offers-message {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* Slide-in animation for offer cards */
+.offer-card {
+    animation: slideInFromTop 0.5s ease-out;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile responsiveness for offers section */
+@media (max-width: 768px) {
+    .offers-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .offer-card {
+        padding: 1rem;
+    }
+    
+    .offer-content h4 {
+        font-size: 1.1rem;
+    }
+    
+    .savings-amount {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+}
+
 .btn-secondary {
     flex: 1;
     padding: 1rem;
