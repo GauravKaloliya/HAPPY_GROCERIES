@@ -65,39 +65,6 @@
 
     <main>
         <section class="hero">
-            <div class="floating-festivals">
-                <div class="festival-badge festival-float" style="--delay: 0s; top: 20%; left: 10%;">
-                    🎉 Diwali Special
-                </div>
-                <div class="festival-badge festival-float" style="--delay: 1.5s; top: 30%; right: 15%;">
-                    🧧 New Year Offers
-                </div>
-                <div class="festival-badge festival-float" style="--delay: 3s; top: 60%; left: 8%;">
-                    🎊 Festival Deals
-                </div>
-                <div class="festival-badge festival-float" style="--delay: 2s; top: 70%; right: 10%;">
-                    🎈 Celebration Sale
-                </div>
-            </div>
-
-            <div class="floating-offers">
-                <div class="offer-badge offer-pulse" style="--delay: 0.5s; top: 25%; left: 70%;">
-                    🔥 Hot Deals
-                </div>
-                <div class="offer-badge badge-bounce" style="--delay: 1s; top: 45%; right: 5%;">
-                    ⚡ Flash Sale
-                </div>
-                <div class="offer-badge offer-pulse" style="--delay: 2.5s; top: 55%; left: 5%;">
-                    💰 Limited Offers
-                </div>
-                <div class="offer-badge badge-bounce" style="--delay: 3.5s; top: 80%; left: 25%;">
-                    🎁 Free Delivery
-                </div>
-                <div class="offer-badge offer-pulse" style="--delay: 4s; top: 15%; right: 25%;">
-                    🎯 Special Discount
-                </div>
-            </div>
-
             <div class="hero-content">
                 <div class="floating-icons">
                     <span class="float-icon" style="--delay: 0s;">🍎</span>
@@ -158,34 +125,13 @@
 
     <div class="toast" id="toast"></div>
 
+    <script src="js/config.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/validation.js"></script>
+    <script src="js/session.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
     <script src="js/search.js"></script>
     <script src="js/main.js"></script>
-    <script>
-        // Add click functionality to floating badges
-        document.addEventListener('DOMContentLoaded', function() {
-            // Festival badges - navigate to offers page
-            document.querySelectorAll('.festival-badge').forEach(badge => {
-                badge.addEventListener('click', function() {
-                    window.location.href = 'pages/offers.html';
-                });
-            });
-
-            // Offer badges - navigate to shop page
-            document.querySelectorAll('.offer-badge').forEach(badge => {
-                badge.addEventListener('click', function() {
-                    const offerText = this.textContent.trim();
-                    if (offerText.includes('🔥 Hot Deals') || offerText.includes('⚡ Flash Sale')) {
-                        window.location.href = 'pages/shop.html?sort=discount';
-                    } else if (offerText.includes('🎁 Free Delivery')) {
-                        window.location.href = 'pages/shop.html?filter=free-delivery';
-                    } else {
-                        window.location.href = 'pages/shop.html';
-                    }
-                });
-            });
-        });
-    </script>
 </body>
 </html>
