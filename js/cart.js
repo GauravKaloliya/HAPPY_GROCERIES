@@ -11,7 +11,7 @@ const AVAILABLE_COUPONS = [
         minOrderValue: 500,
         maxDiscount: 100,
         active: true,
-        expiryDate: '2024-12-31'
+        expiryDate: '2027-12-31'
     },
     {
         code: 'FRESH15',
@@ -22,7 +22,7 @@ const AVAILABLE_COUPONS = [
         minOrderValue: 200,
         maxDiscount: 75,
         active: true,
-        expiryDate: '2024-12-31'
+        expiryDate: '2027-12-31'
     },
     {
         code: 'WELCOME50',
@@ -32,7 +32,7 @@ const AVAILABLE_COUPONS = [
         minOrderValue: 300,
         maxDiscount: 50,
         active: true,
-        expiryDate: '2024-12-31',
+        expiryDate: '2027-12-31',
         firstOrderOnly: true
     },
     {
@@ -44,7 +44,7 @@ const AVAILABLE_COUPONS = [
         minOrderValue: 150,
         maxDiscount: 50,
         active: true,
-        expiryDate: '2024-12-31'
+        expiryDate: '2027-12-31'
     },
     {
         code: 'SNACKS25',
@@ -55,7 +55,7 @@ const AVAILABLE_COUPONS = [
         minOrderValue: 100,
         maxDiscount: 25,
         active: true,
-        expiryDate: '2024-12-31'
+        expiryDate: '2027-12-31'
     }
 ];
 
