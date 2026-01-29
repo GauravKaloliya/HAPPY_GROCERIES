@@ -1,0 +1,110 @@
+.wishlist-page {
+    padding: 2rem 0;
+    min-height: 80vh;
+}
+
+.wishlist-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.wishlist-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.wishlist-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-dark);
+    opacity: 0.8;
+}
+
+.wishlist-content {
+    background: var(--bg-white);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    min-height: 400px;
+}
+
+.empty-wishlist {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-dark);
+}
+
+.empty-wishlist-icon {
+    font-size: 6rem;
+    margin-bottom: 2rem;
+    opacity: 0.6;
+    animation: float 3s ease-in-out infinite;
+}
+
+.empty-wishlist-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+}
+
+.empty-wishlist-message {
+    font-size: 1.1rem;
+    color: var(--text-dark);
+    opacity: 0.7;
+    margin-bottom: 2rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .wishlist-page {
+        padding: 1rem 0;
+    }
+    
+    .wishlist-title {
+        font-size: 2rem;
+    }
+    
+    .wishlist-content {
+        padding: 1.5rem;
+    }
+    
+    .empty-wishlist {
+        padding: 3rem 1rem;
+    }
+    
+    .empty-wishlist-icon {
+        font-size: 4rem;
+    }
+    
+    .empty-wishlist-title {
+        font-size: 1.75rem;
+    }
+    
+    .empty-wishlist-message {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .wishlist-title {
+        font-size: 1.75rem;
+    }
+    
+    .wishlist-content {
+        padding: 1rem;
+    }
+    
+    .empty-wishlist-icon {
+        font-size: 3rem;
+    }
+    
+    .empty-wishlist-title {
+        font-size: 1.5rem;
+    }
+}

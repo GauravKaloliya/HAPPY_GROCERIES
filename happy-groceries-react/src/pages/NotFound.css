@@ -1,0 +1,234 @@
+.not-found-page {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 0;
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-blue));
+    position: relative;
+}
+
+.not-found-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+}
+
+.not-found-content {
+    text-align: center;
+    color: white;
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+}
+
+.not-found-illustration {
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.error-number {
+    font-size: 8rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 1rem;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: bounce 2s ease-in-out infinite;
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: float 3s ease-in-out infinite;
+    animation-delay: 0.5s;
+}
+
+.not-found-message {
+    margin-bottom: 3rem;
+}
+
+.error-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-description {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    opacity: 0.95;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.not-found-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 4rem;
+    flex-wrap: wrap;
+}
+
+.helpful-links {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.helpful-links h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: white;
+}
+
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.helpful-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    color: white;
+    transition: var(--transition);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.helpful-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.link-icon {
+    font-size: 2.5rem;
+    opacity: 0.9;
+}
+
+.link-text {
+    text-align: left;
+}
+
+.link-text h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: white;
+}
+
+.link-text p {
+    font-size: 0.875rem;
+    opacity: 0.8;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .not-found-page {
+        padding: 1rem 0;
+    }
+    
+    .error-number {
+        font-size: 6rem;
+    }
+    
+    .error-icon {
+        font-size: 3rem;
+    }
+    
+    .error-title {
+        font-size: 2rem;
+    }
+    
+    .error-description {
+        font-size: 1.1rem;
+    }
+    
+    .not-found-actions {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 3rem;
+    }
+    
+    .not-found-actions .btn {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    .helpful-links {
+        padding: 1.5rem;
+    }
+    
+    .links-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .helpful-link {
+        padding: 1rem;
+    }
+    
+    .link-icon {
+        font-size: 2rem;
+    }
+    
+    .link-text h4 {
+        font-size: 0.9rem;
+    }
+    
+    .link-text p {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .error-number {
+        font-size: 4rem;
+    }
+    
+    .error-icon {
+        font-size: 2.5rem;
+    }
+    
+    .error-title {
+        font-size: 1.75rem;
+    }
+    
+    .error-description {
+        font-size: 1rem;
+    }
+    
+    .helpful-links {
+        padding: 1rem;
+    }
+    
+    .links-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .helpful-link {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem 1rem;
+    }
+    
+    .link-text {
+        text-align: center;
+    }
+}
