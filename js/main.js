@@ -228,7 +228,10 @@ function handleWishlistToggle(e) {
     if (!isUserLoggedIn()) {
         showToast('Please login to use wishlist');
         setTimeout(() => {
-            window.location.href = '../pages/login.html';
+            // Determine correct redirect path based on current location
+            const currentPath = window.location.pathname;
+            const inPagesDir = currentPath.includes('/pages/');
+            window.location.href = inPagesDir ? 'login.html' : 'pages/login.html';
         }, 1000);
         return;
     }
