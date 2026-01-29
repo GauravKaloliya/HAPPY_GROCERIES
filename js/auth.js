@@ -63,14 +63,7 @@ function validateName(name) {
     return name && name.length >= 3;
 }
 
-function registerUser(name, phone, email, password, csrfToken) {
-    const providedToken = csrfToken || (typeof HGValidation !== 'undefined' && HGValidation.getCSRFToken ? HGValidation.getCSRFToken() : sessionStorage.getItem('csrf_token'));
-    if (typeof HGValidation !== 'undefined' && HGValidation.validateCSRFToken) {
-        if (!HGValidation.validateCSRFToken(providedToken)) {
-            return { success: false, error: 'Security check failed. Please refresh and try again.' };
-        }
-    }
-
+function registerUser(name, phone, email, password) {
     if (typeof HGValidation !== 'undefined' && HGValidation.checkRateLimit) {
         const rateCheck = HGValidation.checkRateLimit('register', phone);
         if (!rateCheck.allowed) {
