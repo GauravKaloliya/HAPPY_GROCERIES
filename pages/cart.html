@@ -86,10 +86,8 @@
     <script src="../js/cart.js"></script>
     <script src="../js/main.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            loadCart();
-
-            function loadCart() {
+        // Define loadCart as a global function so it can be accessed by offer interaction functions
+        function loadCart() {
                 const cart = getCart();
                 const cartContent = document.getElementById('cartContent');
 
@@ -382,6 +380,11 @@
                     });
                 });
             }
+        }
+
+        // Initialize cart on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCart();
         });
     </script>
 

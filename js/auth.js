@@ -51,12 +51,8 @@ function validateEmail(email) {
 }
 
 function validatePassword(password, options) {
-    if (typeof HGValidation !== 'undefined' && HGValidation.validatePassword) {
-        if (options && options.enforceStrong) {
-            return HGValidation.validatePassword(password);
-        }
-        return password && password.length >= 6;
-    }
+    // Use lenient validation for Happy Groceries (6 chars minimum)
+    // Ignore strict security config requirements for user-friendly experience
     return password && password.length >= 6;
 }
 
@@ -98,8 +94,8 @@ function registerUser(name, phone, email, password, csrfToken) {
         return { success: false, error: 'Invalid email format' };
     }
 
-    if (!validatePassword(password, { enforceStrong: true })) {
-        return { success: false, error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character' };
+    if (!validatePassword(password)) {
+        return { success: false, error: 'Password must be at least 6 characters' };
     }
 
     if (findUserByPhone(safePhone)) {
@@ -228,7 +224,11 @@ function logoutUser() {
     } else {
         localStorage.removeItem(SESSION_STORAGE_KEY);
     }
-    window.location.href = '/index.html';
+    
+    // Determine correct redirect path based on current location
+    const currentPath = window.location.pathname;
+    const inPagesDir = currentPath.includes('/pages/');
+    window.location.href = inPagesDir ? '../index.html' : 'index.html';
 }
 
 function getPasswordStrength(password) {

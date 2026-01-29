@@ -605,7 +605,7 @@ function applyOfferFromCart(couponCode) {
 
     if (validation.valid) {
         setAppliedCoupon(validation.coupon);
-        markCouponAsUsed(couponCode);
+        // Don't mark as used here - only mark as used after successful order placement in addOrder()
 
         const discount = calculateCouponDiscountAmount(validation.coupon, cartTotal, cart);
         showToast(`Coupon ${couponCode} applied!`);
