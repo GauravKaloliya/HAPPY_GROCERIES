@@ -16,11 +16,21 @@
       "dest": "/static/$1"
     },
     {
+      "src": "/media/(.*)",
+      "dest": "/media/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "happy_groceries/wsgi.py"
     }
   ],
   "env": {
-    "DJANGO_SETTINGS_MODULE": "happy_groceries.settings"
+    "DJANGO_SETTINGS_MODULE": "happy_groceries.settings",
+    "PYTHONPATH": "."
+  },
+  "functions": {
+    "happy_groceries/wsgi.py": {
+      "maxDuration": 30
+    }
   }
 }

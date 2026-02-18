@@ -1,19 +1,15 @@
 {
   "version": 2,
   "name": "happy-groceries-frontend",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    }
-  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app",
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "headers": {
+        "cache-control": "s-maxage=31536000,immutable"
+      }
     },
     {
       "src": "/(.*)",
@@ -21,6 +17,6 @@
     }
   ],
   "env": {
-    "REACT_APP_API_URL": "@backend_api_url"
+    "REACT_APP_API_URL": "https://happy-groceries-backend.vercel.app/api"
   }
 }
