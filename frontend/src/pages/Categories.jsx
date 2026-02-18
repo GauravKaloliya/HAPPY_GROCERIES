@@ -2,38 +2,60 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
+import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
 
 const Categories = () => {
   const [searchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
 
-  const categories = [
-    { name: 'All', emoji: '🛒', color: 'var(--primary-pink)' },
-    { name: 'Fruits', emoji: '🍎', color: 'var(--primary-pink)' },
-    { name: 'Vegetables', emoji: '🥕', color: 'var(--primary-green)' },
-    { name: 'Dairy', emoji: '🥛', color: 'var(--primary-blue)' },
-    { name: 'Snacks', emoji: '🍪', color: 'var(--primary-yellow)' },
-    { name: 'Beverages', emoji: '🧃', color: 'var(--primary-orange)' },
-  ];
-
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const params = selectedCategory === 'All' ? {} : { category: selectedCategory };
-        const response = await productsAPI.getAll(params);
-        setProducts(response.data.results || response.data);
+        const [productsRes, categoriesRes] = await Promise.all([
+          productsAPI.getAll(selectedCategory === 'All' ? {} : { category: selectedCategory }),
+          categoriesAPI.getAll(),
+        ]);
+        setProducts(productsRes.data.results || productsRes.data);
+        setCategories(categoriesRes.data.results || categoriesRes.data);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetchData();
   }, [selectedCategory]);
+
+  const getCategoryEmoji = (name) => {
+    const emojis = {
+      'All': '🛒',
+      'Fruits': '🍎',
+      'Vegetables': '🥕',
+      'Dairy': '🥛',
+      'Snacks': '🍪',
+      'Beverages': '🧃',
+    };
+    return emojis[name] || '📦';
+  };
+
+  const getCategoryColor = (name) => {
+    const colors = {
+      'All': 'var(--primary-pink)',
+      'Fruits': 'var(--primary-pink)',
+      'Vegetables': 'var(--primary-green)',
+      'Dairy': 'var(--primary-blue)',
+      'Snacks': 'var(--primary-yellow)',
+      'Beverages': 'var(--primary-orange)',
+    };
+    return colors[name] || 'var(--primary-pink)';
+  };
+
+  const allCategories = [{ id: 'all', name: 'All', emoji: '🛒' }, ...categories];
 
   if (loading) return <PageLoader />;
 
@@ -42,25 +64,27 @@ const Categories = () => {
       <h2 className="section-title">🎨 Shop by Category</h2>
       
       <div className="categories-grid">
-        {categories.map((category) => (
+        {allCategories.map((category) => (
           <button
-            key={category.name}
+            key={category.id || category.name}
             onClick={() => setSelectedCategory(category.name)}
             className="category-card"
             style={{ 
-              background: category.color,
+              background: getCategoryColor(category.name),
               border: selectedCategory === category.name ? '4px solid var(--text-dark)' : 'none',
               transform: selectedCategory === category.name ? 'scale(1.05)' : 'scale(1)'
             }}
           >
-            <span className="category-emoji">{category.emoji}</span>
+            <span className="category-emoji">{category.emoji || getCategoryEmoji(category.name)}</span>
             <h3>{category.name}</h3>
           </button>
         ))}
       </div>
 
       <h2 className="section-title">
-        {selectedCategory === 'All' ? '✨ All Products' : `${categories.find(c => c.name === selectedCategory)?.emoji} ${selectedCategory}`}
+        {selectedCategory === 'All' 
+          ? '✨ All Products' 
+          : `${getCategoryEmoji(selectedCategory)} ${selectedCategory}`}
       </h2>
 
       {products.length > 0 ? (

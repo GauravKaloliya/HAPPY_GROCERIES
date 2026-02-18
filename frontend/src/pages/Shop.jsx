@@ -2,11 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
+import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -14,8 +16,6 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || '');
-
-  const categories = ['All', 'Fruits', 'Vegetables', 'Dairy', 'Snacks', 'Beverages'];
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -31,9 +31,14 @@ const Shop = () => {
         if (!params[key]) delete params[key];
       });
 
-      const response = await productsAPI.getAll(params);
-      setProducts(response.data.results || response.data);
-      setTotalCount(response.data.count || response.data.length);
+      const [productsRes, categoriesRes] = await Promise.all([
+        productsAPI.getAll(params),
+        categoriesAPI.getAll(),
+      ]);
+      
+      setProducts(productsRes.data.results || productsRes.data);
+      setTotalCount(productsRes.data.count || productsRes.data.length);
+      setCategories(categoriesRes.data.results || categoriesRes.data);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -78,15 +83,19 @@ const Shop = () => {
         </div>
 
         <div className="filters">
+          <button
+            onClick={() => setSelectedCategory('')}
+            className={`filter-btn ${!selectedCategory ? 'active' : ''}`}
+          >
+            All
+          </button>
           {categories.map((cat) => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat === 'All' ? '' : cat)}
-              className={`filter-btn ${
-                (cat === 'All' && !selectedCategory) || selectedCategory === cat ? 'active' : ''
-              }`}
+              key={cat.id || cat.name}
+              onClick={() => setSelectedCategory(cat.name)}
+              className={`filter-btn ${selectedCategory === cat.name ? 'active' : ''}`}
             >
-              {cat}
+              {cat.name}
             </button>
           ))}
           
