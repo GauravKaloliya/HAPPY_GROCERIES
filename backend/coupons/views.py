@@ -19,7 +19,7 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CouponSerializer
     
     def get_queryset(self):
-        queryset = Coupon.objects.filter(is_active=True)
+        queryset = Coupon.objects.filter(is_active=True, is_deleted=False)
         
         # Filter valid coupons only
         now = timezone.now()
@@ -46,7 +46,7 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Check if coupon exists and is valid
         try:
-            coupon = Coupon.objects.get(code=code)
+            coupon = Coupon.objects.get(code=code, is_deleted=False)
         except Coupon.DoesNotExist:
             return Response({
                 'valid': False,
@@ -74,10 +74,11 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         
         # For authenticated users, check additional constraints
         if request.user.is_authenticated:
-            # Check if user already used this coupon
+            # Check if user already used this coupon (excluding soft-deleted)
             if CouponUsage.objects.filter(
                 user=request.user,
-                coupon=coupon
+                coupon=coupon,
+                is_deleted=False
             ).exists():
                 return Response({
                     'valid': False,
@@ -90,7 +91,7 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
             if coupon.first_order_only:
                 # Check if user has any orders
                 from orders.models import Order
-                if Order.objects.filter(user=request.user).exists():
+                if Order.objects.filter(user=request.user, is_deleted=False).exists():
                     return Response({
                         'valid': False,
                         'message': 'This coupon is only valid for first-time customers',
@@ -159,12 +160,67 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         # Get all valid coupons
         queryset = self.get_queryset()
         
-        # Filter out coupons already used by the user
+        # Filter out coupons already used by the user (excluding soft-deleted)
         used_coupon_ids = CouponUsage.objects.filter(
-            user=request.user
+            user=request.user,
+            is_deleted=False
         ).values_list('coupon_id', flat=True)
         
         queryset = queryset.exclude(id__in=used_coupon_ids)
         
         serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def soft_delete(self, request, pk=None):
+        """Soft delete a coupon."""
+        coupon = self.get_object()
+        coupon.soft_delete()
+        return Response({'message': 'Coupon soft deleted successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Restore a soft-deleted coupon."""
+        coupon = self.get_object()
+        coupon.restore()
+        return Response({'message': 'Coupon restored successfully'})
+    
+    @action(detail=True, methods=['patch'])
+    def update_coupon(self, request, pk=None):
+        """Update coupon details."""
+        coupon = self.get_object()
+        
+        # Update allowed fields
+        allowed_fields = ['description', 'value', 'min_order_value', 'max_discount', 
+                        'usage_limit', 'is_active', 'valid_from', 'valid_until']
+        
+        for field in allowed_fields:
+            if field in request.data:
+                setattr(coupon, field, request.data[field])
+        
+        coupon.save()
+        return Response(CouponSerializer(coupon).data)
+    
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """Get coupon statistics."""
+        stats = {
+            'total_coupons': Coupon.objects.filter(is_deleted=False).count(),
+            'active_coupons': Coupon.objects.filter(is_active=True, is_deleted=False).count(),
+            'soft_deleted_coupons': Coupon.objects.filter(is_deleted=True).count(),
+            'total_usages': CouponUsage.objects.filter(is_deleted=False).count(),
+        }
+        return Response(stats)
+    
+    @action(detail=False, methods=['get'])
+    def all_coupons(self, request):
+        """Get all coupons including soft-deleted."""
+        include_deleted = request.query_params.get('include_deleted', 'false').lower() == 'true'
+        
+        if include_deleted:
+            queryset = Coupon.objects.all()
+        else:
+            queryset = self.get_queryset()
+        
+        serializer = CouponSerializer(queryset, many=True)
         return Response(serializer.data)

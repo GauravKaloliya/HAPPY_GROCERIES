@@ -48,12 +48,32 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Soft delete fields
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         db_table = 'orders'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'status']),
+            models.Index(fields=['is_deleted']),
+        ]
     
     def __str__(self):
         return f"Order {self.order_id} - {self.user.phone}"
+    
+    def soft_delete(self):
+        """Perform soft delete on the order."""
+        self.is_deleted = True
+        self.deleted_at = models.functions.Now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+    
+    def restore(self):
+        """Restore a soft-deleted order."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=['is_deleted', 'deleted_at'])
 
 
 class OrderItem(models.Model):
@@ -76,8 +96,28 @@ class OrderItem(models.Model):
     discount_percent = models.PositiveIntegerField(default=0)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     
+    # Soft delete fields
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         db_table = 'order_items'
+        indexes = [
+            models.Index(fields=['order']),
+            models.Index(fields=['is_deleted']),
+        ]
     
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
+    
+    def soft_delete(self):
+        """Perform soft delete on the order item."""
+        self.is_deleted = True
+        self.deleted_at = models.functions.Now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+    
+    def restore(self):
+        """Restore a soft-deleted order item."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=['is_deleted', 'deleted_at'])

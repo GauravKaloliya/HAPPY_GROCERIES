@@ -10,6 +10,10 @@ class Category(models.Model):
     emoji = models.CharField(max_length=10, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    # Soft delete fields
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         db_table = 'categories'
         verbose_name = 'Category'
@@ -17,6 +21,18 @@ class Category(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def soft_delete(self):
+        """Perform soft delete on the category."""
+        self.is_deleted = True
+        self.deleted_at = models.functions.Now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+    
+    def restore(self):
+        """Restore a soft-deleted category."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=['is_deleted', 'deleted_at'])
 
 
 class Product(models.Model):
@@ -52,12 +68,17 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Soft delete fields
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
     class Meta:
         db_table = 'products'
         ordering = ['id']
         indexes = [
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['name']),
+            models.Index(fields=['is_deleted']),
         ]
     
     def __str__(self):
@@ -74,3 +95,17 @@ class Product(models.Model):
     def discount_amount(self):
         """Calculate discount amount."""
         return self.price * (self.discount_percent / 100)
+    
+    def soft_delete(self):
+        """Perform soft delete on the product."""
+        self.is_deleted = True
+        self.deleted_at = models.functions.Now()
+        self.is_active = False
+        self.save(update_fields=['is_deleted', 'deleted_at', 'is_active', 'updated_at'])
+    
+    def restore(self):
+        """Restore a soft-deleted product."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.is_active = True
+        self.save(update_fields=['is_deleted', 'deleted_at', 'is_active', 'updated_at'])

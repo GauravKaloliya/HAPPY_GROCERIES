@@ -21,7 +21,10 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-created_at']
     
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user).prefetch_related(
+        return Order.objects.filter(
+            user=self.request.user,
+            is_deleted=False
+        ).prefetch_related(
             'items__product'
         )
     
@@ -33,7 +36,7 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         
         try:
             # Get or create user's cart
-            cart = Cart.objects.get(user=request.user)
+            cart = Cart.objects.get(user=request.user, is_deleted=False)
             
             if cart.total_items == 0:
                 return Response(
@@ -81,6 +84,20 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    @action(detail=True, methods=['post'])
+    def soft_delete(self, request, pk=None):
+        """Soft delete an order."""
+        order = self.get_object()
+        order.soft_delete()
+        return Response({'message': 'Order soft deleted successfully'})
+    
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Restore a soft-deleted order."""
+        order = self.get_object()
+        order.restore()
+        return Response({'message': 'Order restored successfully'})
+    
     @action(detail=False, methods=['get'])
     def statistics(self, request):
         """Get order statistics for the user."""
@@ -106,3 +123,42 @@ class OrderViewSet(viewsets.ReadOnlyModelViewSet):
         
         serializer = self.get_serializer(past_orders, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def all_orders(self, request):
+        """Get all orders including soft-deleted."""
+        include_deleted = request.query_params.get('include_deleted', 'false').lower() == 'true'
+        
+        if include_deleted:
+            queryset = Order.objects.filter(user=self.request.user).prefetch_related(
+                'items__product'
+            )
+        else:
+            queryset = self.get_queryset()
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['patch'])
+    def update_status(self, request, pk=None):
+        """Update order status."""
+        order = self.get_object()
+        new_status = request.data.get('status')
+        
+        if not new_status:
+            return Response(
+                {'error': 'status is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        valid_statuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
+        if new_status not in valid_statuses:
+            return Response(
+                {'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        order.status = new_status
+        order.save(update_fields=['status', 'updated_at'])
+        
+        return Response(OrderSerializer(order).data)
