@@ -46,6 +46,17 @@ body {
     color: var(--text-dark);
     transition: var(--transition);
     line-height: 1.6;
+    min-height: 100vh;
+}
+
+.app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.app-main {
+    flex: 1;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -578,6 +589,7 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    margin-top: 0.75rem;
     margin-bottom: 1rem;
 }
 
@@ -708,8 +720,28 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--bg-white);
     padding: 2rem;
     text-align: center;
-    margin-top: 4rem;
     box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.footer-link {
+    color: var(--text-dark);
+    text-decoration: none;
+    font-weight: 600;
+    opacity: 0.7;
+    transition: var(--transition);
+}
+
+.footer-link:hover {
+    opacity: 1;
+    color: var(--primary-pink);
 }
 
 /* Toast */
