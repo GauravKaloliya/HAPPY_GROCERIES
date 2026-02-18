@@ -112,13 +112,12 @@ const LayoutLoader = (function() {
 
         const year = footer.querySelector('copyright year')?.textContent || '2026';
         const company = footer.querySelector('copyright company')?.textContent || 'Happy Groceries';
-        const emoji = footer.querySelector('copyright emoji')?.textContent || '🛒';
-        const message = footer.querySelector('copyright message')?.textContent || 'Created by Gaurav Kaloliya';
+        const message = footer.querySelector('copyright message')?.textContent || 'Made with 💖';
 
         return `
 <footer class="footer">
     <div class="container">
-        <p>&copy; ${year} ${company} ${emoji} | ${message}</p>
+        <p>&copy; ${year} ${company}. ${message}</p>
     </div>
 </footer>
         `.trim();
@@ -190,72 +189,63 @@ const LayoutLoader = (function() {
     function init() {
         const headerPlaceholder = document.getElementById('header-placeholder');
         const footerPlaceholder = document.getElementById('footer-placeholder');
-
-        // Load both header and footer in parallel for faster loading
-        const loadPromises = [];
-
+        
         if (headerPlaceholder) {
-            loadPromises.push(
-                loadHeader().then(() => {
-                    headerPlaceholder.remove();
-                    if (typeof initializeNavbar === 'function') {
-                        initializeNavbar();
-                    }
-                    if (typeof initializeDarkMode === 'function') {
-                        initializeDarkMode();
-                    }
-
-                    const hamburger = document.getElementById('hamburger');
-                    const navMenu = document.getElementById('navMenu');
-                    if (hamburger && navMenu) {
-                        hamburger.addEventListener('click', () => {
-                            hamburger.classList.toggle('active');
-                            navMenu.classList.toggle('active');
-                        });
-
-                        document.addEventListener('click', (e) => {
-                            if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
-                                hamburger.classList.remove('active');
-                                navMenu.classList.remove('active');
-                            }
-                        });
-                    }
-
-                    const profileBtn = document.getElementById('profileBtn');
-                    const profileDropdown = document.getElementById('profileDropdown');
-                    if (profileBtn && profileDropdown) {
-                        profileBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            profileDropdown.classList.toggle('active');
-                        });
-
-                        document.addEventListener('click', (e) => {
-                            if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
-                                profileDropdown.classList.remove('active');
-                            }
-                        });
-                    }
-
-                    const logoutBtn = document.getElementById('logoutBtn');
-                    if (logoutBtn && typeof logoutUser === 'function') {
-                        logoutBtn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            logoutUser();
-                        });
-                    }
-                })
-            );
+            loadHeader().then(() => {
+                headerPlaceholder.remove();
+                if (typeof initializeNavbar === 'function') {
+                    initializeNavbar();
+                }
+                if (typeof initializeDarkMode === 'function') {
+                    initializeDarkMode();
+                }
+                
+                const hamburger = document.getElementById('hamburger');
+                const navMenu = document.getElementById('navMenu');
+                if (hamburger && navMenu) {
+                    hamburger.addEventListener('click', () => {
+                        hamburger.classList.toggle('active');
+                        navMenu.classList.toggle('active');
+                    });
+                    
+                    document.addEventListener('click', (e) => {
+                        if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
+                            hamburger.classList.remove('active');
+                            navMenu.classList.remove('active');
+                        }
+                    });
+                }
+                
+                const profileBtn = document.getElementById('profileBtn');
+                const profileDropdown = document.getElementById('profileDropdown');
+                if (profileBtn && profileDropdown) {
+                    profileBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        profileDropdown.classList.toggle('active');
+                    });
+                    
+                    document.addEventListener('click', (e) => {
+                        if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+                            profileDropdown.classList.remove('active');
+                        }
+                    });
+                }
+                
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn && typeof logoutUser === 'function') {
+                    logoutBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        logoutUser();
+                    });
+                }
+            });
         }
-
+        
         if (footerPlaceholder) {
-            loadPromises.push(
-                loadFooter().then(() => {
-                    footerPlaceholder.remove();
-                })
-            );
+            loadFooter().then(() => {
+                footerPlaceholder.remove();
+            });
         }
-
-        return Promise.all(loadPromises);
     }
 
     return {
