@@ -22,7 +22,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-development-key-chang
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Allow all hosts for Vercel deployment
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*.vercel.app').split(',')
 
 
 # Application definition
@@ -85,12 +85,22 @@ WSGI_APPLICATION = 'happy_groceries.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Neon PostgreSQL Database - Hardcoded for production
-NEON_DATABASE_URL = 'postgresql://neondb_owner:npg_H5utRe6ISzbf@ep-little-meadow-aiuaw4j8-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+# Neon PostgreSQL Database - Use environment variable
+# Fallback to local SQLite for development if DATABASE_URL is not set
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-DATABASES = {
-    'default': dj_database_url.parse(NEON_DATABASE_URL, conn_max_age=600)
-}
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+    }
+else:
+    # Development fallback - use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
