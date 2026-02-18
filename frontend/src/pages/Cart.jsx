@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import CartItem from '../components/CartItem';
-import { 
-  fetchCart, 
-  clearCart, 
-  selectCartItems, 
+import {
+  fetchCart,
+  clearCart,
+  selectCartItems,
   selectCartSubtotal,
   selectCartTax,
   selectDeliveryCharge,
   selectCartTotal,
   selectDiscount,
-  applyCoupon,
+  validateCoupon,
   clearCoupon,
 } from '../store/slices/cartSlice';
 import { formatPrice } from '../utils/helpers';
@@ -58,9 +58,9 @@ const Cart = () => {
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
-    
+
     try {
-      await dispatch(applyCoupon(couponCode)).unwrap();
+      await dispatch(validateCoupon({ code: couponCode, cartTotal: subtotal })).unwrap();
       toast.success('Coupon applied successfully! 🎉');
       setCouponCode('');
     } catch (error) {

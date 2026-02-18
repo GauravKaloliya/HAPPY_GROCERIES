@@ -28,13 +28,13 @@ export const login = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await authAPI.login(credentials);
-      const { access, refresh, user } = response.data;
-      localStorage.setItem('accessToken', access);
-      localStorage.setItem('refreshToken', refresh);
+      const { access_token, refresh_token, user } = response.data;
+      localStorage.setItem('accessToken', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
-      return { access, refresh, user };
+      return { access: access_token, refresh: refresh_token, user };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      return rejectWithValue(error.response?.data?.error || 'Login failed');
     }
   }
 );
@@ -44,13 +44,13 @@ export const register = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const response = await authAPI.register(userData);
-      const { access, refresh, user } = response.data;
-      localStorage.setItem('accessToken', access);
-      localStorage.setItem('refreshToken', refresh);
+      const { access_token, refresh_token, user } = response.data;
+      localStorage.setItem('accessToken', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
-      return { access, refresh, user };
+      return { access: access_token, refresh: refresh_token, user };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Registration failed');
+      return rejectWithValue(error.response?.data?.phone?.[0] || error.response?.data?.error || 'Registration failed');
     }
   }
 );

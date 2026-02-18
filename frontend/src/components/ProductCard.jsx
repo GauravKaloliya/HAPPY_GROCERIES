@@ -43,9 +43,9 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   };
 
   const inCart = cartItems.find(item => item.product?.id === product.id);
-  
-  const isOnSale = product.discount_price && product.discount_price < product.price;
-  const displayPrice = isOnSale ? product.discount_price : product.price;
+
+  const isOnSale = product.effective_price && parseFloat(product.effective_price) < parseFloat(product.price);
+  const displayPrice = isOnSale ? product.effective_price : product.price;
   
   const renderStars = (rating) => {
     const fullStars = Math.floor(rating || 0);
