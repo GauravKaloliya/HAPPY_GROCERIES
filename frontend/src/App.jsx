@@ -31,99 +31,97 @@ function App() {
     // Check for saved theme preference
     const isDark = localStorage.getItem('darkMode') === 'true';
     if (isDark) {
-      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark-mode');
     }
   }, []);
 
   return (
     <Provider store={store}>
       <Router>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          
-          <main className="flex-grow">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              
-              {/* Protected Routes */}
-              <Route path="/cart" element={<Cart />} />
-              <Route
-                path="/checkout"
-                element={
-                  <ProtectedRoute>
-                    <Checkout />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/wishlist"
-                element={
-                  <ProtectedRoute>
-                    <Wishlist />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/orders"
-                element={
-                  <ProtectedRoute>
-                    <Orders />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
+        <Header />
+        
+        <main>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            {/* Protected Routes */}
+            <Route path="/cart" element={<Cart />} />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wishlist"
+              element={
+                <ProtectedRoute>
+                  <Wishlist />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Catch all */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
+            {/* Catch all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
 
-          <Footer />
-        </div>
+        <Footer />
 
         {/* Toast Notifications */}
         <Toaster
-          position="top-center"
+          position="bottom-right"
           toastOptions={{
             duration: 3000,
             style: {
-              background: '#fff',
-              color: '#363636',
-              borderRadius: '16px',
+              background: 'var(--primary-green)',
+              color: 'var(--text-dark)',
+              borderRadius: '15px',
               padding: '16px 24px',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+              boxShadow: 'var(--shadow-hover)',
+              fontWeight: 600,
             },
             success: {
-              iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff',
+              style: {
+                background: 'var(--primary-green)',
               },
             },
             error: {
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff',
+              style: {
+                background: '#ff4444',
+                color: 'white',
               },
             },
           }}
