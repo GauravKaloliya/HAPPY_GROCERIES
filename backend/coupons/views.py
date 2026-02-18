@@ -149,78 +149,54 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         # Ensure discount doesn't exceed cart total
         return min(discount_amount, cart_total)
     
-    @action(detail=False, methods=['get'])
-    def user_coupons(self, request):
-        """Get available coupons for authenticated user."""
-        if not request.user.is_authenticated:
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def apply(self, request):
+        """Apply a coupon to the user's cart."""
+        code = request.data.get('code', '').upper()
+        
+        if not code:
             return Response({
-                'error': 'Authentication required'
-            }, status=status.HTTP_401_UNAUTHORIZED)
+                'error': 'Coupon code is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get all valid coupons
-        queryset = self.get_queryset()
+        try:
+            coupon = Coupon.objects.get(code=code, is_deleted=False)
+        except Coupon.DoesNotExist:
+            return Response({
+                'error': 'Invalid coupon code'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Filter out coupons already used by the user (excluding soft-deleted)
-        used_coupon_ids = CouponUsage.objects.filter(
-            user=request.user,
-            is_deleted=False
-        ).values_list('coupon_id', flat=True)
+        if not coupon.is_valid():
+            return Response({
+                'error': 'This coupon is no longer valid'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        queryset = queryset.exclude(id__in=used_coupon_ids)
+        return Response({
+            'message': 'Coupon applied successfully',
+            'coupon': CouponSerializer(coupon).data
+        })
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def remove(self, request):
+        """Remove applied coupon from cart."""
+        return Response({
+            'message': 'Coupon removed successfully'
+        })
+    
+    @action(detail=False, methods=['post'])
+    def suggested(self, request):
+        """Get suggested coupons based on cart."""
+        cart_total = request.data.get('cart_total', 0)
+        
+        try:
+            cart_total = float(cart_total)
+        except (ValueError, TypeError):
+            cart_total = 0
+        
+        # Get valid coupons that meet the minimum order value
+        queryset = self.get_queryset().filter(
+            min_order_value__lte=cart_total
+        ).order_by('-value')[:3]
         
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=True, methods=['post'])
-    def soft_delete(self, request, pk=None):
-        """Soft delete a coupon."""
-        coupon = self.get_object()
-        coupon.soft_delete()
-        return Response({'message': 'Coupon soft deleted successfully'})
-    
-    @action(detail=True, methods=['post'])
-    def restore(self, request, pk=None):
-        """Restore a soft-deleted coupon."""
-        coupon = self.get_object()
-        coupon.restore()
-        return Response({'message': 'Coupon restored successfully'})
-    
-    @action(detail=True, methods=['patch'])
-    def update_coupon(self, request, pk=None):
-        """Update coupon details."""
-        coupon = self.get_object()
-        
-        # Update allowed fields
-        allowed_fields = ['description', 'value', 'min_order_value', 'max_discount', 
-                        'usage_limit', 'is_active', 'valid_from', 'valid_until']
-        
-        for field in allowed_fields:
-            if field in request.data:
-                setattr(coupon, field, request.data[field])
-        
-        coupon.save()
-        return Response(CouponSerializer(coupon).data)
-    
-    @action(detail=False, methods=['get'])
-    def statistics(self, request):
-        """Get coupon statistics."""
-        stats = {
-            'total_coupons': Coupon.objects.filter(is_deleted=False).count(),
-            'active_coupons': Coupon.objects.filter(is_active=True, is_deleted=False).count(),
-            'soft_deleted_coupons': Coupon.objects.filter(is_deleted=True).count(),
-            'total_usages': CouponUsage.objects.filter(is_deleted=False).count(),
-        }
-        return Response(stats)
-    
-    @action(detail=False, methods=['get'])
-    def all_coupons(self, request):
-        """Get all coupons including soft-deleted."""
-        include_deleted = request.query_params.get('include_deleted', 'false').lower() == 'true'
-        
-        if include_deleted:
-            queryset = Coupon.objects.all()
-        else:
-            queryset = self.get_queryset()
-        
-        serializer = CouponSerializer(queryset, many=True)
         return Response(serializer.data)

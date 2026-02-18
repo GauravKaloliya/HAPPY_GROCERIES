@@ -18,16 +18,48 @@ class OrderService:
     @classmethod
     @transaction.atomic
     def create_order(cls, user, cart, delivery_data):
-        """Create an order from cart items."""
+        """Create an order from cart items or provided items."""
         
         delivery_type = delivery_data.get('delivery_type', 'standard')
         coupon_code = delivery_data.get('coupon_code')
         
-        # Get cart items
-        cart_items = cart.items.select_related('product__category').all()
-        
-        if not cart_items:
-            raise ValueError("Cart is empty")
+        # Get items - either from cart or from provided data
+        if cart:
+            cart_items = cart.items.select_related('product__category').all()
+            if not cart_items:
+                raise ValueError("Cart is empty")
+        else:
+            # Get items from delivery_data
+            items_data = delivery_data.get('items', [])
+            if not items_data:
+                raise ValueError("No items provided")
+            
+            # Import here to avoid circular imports
+            from products.models import Product
+            
+            # Validate and fetch products
+            cart_items = []
+            for item_data in items_data:
+                product = Product.objects.get(
+                    id=item_data['product_id'],
+                    is_active=True,
+                    is_deleted=False
+                )
+                
+                # Create a mock cart item object for consistency
+                class MockCartItem:
+                    def __init__(self, product, quantity, price):
+                        self.product = product
+                        self.quantity = quantity
+                        self.total = price * quantity
+                
+                cart_items.append(
+                    MockCartItem(
+                        product,
+                        item_data['quantity'],
+                        item_data.get('price', product.effective_price)
+                    )
+                )
         
         # Calculate subtotal
         subtotal = sum(item.total for item in cart_items)
@@ -115,8 +147,9 @@ class OrderService:
             product.stock = max(0, product.stock - cart_item.quantity)
             product.save()
         
-        # Clear cart
-        cart.items.all().delete()
+        # Clear cart if it was provided
+        if cart:
+            cart.items.all().delete()
         
         # Record coupon usage
         if coupon:
