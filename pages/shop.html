@@ -16,8 +16,7 @@
 
             <div class="search-section">
                 <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="Type and press Enter to search...">
-                    <button type="button" id="searchBtn" class="btn-coupon">🔍 Search</button>
+                    <input type="text" id="searchInput" placeholder="Search for products...">
                 </div>
                 
                 <div class="filters">
@@ -73,24 +72,11 @@
             const debouncedSearch = debounce(function(query) {
                 currentQuery = query;
                 loadProducts();
-            }, 500);
+            }, 300);
 
-            searchInput.addEventListener('keyup', function(e) {
-                if (e.key === 'Enter') {
-                    currentQuery = e.target.value;
-                    loadProducts();
-                } else {
-                    debouncedSearch(e.target.value);
-                }
+            searchInput.addEventListener('input', function(e) {
+                debouncedSearch(e.target.value);
             });
-
-            const searchBtn = document.getElementById('searchBtn');
-            if (searchBtn) {
-                searchBtn.addEventListener('click', function() {
-                    currentQuery = searchInput.value;
-                    loadProducts();
-                });
-            }
 
             filterButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
