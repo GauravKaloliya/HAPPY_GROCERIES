@@ -3,8 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q, Avg, Count
-from django.db import models
+from django.db.models import Q, F, ExpressionWrapper, DecimalField, Value
 
 from .models import Category, Product
 from .serializers import (
@@ -55,14 +54,20 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(category__name__icontains=search)
             )
         
-        # Min/Max price filter
+        # Min/Max price filter (use discounted price)
         min_price = self.request.query_params.get('min_price')
         max_price = self.request.query_params.get('max_price')
-        
+
+        effective_price_expression = ExpressionWrapper(
+            F('price') * (Value(1) - (F('discount_percent') / Value(100.0))),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+        queryset = queryset.annotate(effective_price=effective_price_expression)
+
         if min_price:
-            queryset = queryset.filter(price__gte=min_price)
+            queryset = queryset.filter(effective_price__gte=min_price)
         if max_price:
-            queryset = queryset.filter(price__lte=max_price)
+            queryset = queryset.filter(effective_price__lte=max_price)
         
         # In stock filter
         in_stock = self.request.query_params.get('in_stock')
