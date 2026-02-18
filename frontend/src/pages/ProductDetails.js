@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { productsAPI, cartAPI, wishlistAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,11 +14,7 @@ const ProductDetails = () => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    fetchProduct();
-  }, [id]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     setLoading(true);
     try {
       const response = await productsAPI.getById(id);
@@ -39,7 +35,11 @@ const ProductDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, isAuthenticated]);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [id, fetchProduct]);
 
   const handleAddToCart = async () => {
     try {

@@ -18,15 +18,6 @@ export const CartProvider = ({ children }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const { isAuthenticated } = useAuth();
 
-  // Load cart when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchCart();
-    } else {
-      setCart(null);
-    }
-  }, [isAuthenticated]);
-
   const fetchCart = useCallback(async () => {
     try {
       const response = await cartAPI.get();
@@ -35,6 +26,15 @@ export const CartProvider = ({ children }) => {
       console.error('Failed to fetch cart:', error);
     }
   }, []);
+
+  // Load cart when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+    } else {
+      setCart(null);
+    }
+  }, [isAuthenticated, fetchCart]);
 
   const addToCart = useCallback(async (productId, quantity = 1) => {
     setLoading(true);
@@ -55,7 +55,7 @@ export const CartProvider = ({ children }) => {
   const updateQuantity = useCallback(async (itemId, quantity) => {
     setLoading(true);
     try {
-      const response = await cartAPI.updateItem(itemId, quantity);
+      await cartAPI.updateItem(itemId, quantity);
       await fetchCart();
       return { success: true };
     } catch (error) {

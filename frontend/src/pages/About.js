@@ -59,11 +59,11 @@ const About = () => {
 
         <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Connect With Us</h3>
         <div className="social-icons">
-          <a href="#" className="social-icon">📧</a>
-          <a href="#" className="social-icon">📱</a>
-          <a href="#" className="social-icon">🐦</a>
-          <a href="#" className="social-icon">📘</a>
-          <a href="#" className="social-icon">📸</a>
+          <button className="social-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>📧</button>
+          <button className="social-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>📱</button>
+          <button className="social-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>🐦</button>
+          <button className="social-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>📘</button>
+          <button className="social-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>📸</button>
         </div>
 
         <div className="contact-info">
