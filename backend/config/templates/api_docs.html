@@ -236,8 +236,6 @@
     <header class="hero">
         <div class="hero-content">
             <div class="hero-badge">🛒 Happy Groceries API</div>
-            <h1>Frontend-Focused API Documentation</h1>
-            <p>All endpoints listed below are actively used by the Happy Groceries customer experience. This documentation covers authentication, shopping, orders, promotions, and customer engagement features.</p>
             <div class="meta-grid">
                 <div class="meta-card">
                     <span>Base URL</span>
@@ -635,49 +633,6 @@
 
         <section class="section">
             <div class="section-header">
-                <h2>Activity Logs</h2>
-                <span>/api/activity-logs/ <span class="tag">Auth required</span></span>
-            </div>
-            <table class="endpoint-table">
-                <thead>
-                    <tr>
-                        <th>Method</th>
-                        <th>Endpoint</th>
-                        <th>Auth</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="method post">POST</span></td>
-                        <td>/activity-logs/log_activity/</td>
-                        <td>Public</td>
-                        <td>Capture page views and user actions.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="method get">GET</span></td>
-                        <td>/activity-logs/</td>
-                        <td>Required</td>
-                        <td>List activity logs for the authenticated user.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="method get">GET</span></td>
-                        <td>/activity-logs/statistics/</td>
-                        <td>Required</td>
-                        <td>Return aggregate activity metrics.</td>
-                    </tr>
-                </tbody>
-            </table>
-            <p><strong>Filters</strong></p>
-            <ul class="list">
-                <li>• ?days=7 for the last 7 days</li>
-                <li>• ?action=page_view</li>
-                <li>• ?page=/shop</li>
-            </ul>
-        </section>
-
-        <section class="section">
-            <div class="section-header">
                 <h2>Contact & Support</h2>
                 <span>/api/contact/</span>
             </div>
@@ -714,8 +669,7 @@
         </section>
 
         <div class="footer">
-            <p>Happy Groceries API • Built with Django REST Framework</p>
-            <p>Updated for the customer-facing experience (2025)</p>
+            <p>Happy Groceries API • Created by Gaurav Kaloliya</p>
         </div>
     </main>
 </body>
