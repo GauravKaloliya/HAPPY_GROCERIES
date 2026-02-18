@@ -21,7 +21,7 @@ const Wishlist = () => {
     const fetchWishlist = async () => {
       try {
         const response = await wishlistAPI.getWishlist();
-        setWishlistItems(response.data);
+        setWishlistItems(response.data.results || response.data);
       } catch (error) {
         console.error('Error fetching wishlist:', error);
         toast.error('Failed to load wishlist');
@@ -102,10 +102,8 @@ const Wishlist = () => {
       <div className="products-grid">
         {wishlistItems.map((item) => {
           const product = item.product;
-          const hasDiscount = product.discount_percent > 0;
-          const discountedPrice = hasDiscount 
-            ? product.price * (1 - product.discount_percent / 100)
-            : product.price;
+          const effectivePrice = product.effective_price ? Number(product.effective_price) : product.price * (1 - product.discount_percent / 100);
+          const hasDiscount = effectivePrice < product.price;
 
           return (
             <div key={product.id} className="product-card">
@@ -132,7 +130,7 @@ const Wishlist = () => {
                   {hasDiscount ? (
                     <>
                       <p className="product-price">
-                        ₹{discountedPrice.toFixed(0)}
+                        ₹{effectivePrice.toFixed(0)}
                         <span className="discount-badge">{product.discount_percent}% OFF</span>
                       </p>
                       <p className="product-price-original">₹{product.price}</p>
