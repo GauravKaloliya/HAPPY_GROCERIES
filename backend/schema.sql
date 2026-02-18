@@ -25,8 +25,11 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TIMESTAMP WITH TIME ZONE,
+    first_order BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX users_phone_idx ON users(phone);
@@ -41,7 +44,9 @@ CREATE TABLE IF NOT EXISTS categories (
     name VARCHAR(50) NOT NULL UNIQUE,
     description TEXT NOT NULL DEFAULT '',
     emoji VARCHAR(10) NOT NULL DEFAULT '',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX categories_name_idx ON categories(name);
@@ -63,11 +68,14 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT NOT NULL DEFAULT '',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX products_name_idx ON products(name);
 CREATE INDEX products_category_is_active_idx ON products(category_id, is_active);
+CREATE INDEX products_is_deleted_idx ON products(is_deleted);
 
 -- =====================================================
 -- CARTS
@@ -77,10 +85,13 @@ CREATE TABLE IF NOT EXISTS carts (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX carts_user_idx ON carts(user_id);
+CREATE INDEX carts_user_is_deleted_idx ON carts(user_id, is_deleted);
 
 -- =====================================================
 -- CART ITEMS
@@ -92,11 +103,14 @@ CREATE TABLE IF NOT EXISTS cart_items (
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
     added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE(cart_id, product_id)
 );
 
 CREATE INDEX cart_items_cart_idx ON cart_items(cart_id);
 CREATE INDEX cart_items_product_idx ON cart_items(product_id);
+CREATE INDEX cart_items_cart_is_deleted_idx ON cart_items(cart_id, is_deleted);
 
 -- =====================================================
 -- ORDERS
@@ -107,8 +121,6 @@ CREATE TABLE IF NOT EXISTS orders (
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     order_id VARCHAR(20) NOT NULL UNIQUE CHECK (order_id ~ '^HG[0-9]{8}$'),
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled')),
-    payment_status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'authorized', 'paid', 'failed', 'refunded')),
-    payment_reference VARCHAR(100),
     delivery_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (delivery_type IN ('standard', 'express')),
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
     tax DECIMAL(10, 2) NOT NULL CHECK (tax >= 0),
@@ -122,12 +134,16 @@ CREATE TABLE IF NOT EXISTS orders (
     estimated_delivery TIMESTAMP WITH TIME ZONE,
     delivered_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX orders_order_id_idx ON orders(order_id);
 CREATE INDEX orders_user_idx ON orders(user_id);
 CREATE INDEX orders_status_idx ON orders(status);
+CREATE INDEX orders_user_status_idx ON orders(user_id, status);
+CREATE INDEX orders_is_deleted_idx ON orders(is_deleted);
 CREATE INDEX orders_user_created_idx ON orders(user_id, created_at DESC);
 
 -- =====================================================
@@ -143,11 +159,15 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_emoji VARCHAR(10) NOT NULL DEFAULT '',
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0),
-    subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0)
+    subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX order_items_order_idx ON order_items(order_id);
 CREATE INDEX order_items_product_idx ON order_items(product_id);
+CREATE INDEX order_items_order_is_deleted_idx ON order_items(order_id, is_deleted);
+CREATE INDEX order_items_is_deleted_idx ON order_items(is_deleted);
 
 -- =====================================================
 -- COUPONS
@@ -168,13 +188,17 @@ CREATE TABLE IF NOT EXISTS coupons (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     valid_from TIMESTAMP WITH TIME ZONE,
     valid_until TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE INDEX coupons_code_idx ON coupons(code);
 CREATE INDEX coupons_is_active_idx ON coupons(is_active);
 CREATE INDEX coupons_active_valid_idx ON coupons(is_active, valid_until);
 CREATE INDEX coupons_categories_gin ON coupons USING GIN (applicable_categories);
+CREATE INDEX coupons_code_is_active_idx ON coupons(code, is_active);
+CREATE INDEX coupons_is_deleted_idx ON coupons(is_deleted);
 
 -- =====================================================
 -- COUPON USAGES
@@ -186,12 +210,111 @@ CREATE TABLE IF NOT EXISTS coupon_usages (
     coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     discount_amount DECIMAL(10, 2) NOT NULL CHECK (discount_amount >= 0),
-    used_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    used_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(user_id, coupon_id)
 );
 
 CREATE INDEX coupon_usages_user_idx ON coupon_usages(user_id);
 CREATE INDEX coupon_usages_coupon_idx ON coupon_usages(coupon_id);
 CREATE INDEX coupon_usages_order_idx ON coupon_usages(order_id);
+CREATE INDEX coupon_usages_user_is_deleted_idx ON coupon_usages(user_id, is_deleted);
+CREATE INDEX coupon_usages_coupon_is_deleted_idx ON coupon_usages(coupon_id, is_deleted);
+CREATE INDEX coupon_usages_is_deleted_idx ON coupon_usages(is_deleted);
+
+-- =====================================================
+-- WISHLIST ITEMS
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS wishlist_items (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(user_id, product_id)
+);
+
+CREATE INDEX wishlist_items_user_idx ON wishlist_items(user_id);
+CREATE INDEX wishlist_items_product_idx ON wishlist_items(product_id);
+CREATE INDEX wishlist_items_user_is_deleted_idx ON wishlist_items(user_id, is_deleted);
+CREATE INDEX wishlist_items_product_is_deleted_idx ON wishlist_items(product_id, is_deleted);
+
+-- =====================================================
+-- DJANGO AUTH TABLES (for reference)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS auth_group (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS auth_permission (
+    id SERIAL PRIMARY KEY,
+    content_type_id INTEGER NOT NULL REFERENCES django_content_type(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    codename VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    UNIQUE(content_type_id, codename)
+);
+
+CREATE TABLE IF NOT EXISTS auth_group_permissions (
+    id BIGSERIAL PRIMARY KEY,
+    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    UNIQUE(group_id, permission_id)
+);
+
+CREATE TABLE IF NOT EXISTS users_groups (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    UNIQUE(user_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS users_user_permissions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    UNIQUE(user_id, permission_id)
+);
+
+CREATE TABLE IF NOT EXISTS django_content_type (
+    id SERIAL PRIMARY KEY,
+    app_label VARCHAR(100) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    UNIQUE(app_label, model)
+);
+
+CREATE TABLE IF NOT EXISTS django_session (
+    session_key VARCHAR(40) NOT NULL PRIMARY KEY,
+    session_data TEXT NOT NULL,
+    expire_date TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE INDEX django_session_expire_date_idx ON django_session(expire_date);
+
+CREATE TABLE IF NOT EXISTS django_admin_log (
+    id SERIAL PRIMARY KEY,
+    action_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    content_type_id INTEGER REFERENCES django_content_type(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
+    object_id TEXT,
+    object_repr VARCHAR(200) NOT NULL,
+    action_flag SMALLINT NOT NULL CHECK (action_flag >= 0),
+    change_message TEXT NOT NULL
+);
+
+CREATE INDEX django_admin_log_content_type_idx ON django_admin_log(content_type_id);
+CREATE INDEX django_admin_log_user_idx ON django_admin_log(user_id);
+
+CREATE TABLE IF NOT EXISTS django_migrations (
+    id BIGSERIAL PRIMARY KEY,
+    app VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    applied TIMESTAMP WITH TIME ZONE NOT NULL
+);
 
 -- =====================================================
 -- AUTOMATED UPDATE TRIGGERS FOR updated_at
@@ -206,24 +329,28 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply trigger to users table
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Apply trigger to products table
+DROP TRIGGER IF EXISTS update_products_updated_at ON products;
 CREATE TRIGGER update_products_updated_at
     BEFORE UPDATE ON products
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Apply trigger to carts table
+DROP TRIGGER IF EXISTS update_carts_updated_at ON carts;
 CREATE TRIGGER update_carts_updated_at
     BEFORE UPDATE ON carts
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Apply trigger to orders table
+DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
 CREATE TRIGGER update_orders_updated_at
     BEFORE UPDATE ON orders
     FOR EACH ROW
@@ -263,9 +390,10 @@ INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count
     (31, 'Blueberry', 300.00, 1, '🫐', 4.9, 156, 10, 0, 'Premium fresh blueberries, perfect for smoothies, pancakes, or healthy snacking.', TRUE),
     (32, 'Peach', 180.00, 1, '🍑', 4.4, 53, 14, 0, 'Soft and sweet peaches with a delicate aroma. Ideal for desserts and salads.', TRUE),
     (33, 'Cherry', 250.00, 1, '🍒', 4.7, 124, 8, 0, 'Sweet red cherries, a perfect seasonal treat for snacking or baking.', TRUE),
-    (34, 'Avocado', 200.00, 1, '🥑', 4.3, 89, 12, 0, 'Creamy ripe avocados, perfect for toast, salads, and healthy fats.', TRUE);
+    (34, 'Avocado', 200.00, 1, '🥑', 4.3, 89, 12, 0, 'Creamy ripe avocados, perfect for toast, salads, and healthy fats.', TRUE)
+ON CONFLICT (id) DO NOTHING;
 
--- VEGETABLES (14 products)
+-- VEGETABLES (16 products)
 INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count, stock, discount_percent, description, is_active) VALUES
     (7, 'Carrot', 30.00, 2, '🥕', 4.0, 44, 35, 20, 'Crunchy carrots rich in beta-carotene. Ideal for salads, soups, and healthy snacking.', TRUE),
     (8, 'Tomato', 25.00, 2, '🍅', 4.1, 52, 28, 15, 'Juicy tomatoes that add flavor to curries, sandwiches, and salads. A kitchen staple!', TRUE),
@@ -282,7 +410,8 @@ INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count
     (41, 'Sweet Potato', 60.00, 2, '🍠', 4.3, 48, 30, 18, 'Nutritious sweet potatoes, great for roasting, mashing, or as a healthy snack.', TRUE),
     (42, 'Peas', 70.00, 2, '🫛', 4.5, 52, 20, 20, 'Fresh green peas, sweet and tender. Ideal for curries, pulao, and side dishes.', TRUE),
     (43, 'Beans', 50.00, 2, '🫛', 4.2, 41, 25, 16, 'Fresh green beans, crunchy and nutritious. Great for stir-frying and steaming.', TRUE),
-    (44, 'Mushrooms', 90.00, 2, '🍄', 4.7, 84, 12, 0, 'Fresh button mushrooms, earthy and savory. Perfect for pasta, pizzas, and stir-fries.', TRUE);
+    (44, 'Mushrooms', 90.00, 2, '🍄', 4.7, 84, 12, 0, 'Fresh button mushrooms, earthy and savory. Perfect for pasta, pizzas, and stir-fries.', TRUE)
+ON CONFLICT (id) DO NOTHING;
 
 -- DAIRY (14 products)
 INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count, stock, discount_percent, description, is_active) VALUES
@@ -299,7 +428,8 @@ INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count
     (51, 'Sour Cream', 120.00, 3, '🥛', 4.1, 32, 15, 0, 'Thick and tangy sour cream, ideal for dips, baked potatoes, and tacos.', TRUE),
     (52, 'Condensed Milk', 180.00, 3, '🥛', 4.6, 87, 20, 10, 'Sweetened condensed milk, a key ingredient for many delicious desserts.', TRUE),
     (53, 'Soya Milk', 90.00, 3, '🥛', 4.0, 42, 18, 15, 'Nutritious plant-based soya milk, a great dairy alternative for health-conscious users.', TRUE),
-    (54, 'Almond Milk', 250.00, 3, '🥛', 4.4, 59, 14, 0, 'Creamy almond milk, a delicious and healthy non-dairy milk alternative.', TRUE);
+    (54, 'Almond Milk', 250.00, 3, '🥛', 4.4, 59, 14, 0, 'Creamy almond milk, a delicious and healthy non-dairy milk alternative.', TRUE)
+ON CONFLICT (id) DO NOTHING;
 
 -- SNACKS (14 products)
 INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count, stock, discount_percent, description, is_active) VALUES
@@ -316,7 +446,8 @@ INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count
     (61, 'Pretzels', 100.00, 4, '🥨', 4.2, 54, 40, 30, 'Classic salted pretzels, a crunchy and satisfying snack for any time.', TRUE),
     (62, 'Nachos', 90.00, 4, '🌮', 4.3, 86, 30, 25, 'Crispy corn nachos, perfect with cheese dip or salsa for movie nights.', TRUE),
     (63, 'Peanuts', 60.00, 4, '🥜', 4.1, 102, 50, 15, 'Roasted and salted peanuts, a classic and affordable high-protein snack.', TRUE),
-    (64, 'Pistachios', 700.00, 4, '🥜', 4.8, 115, 18, 0, 'Delicious roasted pistachios, fun to crack and full of nutrients.', TRUE);
+    (64, 'Pistachios', 700.00, 4, '🥜', 4.8, 115, 18, 0, 'Delicious roasted pistachios, fun to crack and full of nutrients.', TRUE)
+ON CONFLICT (id) DO NOTHING;
 
 -- BEVERAGES (16 products)
 INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count, stock, discount_percent, description, is_active) VALUES
@@ -333,7 +464,8 @@ INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count
     (71, 'Smoothie', 150.00, 5, '🥤', 4.8, 89, 12, 20, 'Delicious mixed fruit smoothie, a healthy and filling drink for any time.', TRUE),
     (72, 'Milkshake', 120.00, 5, '🥤', 4.7, 134, 15, 18, 'Thick and creamy chocolate milkshake, a classic treat for all ages.', TRUE),
     (73, 'Lemonade', 40.00, 5, '🍋', 4.3, 72, 45, 15, 'Zesty and refreshing lemonade, the perfect thirst quencher on a hot day.', TRUE),
-    (74, 'Hot Chocolate', 100.00, 5, '☕', 4.6, 121, 20, 10, 'Rich and comforting hot chocolate, perfect for cozy evenings.', TRUE);
+    (74, 'Hot Chocolate', 100.00, 5, '☕', 4.6, 121, 20, 10, 'Rich and comforting hot chocolate, perfect for cozy evenings.', TRUE)
+ON CONFLICT (id) DO NOTHING;
 
 -- =====================================================
 -- COUPONS (5 coupons matching legacy system)
@@ -344,7 +476,8 @@ INSERT INTO coupons (code, description, coupon_type, value, min_order_value, max
     ('FRESH15', '15% off on fruits & vegetables', 'category', 15.00, 200.00, 75.00, '["Fruits", "Vegetables"]'::JSONB, FALSE, TRUE, NOW(), NOW() + INTERVAL '1 year'),
     ('WELCOME50', '₹50 off first order', 'fixed', 50.00, 300.00, 50.00, '[]'::JSONB, TRUE, TRUE, NOW(), NOW() + INTERVAL '1 year'),
     ('DAIRY10', '10% off on dairy products', 'category', 10.00, 150.00, 50.00, '["Dairy"]'::JSONB, FALSE, TRUE, NOW(), NOW() + INTERVAL '1 year'),
-    ('SNACKS25', '₹25 off snacks orders', 'fixed', 25.00, 100.00, 25.00, '["Snacks"]'::JSONB, FALSE, TRUE, NOW(), NOW() + INTERVAL '1 year');
+    ('SNACKS25', '₹25 off snacks orders', 'fixed', 25.00, 100.00, 25.00, '["Snacks"]'::JSONB, FALSE, TRUE, NOW(), NOW() + INTERVAL '1 year')
+ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
 -- SEED DATA SUMMARY
@@ -358,10 +491,10 @@ INSERT INTO coupons (code, description, coupon_type, value, min_order_value, max
 --
 -- Total Products: 74
 --   - Fruits: 16 products (ID: 1-6, 25-34)
---   - Vegetables: 14 products (ID: 7-12, 35-44)
+--   - Vegetables: 16 products (ID: 7-12, 35-44)
 --   - Dairy: 14 products (ID: 13-16, 45-54)
 --   - Snacks: 14 products (ID: 17-20, 55-64)
---   - Beverages: 16 products (ID: 21-24, 65-74)
+--   - Beverables: 16 products (ID: 21-24, 65-74)
 --
 -- Total Coupons: 5
 --   - SAVE20 (20% off orders above ₹500)
@@ -369,6 +502,12 @@ INSERT INTO coupons (code, description, coupon_type, value, min_order_value, max
 --   - WELCOME50 (₹50 off first order)
 --   - DAIRY10 (10% off on dairy products)
 --   - SNACKS25 (₹25 off snacks orders)
+--
+-- New in this version:
+--   - Wishlist items table
+--   - first_order field in users table
+--   - Soft delete fields on all tables
+--   - Additional indexes for soft delete queries
 --
 -- Note: This seed data exactly matches the legacy system (js/search.js)
 -- All product IDs, prices, ratings, descriptions, and discounts are preserved
