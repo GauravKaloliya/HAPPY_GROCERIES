@@ -12,24 +12,24 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for product data."""
-    
+
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         source='category',
         write_only=True
     )
-    effective_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        read_only=True
-    )
-    discount_amount = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        read_only=True
-    )
-    
+    effective_price = serializers.SerializerMethodField()
+    discount_amount = serializers.SerializerMethodField()
+
+    def get_effective_price(self, obj):
+        """Calculate effective price with discount."""
+        return obj.effective_price
+
+    def get_discount_amount(self, obj):
+        """Calculate discount amount."""
+        return obj.discount_amount
+
     class Meta:
         model = Product
         fields = [
@@ -42,13 +42,13 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class ProductListSerializer(serializers.ModelSerializer):
     """Simplified serializer for product lists."""
-    
-    effective_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        read_only=True
-    )
-    
+
+    effective_price = serializers.SerializerMethodField()
+
+    def get_effective_price(self, obj):
+        """Calculate effective price with discount."""
+        return obj.effective_price
+
     class Meta:
         model = Product
         fields = [
