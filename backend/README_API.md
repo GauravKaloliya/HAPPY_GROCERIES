@@ -8,7 +8,7 @@ This API has been optimized to include only the endpoints that are actively used
 
 ## 📚 Documentation
 
-Visit the root URL (`/`) to view the interactive API documentation with all available endpoints, their methods, and descriptions.
+Visit the root URL (`/`) to view the redesigned API documentation with all available endpoints, their methods, and request details.
 
 ## 🔒 Authentication
 
@@ -153,6 +153,25 @@ User wishlist management. **All endpoints require authentication.**
 | GET | `/{product_id}/check/` | Check if product is in wishlist |
 | POST | `/clear/` | Clear entire wishlist |
 
+### Activity Logs (`/api/activity-logs/`)
+
+Track and review user activity. **List endpoints require authentication.**
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/log_activity/` | No | Log user activity events (page_view, add_to_cart, etc.) |
+| GET | `/` | Yes | List activity logs for the current user |
+| GET | `/statistics/` | Yes | Summary of activity totals and counts |
+
+### Contact & Support (`/api/contact/`)
+
+Customer support messaging. **Submitting is public, listing requires authentication.**
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/messages/submit/` | No | Submit a contact message |
+| GET | `/messages/` | Yes | Retrieve support messages for the user |
+
 ## 🔧 Query Parameters
 
 ### Products Filtering
@@ -219,7 +238,7 @@ All responses follow a consistent format:
 
 ## 🔄 API Versioning
 
-Current version: **v3.0** (Frontend Aligned)
+Current version: **v3.1** (Frontend Aligned)
 
 Previous versions removed unused endpoints. This version includes only:
 - Endpoints actively used by the frontend
@@ -269,4 +288,4 @@ See `API_CHANGES.md` for a detailed list of changes from previous versions.
 
 ---
 
-**Happy Groceries API** © 2025 | Version 3.0
+**Happy Groceries API** © 2025 | Version 3.1
