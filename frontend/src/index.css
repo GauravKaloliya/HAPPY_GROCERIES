@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap');
 
 :root {
-    --primary-pink: #FFB3D9;
+    --primary-pink: #1877f2;
     --primary-blue: #B3E5FC;
     --primary-green: #C8E6C9;
     --primary-yellow: #FFECB3;
@@ -21,7 +21,7 @@ body.dark-mode {
     --text-light: #1a1a1a;
     --bg-light: #1a1a1a;
     --bg-white: #2d2d2d;
-    --primary-pink: #d68bb5;
+    --primary-pink: #1877f2;
     --primary-blue: #7db8d1;
     --primary-green: #a1c79e;
     --primary-yellow: #d9c993;
@@ -600,6 +600,7 @@ h1, h2, h3, h4, h5, h6 {
     border: 2px solid var(--primary-pink);
     border-radius: var(--border-radius);
     padding: 0.25rem;
+    width: fit-content;
 }
 
 .qty-btn {
@@ -622,14 +623,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .qty-input {
-    width: 40px;
+    width: 50px;
     text-align: center;
     border: none;
     background: transparent;
     font-weight: 600;
     color: var(--text-dark);
     font-size: 1rem;
-    padding: 0;
+    padding: 0.25rem;
 }
 
 .btn-add-cart {
@@ -1248,6 +1249,12 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     gap: 1rem;
     margin-top: 2rem;
+}
+
+.cart-actions .btn-submit,
+.cart-actions .btn-secondary {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
 }
 
 .btn-secondary {

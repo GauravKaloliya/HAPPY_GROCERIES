@@ -36,11 +36,7 @@ const Footer = () => {
   const brandName = config?.brand?.name || 'Happy Groceries';
   const brandLogo = config?.brand?.logo || '🛒';
   const author = config?.author || 'Gaurav Kaloliya';
-  const links = config?.links || [
-    { label: 'Home', href: '/' },
-    { label: 'Shop', href: '/shop' },
-    { label: 'About', href: '/about' },
-  ];
+  const links = config?.links || [];
 
   return (
     <footer className="footer">
