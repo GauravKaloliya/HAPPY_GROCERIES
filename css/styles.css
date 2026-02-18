@@ -904,10 +904,6 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--primary-pink);
 }
 
-.search-bar .btn-coupon {
-    white-space: nowrap;
-}
-
 .filters {
     display: flex;
     gap: 1rem;
@@ -2831,20 +2827,4 @@ h1, h2, h3, h4, h5, h6 {
     #couponsList {
         grid-template-columns: 1fr;
     }
-}
-
-/* Expired coupon styling */
-.coupon-card.expired {
-    opacity: 0.6;
-    filter: grayscale(0.5);
-}
-
-.coupon-card.expired .coupon-header {
-    background: #999;
-}
-
-.btn-copy-coupon:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-    opacity: 0.7;
 }
