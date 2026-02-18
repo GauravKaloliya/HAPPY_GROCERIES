@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, selectAuthLoading, selectAuthError, clearError } from '../store/slices/authSlice';
@@ -16,19 +16,42 @@ const Login = () => {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   const from = location.state?.from?.pathname || '/';
 
+  useEffect(() => {
+    dispatch(clearError());
+    setFormErrors({});
+  }, [dispatch]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (formErrors[e.target.name]) {
+      setFormErrors({ ...formErrors, [e.target.name]: '' });
+    }
     if (error) dispatch(clearError());
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.phone) {
+      errors.phone = 'Phone number is required';
+    } else if (formData.phone.length !== 10) {
+      errors.phone = 'Phone number must be 10 digits';
+    }
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    }
+    return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.phone || !formData.password) {
-      toast.error('Please fill in all fields');
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
@@ -37,8 +60,14 @@ const Login = () => {
       toast.success('Welcome back! 🎉');
       navigate(from, { replace: true });
     } catch (err) {
-      toast.error(err || 'Login failed');
+      const errorMessage = err || 'Login failed. Please try again.';
+      setFormErrors({ submit: errorMessage });
     }
+  };
+
+  const handleSignupClick = () => {
+    dispatch(clearError());
+    setFormErrors({});
   };
 
   return (
@@ -59,6 +88,9 @@ const Login = () => {
               maxLength="10"
               required
             />
+            {formErrors.phone && (
+              <div className="error-message show">{formErrors.phone}</div>
+            )}
           </div>
 
           <div className="form-group">
@@ -81,11 +113,14 @@ const Login = () => {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+            {formErrors.password && (
+              <div className="error-message show">{formErrors.password}</div>
+            )}
           </div>
 
-          {error && (
+          {(error || formErrors.submit) && (
             <div className="error-message show" style={{ marginBottom: '1rem' }}>
-              {error}
+              {error || formErrors.submit}
             </div>
           )}
 
@@ -99,7 +134,7 @@ const Login = () => {
         </form>
 
         <p className="auth-link">
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          Don't have an account? <Link to="/signup" onClick={handleSignupClick}>Sign up</Link>
         </p>
 
         <p className="auth-link" style={{ marginTop: '0.5rem' }}>
