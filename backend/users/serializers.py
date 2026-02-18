@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
-from .models import User
+from .models import User, UserActivityLog
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -89,3 +89,49 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials")
         
         return data
+
+
+class UserActivityLogSerializer(serializers.ModelSerializer):
+    """Serializer for user activity logs."""
+    
+    user_name = serializers.SerializerMethodField()
+    activity_display = serializers.CharField(source='get_activity_type_display', read_only=True)
+    
+    class Meta:
+        model = UserActivityLog
+        fields = [
+            'id', 'user', 'user_name', 'activity_type', 'activity_display',
+            'description', 'ip_address', 'user_agent', 'metadata',
+            'session_id', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+    
+    def get_user_name(self, obj):
+        if obj.user:
+            return obj.user.name
+        return 'Anonymous'
+
+
+class CreateActivityLogSerializer(serializers.Serializer):
+    """Serializer for creating activity logs."""
+    
+    activity_type = serializers.ChoiceField(choices=UserActivityLog.ACTIVITY_TYPES)
+    description = serializers.CharField(required=False, allow_blank=True)
+    metadata = serializers.JSONField(required=False, default=dict)
+    session_id = serializers.CharField(required=False, allow_blank=True)
+
+
+class ContactFormSerializer(serializers.ModelSerializer):
+    """Serializer for contact form submissions."""
+    
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = ContactForm
+        fields = [
+            'id', 'name', 'email', 'phone', 'category', 'category_display',
+            'subject', 'message', 'ip_address', 'user_agent', 'status',
+            'status_display', 'admin_response', 'response_at', 'created_at'
+        ]
+        read_only_fields = ['id', 'ip_address', 'user_agent', 'status', 'admin_response', 'response_at', 'created_at']

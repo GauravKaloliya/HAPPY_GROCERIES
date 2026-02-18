@@ -93,10 +93,12 @@ const Header = () => {
     { label: 'Categories', href: '/categories' },
     { label: '🎉 Offers', href: '/offers' },
     { label: 'About', href: '/about' },
+    { label: '📞 Contact', href: '/contact' },
   ];
 
   const userMenuItems = config?.userMenuItems || [
     { icon: '👤', label: 'Profile', href: '/profile' },
+    { icon: '📊', label: 'Activity Logs', href: '/activity-logs' },
     { icon: '📦', label: 'Orders', href: '/orders' },
     { icon: '❤️', label: 'Wishlist', href: '/wishlist' },
     { icon: '⚙️', label: 'Settings', href: '/settings' },
