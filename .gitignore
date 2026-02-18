@@ -8,5 +8,6 @@ backend/**/__pycache__/
 backend/*.sqlite3
 backend/*.pyc
 backend/venv/
+*.sqlite3
 *.log
 .DS_Store

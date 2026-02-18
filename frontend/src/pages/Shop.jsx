@@ -19,6 +19,9 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || '');
+  const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '');
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
+  const [inStock, setInStock] = useState(searchParams.get('in_stock') === 'true');
 
   // Fetch categories only once
   useEffect(() => {
@@ -45,15 +48,18 @@ const Shop = () => {
         search: searchQuery,
         category: selectedCategory === 'All' ? '' : selectedCategory,
         ordering: sortBy,
+        min_price: minPrice,
+        max_price: maxPrice,
+        in_stock: inStock ? 'true' : undefined,
       };
-      
+
       // Remove empty params
       Object.keys(params).forEach(key => {
         if (!params[key]) delete params[key];
       });
 
       const productsRes = await productsAPI.getAll(params);
-      
+
       setProducts(productsRes.data.results || productsRes.data);
       setTotalCount(productsRes.data.count || productsRes.data.length);
     } catch (error) {
@@ -61,7 +67,7 @@ const Shop = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock]);
 
   // Debounce search to reduce API calls
   useEffect(() => {
@@ -77,19 +83,25 @@ const Shop = () => {
     if (searchQuery) params.search = searchQuery;
     if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory;
     if (sortBy) params.sort = sortBy;
-    
+    if (minPrice) params.min_price = minPrice;
+    if (maxPrice) params.max_price = maxPrice;
+    if (inStock) params.in_stock = 'true';
+
     setSearchParams(params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock]);
 
   const clearFilters = () => {
     setSearchInput('');
     setSearchQuery('');
     setSelectedCategory('');
     setSortBy('');
+    setMinPrice('');
+    setMaxPrice('');
+    setInStock(false);
   };
 
-  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy;
+  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy || minPrice || maxPrice || inStock;
 
   if (loading && products.length === 0) return <PageLoader />;
 
@@ -141,6 +153,35 @@ const Shop = () => {
             <option value="name">Name: A to Z</option>
             <option value="-rating">Rating: High to Low</option>
           </select>
+
+          <div className="price-filters" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <input
+              type="number"
+              placeholder="Min Price"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="price-input"
+              style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', width: '100px' }}
+            />
+            <span>-</span>
+            <input
+              type="number"
+              placeholder="Max Price"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="price-input"
+              style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', width: '100px' }}
+            />
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={inStock}
+              onChange={(e) => setInStock(e.target.checked)}
+            />
+            In Stock Only
+          </label>
 
           {hasFilters && (
             <button

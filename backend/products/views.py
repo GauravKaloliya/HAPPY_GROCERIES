@@ -24,12 +24,11 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for products."""
-    
+
     queryset = Product.objects.filter(is_active=True, is_deleted=False).select_related('category')
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category']
     search_fields = ['name', 'description', 'category__name']
     ordering_fields = ['name', 'price', 'rating', 'created_at']
     ordering = ['id']
