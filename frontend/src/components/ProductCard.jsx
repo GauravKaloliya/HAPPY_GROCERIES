@@ -125,10 +125,6 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         )}
       </div>
 
-      <Link to={`/product/${product.id}`} className="product-card-cta" style={{ display: 'block', marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary-pink)', textDecoration: 'none' }}>
-        View Details →
-      </Link>
-
       {showAddToCart && product.stock > 0 && (
         <div className="product-actions">
           {inCart ? (
@@ -156,6 +152,10 @@ const ProductCard = ({ product, showAddToCart = true }) => {
           )}
         </div>
       )}
+
+      <Link to={`/product/${product.id}`} className="product-card-cta" style={{ display: 'block', marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary-pink)', textDecoration: 'none' }}>
+        View Details →
+      </Link>
     </div>
   );
 };
