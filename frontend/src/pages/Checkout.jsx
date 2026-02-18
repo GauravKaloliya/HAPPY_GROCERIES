@@ -15,6 +15,7 @@ import {
 import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ const Checkout = () => {
   const tax = useSelector(selectCartTax);
   const delivery = useSelector(selectDeliveryCharge);
   const discount = useSelector(selectDiscount);
+
+  const { logCustomActivity } = useActivityLog('page_view', { section: 'checkout' });
   const total = useSelector(selectCartTotal);
   const appliedCoupon = useSelector(selectAppliedCoupon);
 
@@ -89,6 +92,7 @@ const Checkout = () => {
       setOrderId(response.data.id);
       setOrderSuccess(true);
       dispatch(clearCartState());
+      logCustomActivity('checkout', { order_id: response.data.id, total, items_count: items.length });
       toast.success('Order placed successfully! 🎉');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to place order');

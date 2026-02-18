@@ -9,6 +9,7 @@ import { initializeTheme } from './store/slices/themeSlice';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import ConnectivityCheck from './components/ConnectivityCheck';
 
 // Pages
 import Home from './pages/Home';
@@ -25,6 +26,7 @@ import Offers from './pages/Offers';
 import About from './pages/About';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import NotFound from './pages/NotFound';
 
 // Initialize theme
 store.dispatch(initializeTheme());
@@ -40,10 +42,11 @@ function App() {
   return (
     <Provider store={store}>
       <Router>
-        <div className="app-layout">
-          <Header />
+        <ConnectivityCheck>
+          <div className="app-layout">
+            <Header />
 
-          <main className="app-main">
+            <main className="app-main">
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
@@ -100,8 +103,8 @@ function App() {
                 }
               />
 
-              {/* Catch all */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Catch all - 404 Page */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
 
@@ -134,6 +137,7 @@ function App() {
             },
           }}
         />
+        </ConnectivityCheck>
       </Router>
     </Provider>
   );

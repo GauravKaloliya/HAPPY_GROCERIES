@@ -5,6 +5,7 @@ import { fetchProfile, updateProfile, selectUser, selectAuthLoading } from '../s
 import { formatDate } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -17,6 +18,8 @@ const Profile = () => {
     phone: '',
     address: '',
   });
+
+  useActivityLog('page_view', { section: 'profile' });
 
   useEffect(() => {
     dispatch(fetchProfile());

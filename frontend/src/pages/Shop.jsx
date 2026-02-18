@@ -4,9 +4,11 @@ import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { logCustomActivity } = useActivityLog('page_view', { section: 'shop' });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
@@ -64,12 +66,26 @@ const Shop = () => {
 
       setProducts(productsRes.data.results || productsRes.data);
       setTotalCount(productsRes.data.count || productsRes.data.length);
+
+      // Log search/filter activity
+      if (searchQuery) {
+        logCustomActivity('search', { query: searchQuery });
+      }
+      if (selectedCategory) {
+        logCustomActivity('filter_apply', { type: 'category', value: selectedCategory });
+      }
+      if (sortBy) {
+        logCustomActivity('filter_apply', { type: 'sort', value: sortBy });
+      }
+      if (minPrice || maxPrice) {
+        logCustomActivity('filter_apply', { type: 'price_range', min: minPrice, max: maxPrice });
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock]);
+  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock, logCustomActivity]);
 
   // Debounce search to reduce API calls
   useEffect(() => {
@@ -109,123 +125,146 @@ const Shop = () => {
 
   return (
     <div className="container">
-      <div className="search-section">
-        <div className="search-bar">
-          <div className="search-input-wrapper">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  setSearchQuery(e.target.value);
-                }
-              }}
-              onBlur={(e) => {
-                setSearchQuery(e.target.value);
-              }}
-              placeholder="Search"
-            />
-            {!searchInput && (
-              <div className="search-placeholder" aria-hidden="true">
-                <span className="search-placeholder-label">Search</span>
-                <span className="search-placeholder-rotator">
-                  <span className="rotator-track">
-                    {placeholderItems.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </span>
-                </span>
+      <div className="shop-layout">
+        <aside className="shop-sidebar">
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Search</h3>
+            <div className="search-bar">
+              <div className="search-input-wrapper">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSearchQuery(e.target.value);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  placeholder="Search"
+                />
+                {!searchInput && (
+                  <div className="search-placeholder" aria-hidden="true">
+                    <span className="search-placeholder-label">Search</span>
+                    <span className="search-placeholder-rotator">
+                      <span className="rotator-track">
+                        {placeholderItems.map((item) => (
+                          <span key={item}>{item}</span>
+                        ))}
+                      </span>
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        <div className="filters">
-          <button
-            onClick={() => setSelectedCategory('')}
-            className={`filter-btn ${!selectedCategory ? 'active' : ''}`}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id || cat.name}
-              onClick={() => setSelectedCategory(cat.name)}
-              className={`filter-btn ${selectedCategory === cat.name ? 'active' : ''}`}
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Categories</h3>
+            <div className="category-filters">
+              <button
+                onClick={() => setSelectedCategory('')}
+                className={`category-filter-btn ${!selectedCategory ? 'active' : ''}`}
+              >
+                All Products
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id || cat.name}
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className={`category-filter-btn ${selectedCategory === cat.name ? 'active' : ''}`}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Price Range</h3>
+            <div className="price-filters">
+              <input
+                type="number"
+                placeholder="Min"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                className="price-input"
+              />
+              <span className="price-separator">-</span>
+              <input
+                type="number"
+                placeholder="Max"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                className="price-input"
+              />
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Sort By</h3>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="sort-select"
             >
-              {cat.name}
-            </button>
-          ))}
-          
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="sort-select"
-          >
-            <option value="">Sort by</option>
-            <option value="price">Price: Low to High</option>
-            <option value="-price">Price: High to Low</option>
-            <option value="name">Name: A to Z</option>
-            <option value="-rating">Rating: High to Low</option>
-          </select>
-
-          <div className="price-filters">
-            <input
-              type="number"
-              placeholder="Min"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              className="price-input"
-            />
-            <span className="price-separator">-</span>
-            <input
-              type="number"
-              placeholder="Max"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="price-input"
-            />
+              <option value="">Default</option>
+              <option value="price">Price: Low to High</option>
+              <option value="-price">Price: High to Low</option>
+              <option value="name">Name: A to Z</option>
+              <option value="-name">Name: Z to A</option>
+              <option value="-rating">Rating: High to Low</option>
+              <option value="rating">Rating: Low to High</option>
+            </select>
           </div>
 
-          <label className="stock-filter">
-            <input
-              type="checkbox"
-              checked={inStock}
-              onChange={(e) => setInStock(e.target.checked)}
-            />
-            In Stock Only
-          </label>
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Availability</h3>
+            <label className="stock-filter">
+              <input
+                type="checkbox"
+                checked={inStock}
+                onChange={(e) => setInStock(e.target.checked)}
+              />
+              In Stock Only
+            </label>
+          </div>
 
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="filter-btn clear-filters"
+              className="btn-clear-all"
             >
-              Clear Filters
+              Clear All Filters
             </button>
+          )}
+        </aside>
+
+        <div className="shop-content">
+          <div className="results-header">
+            <p className="results-count">{totalCount} products found</p>
+          </div>
+
+          {products.length > 0 ? (
+            <div className="products-grid">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-state-icon">🔍</div>
+              <h3>No products found</h3>
+              <p>Try adjusting your search or filters</p>
+              <button onClick={clearFilters} className="btn-primary" style={{ marginTop: '1rem' }}>
+                Clear Filters
+              </button>
+            </div>
           )}
         </div>
       </div>
-
-      <p className="results-count">{totalCount} products found</p>
-
-      {products.length > 0 ? (
-        <div className="products-grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <div className="empty-state-icon">🔍</div>
-          <h3>No products found</h3>
-          <p>Try adjusting your search or filters</p>
-          <button onClick={clearFilters} className="btn-primary" style={{ marginTop: '1rem' }}>
-            Clear Filters
-          </button>
-        </div>
-      )}
     </div>
   );
 };

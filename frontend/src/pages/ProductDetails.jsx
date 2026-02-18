@@ -8,19 +8,22 @@ import { selectIsAuthenticated } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import ProductCard from '../components/ProductCard';
+import useActivityLog from '../hooks/useActivityLog';
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  
+
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+
+  const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -32,7 +35,10 @@ const ProductDetails = () => {
         ]);
         setProduct(productRes.data);
         setRelatedProducts(relatedRes.data.slice(0, 4));
-        
+
+        // Log product view
+        logCustomActivity('product_view', { product_id: id, product_name: productRes.data.name });
+
         // Check if product is in wishlist
         if (isAuthenticated) {
           try {
@@ -54,12 +60,13 @@ const ProductDetails = () => {
     };
 
     fetchProduct();
-  }, [id, navigate, isAuthenticated]);
+  }, [id, navigate, isAuthenticated, logCustomActivity]);
 
   const handleAddToCart = async () => {
     try {
       await dispatch(addToCart({ productId: product.id, quantity, product })).unwrap();
       toast.success(`Added ${quantity} ${product.name} to cart! 🛒`);
+      logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity });
       setQuantity(1);
     } catch (error) {
       toast.error('Failed to add to cart');
@@ -78,10 +85,12 @@ const ProductDetails = () => {
         await wishlistAPI.removeFromWishlist(product.id);
         setIsWishlisted(false);
         toast.success('Removed from wishlist');
+        logCustomActivity('remove_from_wishlist', { product_id: product.id, product_name: product.name });
       } else {
         await wishlistAPI.addToWishlist(product.id);
         setIsWishlisted(true);
         toast.success('Added to wishlist 💖');
+        logCustomActivity('add_to_wishlist', { product_id: product.id, product_name: product.name });
       }
     } catch (error) {
       toast.error('Failed to update wishlist');

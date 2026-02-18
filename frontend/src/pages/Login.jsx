@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, selectAuthLoading, selectAuthError, clearError } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const { logCustomActivity } = useActivityLog('page_view', { section: 'login' });
 
   const from = location.state?.from?.pathname || '/';
 
