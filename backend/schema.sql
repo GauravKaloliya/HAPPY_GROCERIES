@@ -480,6 +480,48 @@ INSERT INTO coupons (code, description, coupon_type, value, min_order_value, max
 ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
+-- ACTIVITY LOGS
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(50) NOT NULL,
+    page VARCHAR(255) NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}',
+    ip_address INET,
+    user_agent TEXT,
+    session_id VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX activity_logs_user_created_idx ON activity_logs(user_id, created_at);
+CREATE INDEX activity_logs_action_created_idx ON activity_logs(action, created_at);
+CREATE INDEX activity_logs_page_idx ON activity_logs(page);
+CREATE INDEX activity_logs_session_id_idx ON activity_logs(session_id);
+
+-- =====================================================
+-- CONTACT MESSAGES
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(254) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX contact_messages_user_idx ON contact_messages(user_id);
+CREATE INDEX contact_messages_status_idx ON contact_messages(status);
+CREATE INDEX contact_messages_created_idx ON contact_messages(created_at);
+
+-- =====================================================
 -- SEED DATA SUMMARY
 -- =====================================================
 -- Total Categories: 5
@@ -508,6 +550,8 @@ ON CONFLICT (code) DO NOTHING;
 --   - first_order field in users table
 --   - Soft delete fields on all tables
 --   - Additional indexes for soft delete queries
+--   - Activity logs table for tracking user actions
+--   - Contact messages table for support requests
 --
 -- Note: This seed data exactly matches the legacy system (js/search.js)
 -- All product IDs, prices, ratings, descriptions, and discounts are preserved
