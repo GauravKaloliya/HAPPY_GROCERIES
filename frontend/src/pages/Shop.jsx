@@ -9,6 +9,7 @@ const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -18,6 +19,24 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || '');
+
+  // Fetch categories only once
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesRes = await categoriesAPI.getAll();
+        setCategories(categoriesRes.data.results || categoriesRes.data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setCategoriesLoaded(true);
+      }
+    };
+    
+    if (!categoriesLoaded) {
+      fetchCategories();
+    }
+  }, [categoriesLoaded]);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -33,14 +52,10 @@ const Shop = () => {
         if (!params[key]) delete params[key];
       });
 
-      const [productsRes, categoriesRes] = await Promise.all([
-        productsAPI.getAll(params),
-        categoriesAPI.getAll(),
-      ]);
+      const productsRes = await productsAPI.getAll(params);
       
       setProducts(productsRes.data.results || productsRes.data);
       setTotalCount(productsRes.data.count || productsRes.data.length);
-      setCategories(categoriesRes.data.results || categoriesRes.data);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -48,8 +63,13 @@ const Shop = () => {
     }
   }, [searchQuery, selectedCategory, sortBy]);
 
+  // Debounce search to reduce API calls
   useEffect(() => {
-    fetchProducts();
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [fetchProducts]);
 
   useEffect(() => {
@@ -71,7 +91,7 @@ const Shop = () => {
 
   const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy;
 
-  if (loading) return <PageLoader />;
+  if (loading && products.length === 0) return <PageLoader />;
 
   return (
     <div className="container">
@@ -81,8 +101,15 @@ const Shop = () => {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            onKeyUp={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search for products..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearchQuery(e.target.value);
+              }
+            }}
+            onBlur={(e) => {
+              setSearchQuery(e.target.value);
+            }}
+            placeholder="Search for products... (Press Enter or blur to search)"
           />
         </div>
 

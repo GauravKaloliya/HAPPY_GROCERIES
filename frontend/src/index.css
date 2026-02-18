@@ -610,12 +610,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .qty-input {
-    width: 50px;
+    width: 40px;
     text-align: center;
     border: none;
     background: transparent;
     font-weight: 600;
     color: var(--text-dark);
+    font-size: 1rem;
+    padding: 0;
 }
 
 .btn-add-cart {
