@@ -206,4 +206,8 @@ ON CONFLICT (code) DO NOTHING;
 --   - Snacks: 14 products (ID 17-20, 55-64)
 --   - Beverages: 16 products (ID 21-24, 65-74)
 -- Coupons: 5 (SAVE20, FRESH15, WELCOME50, DAIRY10, SNACKS25)
+--
+-- New tables (empty, created via schema.sql):
+--   - activity_logs (tracks user activities)
+--   - contact_messages (stores contact form submissions)
 -- =====================================================
