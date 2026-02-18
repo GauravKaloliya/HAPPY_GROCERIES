@@ -1,5 +1,5 @@
 """
-WSGI config for happygroceries_backend project.
+WSGI config for backend project.
 """
 
 import os
