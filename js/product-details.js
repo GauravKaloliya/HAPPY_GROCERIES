@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const product = getProductById(productId);
 
-    setTimeout(() => {
+    // Optimized loading - minimal delay for smooth rendering
+    requestAnimationFrame(() => {
         if (!product) {
             renderNotFound(root);
             setupShareButtons(null);
@@ -108,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 copyCurrentLink();
             });
         }
-    }, 150);
+    });
 });
 
 // Helper function to calculate discounted price
