@@ -68,14 +68,14 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         {isWishlisted ? '❤️' : '🤍'}
       </button>
 
-      <Link to={`/shop?product=${product.id}`} className="product-card-link">
+      <Link to={`/product/${product.id}`} className="product-card-link">
         <div className="product-image">
-          {product.emoji || categoryEmojis[product.category] || '📦'}
+          {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
         </div>
       </Link>
 
       <span className="product-category">
-        {product.category}
+        {typeof product.category === 'object' ? product.category?.name : product.category}
       </span>
 
       <h3 className="product-name">{product.name}</h3>
@@ -99,6 +99,10 @@ const ProductCard = ({ product, showAddToCart = true }) => {
           <span className="product-price">{formatPrice(product.price)}</span>
         )}
       </div>
+
+      <Link to={`/product/${product.id}`} className="product-card-cta" style={{ display: 'block', marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary-pink)', textDecoration: 'none' }}>
+        View Details →
+      </Link>
 
       {showAddToCart && product.stock > 0 && (
         <div className="product-actions">
