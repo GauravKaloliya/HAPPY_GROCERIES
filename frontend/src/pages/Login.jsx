@@ -23,26 +23,39 @@ const Login = () => {
   useEffect(() => {
     dispatch(clearError());
     setFormErrors({});
-  }, [dispatch]);
+  }, [dispatch, location.pathname]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (formErrors[e.target.name]) {
-      setFormErrors({ ...formErrors, [e.target.name]: '' });
+    const { name, value } = e.target;
+    
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '');
+      setFormData({ ...formData, [name]: numericValue.slice(0, 10) });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+    
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: '' });
     }
     if (error) dispatch(clearError());
   };
 
   const validateForm = () => {
     const errors = {};
+    
     if (!formData.phone) {
-      errors.phone = 'Phone number is required';
+      errors.phone = '📱 Phone number is required';
     } else if (formData.phone.length !== 10) {
-      errors.phone = 'Phone number must be 10 digits';
+      errors.phone = '📱 Phone number must be 10 digits';
+    } else if (!/^[6-9]/.test(formData.phone)) {
+      errors.phone = '📱 Please enter a valid Indian phone number (starts with 6, 7, 8, or 9)';
     }
+    
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = '🔒 Password is required';
     }
+    
     return errors;
   };
 
@@ -60,7 +73,7 @@ const Login = () => {
       toast.success('Welcome back! 🎉');
       navigate(from, { replace: true });
     } catch (err) {
-      const errorMessage = err || 'Login failed. Please try again.';
+      const errorMessage = err?.phone?.[0] || err?.non_field_errors?.[0] || '❌ Invalid phone number or password. Please try again.';
       setFormErrors({ submit: errorMessage });
     }
   };
@@ -77,17 +90,20 @@ const Login = () => {
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter 10-digit phone number"
-              maxLength="10"
-              required
-            />
+            <label htmlFor="phone">Phone Number (India)</label>
+            <div className="phone-input-wrapper">
+              <span className="country-code">+91</span>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Enter 10-digit mobile number"
+                maxLength="10"
+                required
+              />
+            </div>
             {formErrors.phone && (
               <div className="error-message show">{formErrors.phone}</div>
             )}
