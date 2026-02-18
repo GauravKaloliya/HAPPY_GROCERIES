@@ -17,17 +17,7 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-# Use local Redis if available, otherwise disable caching
-try:
-    import redis
-    r = redis.from_url(REDIS_URL)
-    r.ping()
-except Exception:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        }
-    }
+# Redis configuration uses REDIS_URL from base settings.
 
 # Development logging
 LOGGING['loggers']['django']['level'] = 'DEBUG'
