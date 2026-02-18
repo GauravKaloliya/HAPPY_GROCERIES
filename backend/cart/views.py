@@ -161,29 +161,6 @@ class CartViewSet(viewsets.ModelViewSet):
         return Response(CartSerializer(cart).data)
     
     @action(detail=False, methods=['post'])
-    def restore_item(self, request):
-        """Restore a soft-deleted cart item."""
-        item_id = request.data.get('item_id')
-        
-        if not item_id:
-            return Response(
-                {'error': 'item_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            cart = self.get_object()
-            cart_item = CartItem.objects.get(id=item_id, cart=cart, is_deleted=True)
-            cart_item.restore()
-        except CartItem.DoesNotExist:
-            return Response(
-                {'error': 'Cart item not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        return Response(CartSerializer(cart).data)
-    
-    @action(detail=False, methods=['post'])
     def clear(self, request):
         """Soft delete all items from cart."""
         cart = self.get_object()
@@ -192,17 +169,3 @@ class CartViewSet(viewsets.ModelViewSet):
         Cart.objects.filter(user=request.user).update(is_deleted=True)
         Cart.objects.get_or_create(user=request.user, defaults={'is_deleted': False})
         return Response(CartSerializer(self.get_object()).data)
-    
-    @action(detail=False, methods=['get'])
-    def count(self, request):
-        """Get cart item count."""
-        cart = self.get_object()
-        return Response({'count': cart.total_items})
-    
-    @action(detail=False, methods=['get'])
-    def deleted_items(self, request):
-        """Get soft-deleted cart items."""
-        cart = self.get_object()
-        deleted_items = cart.items.filter(is_deleted=True)
-        serializer = CartItemSerializer(deleted_items, many=True)
-        return Response(serializer.data)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Happy Groceries API Documentation - Enhanced Security & Soft Delete</title>
+    <title>Happy Groceries API Documentation</title>
     <style>
         * {
             margin: 0;
@@ -161,23 +161,6 @@
             font-weight: bold;
         }
         
-        .new-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            margin-left: 8px;
-            font-weight: bold;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        
         .footer {
             text-align: center;
             margin-top: 50px;
@@ -244,8 +227,8 @@
     <div class="container">
         <div class="header">
             <h1><span class="emoji">🛒</span> Happy Groceries API</h1>
-            <p>Complete REST API documentation with enhanced security & soft delete functionality</p>
-            <div class="api-version">Version 2.0 - Enhanced Security</div>
+            <p>REST API documentation - Frontend-optimized endpoints</p>
+            <div class="api-version">Version 3.0 - Frontend Aligned</div>
             <div class="security-badge">🔒 Enterprise Security Enabled</div>
         </div>
         
@@ -337,12 +320,6 @@
                 
                 <div class="endpoint">
                     <span class="method get">GET</span>
-                    <span class="path">/categories/{id}/</span>
-                    <div class="description">Get category details</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
                     <span class="path">/featured/</span>
                     <div class="description">Get featured products</div>
                 </div>
@@ -350,48 +327,25 @@
                 <div class="endpoint">
                     <span class="method get">GET</span>
                     <span class="path">/{id}/related/</span>
-                    <div class="description">Get related products</div>
+                    <div class="description">Get related products from same category</div>
+                </div>
+            </div>
+            
+            <!-- Categories -->
+            <div class="api-card">
+                <h2><span class="emoji">📂</span> Categories</h2>
+                <span class="base-url">/api/products/categories/</span>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/</span>
+                    <div class="description">List all categories</div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span>
-                    <span class="path">/statistics/</span>
-                    <div class="description">Get product statistics</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/{id}/soft_delete/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Soft delete a product</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/{id}/restore/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Restore a soft-deleted product</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method patch">PATCH</span>
-                    <span class="path">/{id}/update_stock/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Update product stock</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method patch">PATCH</span>
-                    <span class="path">/{id}/update_price/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Update product price</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method patch">PATCH</span>
-                    <span class="path">/{id}/update_discount/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Update product discount</div>
+                    <span class="path">/{id}/</span>
+                    <div class="description">Get category details</div>
                 </div>
             </div>
             
@@ -404,53 +358,31 @@
                 <div class="endpoint">
                     <span class="method get">GET</span>
                     <span class="path">/</span>
-                    <div class="description">Get user's cart with totals</div>
+                    <div class="description">Get user's cart with totals, tax, and delivery charge</div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method post">POST</span>
                     <span class="path">/add/</span>
-                    <div class="description">Add item to cart</div>
+                    <div class="description">Add item to cart (product_id, quantity)</div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method post">POST</span>
                     <span class="path">/update_item/</span>
-                    <div class="description">Update cart item quantity</div>
+                    <div class="description">Update cart item quantity (item_id, quantity)</div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method post">POST</span>
                     <span class="path">/remove_item/</span>
-                    <div class="new-badge">UPDATED</div>
-                    <div class="description">Soft delete item from cart</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/restore_item/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Restore a soft-deleted cart item</div>
+                    <div class="description">Remove item from cart (item_id)</div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method post">POST</span>
                     <span class="path">/clear/</span>
-                    <div class="new-badge">UPDATED</div>
-                    <div class="description">Soft delete all cart items</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/count/</span>
-                    <div class="description">Get cart item count</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/deleted_items/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Get soft-deleted cart items</div>
+                    <div class="description">Clear all cart items</div>
                 </div>
             </div>
             
@@ -474,53 +406,8 @@
                 
                 <div class="endpoint">
                     <span class="method post">POST</span>
-                    <span class="path">/checkout/</span>
-                    <div class="description">Create new order from cart</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/{id}/cancel/</span>
-                    <div class="description">Cancel an order</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/active/</span>
-                    <div class="description">Get active orders</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/past/</span>
-                    <div class="description">Get past orders</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/statistics/</span>
-                    <div class="description">Get order statistics</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/{id}/soft_delete/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Soft delete an order</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/{id}/restore/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Restore a soft-deleted order</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method patch">PATCH</span>
-                    <span class="path">/{id}/update_status/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Update order status</div>
+                    <span class="path">/</span>
+                    <div class="description">Create new order (items, delivery info, coupon)</div>
                 </div>
             </div>
             
@@ -544,42 +431,64 @@
                 <div class="endpoint">
                     <span class="method post">POST</span>
                     <span class="path">/validate/</span>
-                    <div class="description">Validate a coupon code</div>
+                    <div class="description">Validate coupon code against cart (code, cart_total, cart_items)</div>
                 </div>
                 
                 <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/user_coupons/</span>
+                    <span class="method post">POST</span>
+                    <span class="path">/apply/</span>
                     <span class="auth-badge">AUTH</span>
-                    <div class="description">Get user's available coupons</div>
+                    <div class="description">Apply coupon to cart (code)</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/remove/</span>
+                    <span class="auth-badge">AUTH</span>
+                    <div class="description">Remove applied coupon from cart</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/suggested/</span>
+                    <div class="description">Get suggested coupons for cart (cart_total, cart_items)</div>
+                </div>
+            </div>
+            
+            <!-- Wishlist -->
+            <div class="api-card">
+                <h2><span class="emoji">❤️</span> Wishlist</h2>
+                <span class="base-url">/api/wishlist/</span>
+                <span class="auth-badge">AUTH REQUIRED</span>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/</span>
+                    <div class="description">Get user's wishlist items</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/add/</span>
+                    <div class="description">Add product to wishlist (product_id)</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/remove/</span>
+                    <div class="description">Remove product from wishlist (product_id)</div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method get">GET</span>
-                    <span class="path">/statistics/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Get coupon statistics</div>
+                    <span class="path">/{product_id}/check/</span>
+                    <div class="description">Check if product is in wishlist</div>
                 </div>
                 
                 <div class="endpoint">
                     <span class="method post">POST</span>
-                    <span class="path">/{id}/soft_delete/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Soft delete a coupon</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/{id}/restore/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Restore a soft-deleted coupon</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method patch">PATCH</span>
-                    <span class="path">/{id}/update_coupon/</span>
-                    <span class="new-badge">NEW</span>
-                    <div class="description">Update coupon details</div>
+                    <span class="path">/clear/</span>
+                    <div class="description">Clear entire wishlist</div>
                 </div>
             </div>
             
@@ -598,7 +507,7 @@
         
         <div class="footer">
             <p>Built with <span class="emoji">💜</span> using Django REST Framework</p>
-            <p style="margin-top: 10px;">Enhanced Security Features • Soft Delete Support • Updated API v2.0</p>
+            <p style="margin-top: 10px;">Optimized for Frontend Integration • Version 3.0</p>
             <p style="margin-top: 10px;">Happy Groceries API © 2025</p>
         </div>
     </div>
