@@ -12,14 +12,6 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'happygroceriesapi.onrende
 # Development-specific CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
 
-# Development database (can use SQLite for local dev)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
 # Disable HTTPS requirements in development
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False

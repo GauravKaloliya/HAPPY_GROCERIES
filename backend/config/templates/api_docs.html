@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Groceries API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .api-version {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        
+        .api-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .api-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+        }
+        
+        .api-card h2 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .api-card .base-url {
+            color: #888;
+            font-size: 0.85rem;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .endpoint {
+            border-left: 3px solid #e0e0e0;
+            padding-left: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .endpoint:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .method {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+        
+        .method.get { background: #61affe; color: white; }
+        .method.post { background: #49cc90; color: white; }
+        .method.put { background: #fca130; color: white; }
+        .method.patch { background: #50e3c2; color: white; }
+        .method.delete { background: #f93e3e; color: white; }
+        
+        .path {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        
+        .description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .auth-badge {
+            display: inline-block;
+            background: #ffd700;
+            color: #333;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: white;
+            opacity: 0.8;
+        }
+        
+        .footer a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+        
+        .emoji {
+            font-size: 1.3em;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .endpoints-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="emoji">🛒</span> Happy Groceries API</h1>
+            <p>Complete REST API documentation for your grocery shopping needs</p>
+            <div class="api-version">Version 1.0</div>
+        </div>
+        
+        <div class="endpoints-grid">
+            <!-- Authentication -->
+            <div class="api-card">
+                <h2><span class="emoji">🔐</span> Authentication</h2>
+                <span class="base-url">/api/auth/</span>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/register/</span>
+                    <div class="description">Register a new user account</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/login/</span>
+                    <div class="description">Authenticate user and receive JWT tokens</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/logout/</span>
+                    <span class="auth-badge">AUTH</span>
+                    <div class="description">Logout and blacklist tokens</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/refresh/</span>
+                    <div class="description">Refresh access token</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="method patch">PATCH</span>
+                    <span class="path">/profile/</span>
+                    <span class="auth-badge">AUTH</span>
+                    <div class="description">Get or update user profile</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/change-password/</span>
+                    <span class="auth-badge">AUTH</span>
+                    <div class="description">Change user password</div>
+                </div>
+            </div>
+            
+            <!-- Products -->
+            <div class="api-card">
+                <h2><span class="emoji">🍎</span> Products</h2>
+                <span class="base-url">/api/products/</span>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/</span>
+                    <div class="description">List all products with filtering & search</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/{id}/</span>
+                    <div class="description">Get product details</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/categories/</span>
+                    <div class="description">List all categories</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/categories/{id}/</span>
+                    <div class="description">Get category details</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/featured/</span>
+                    <div class="description">Get featured products</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/{id}/related/</span>
+                    <div class="description">Get related products</div>
+                </div>
+            </div>
+            
+            <!-- Cart -->
+            <div class="api-card">
+                <h2><span class="emoji">🛒</span> Shopping Cart</h2>
+                <span class="base-url">/api/cart/</span>
+                <span class="auth-badge">AUTH REQUIRED</span>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/</span>
+                    <div class="description">Get user's cart with totals</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/add/</span>
+                    <div class="description">Add item to cart</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/update_item/</span>
+                    <div class="description">Update cart item quantity</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/remove_item/</span>
+                    <div class="description">Remove item from cart</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/clear/</span>
+                    <div class="description">Clear all cart items</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/count/</span>
+                    <div class="description">Get cart item count</div>
+                </div>
+            </div>
+            
+            <!-- Orders -->
+            <div class="api-card">
+                <h2><span class="emoji">📦</span> Orders</h2>
+                <span class="base-url">/api/orders/</span>
+                <span class="auth-badge">AUTH REQUIRED</span>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/</span>
+                    <div class="description">List user's orders</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/{id}/</span>
+                    <div class="description">Get order details</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/checkout/</span>
+                    <div class="description">Create new order from cart</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/{id}/cancel/</span>
+                    <div class="description">Cancel an order</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/active/</span>
+                    <div class="description">Get active orders</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/past/</span>
+                    <div class="description">Get past orders</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/statistics/</span>
+                    <div class="description">Get order statistics</div>
+                </div>
+            </div>
+            
+            <!-- Coupons -->
+            <div class="api-card">
+                <h2><span class="emoji">🏷️</span> Coupons</h2>
+                <span class="base-url">/api/coupons/</span>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/</span>
+                    <div class="description">List available coupons</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/{id}/</span>
+                    <div class="description">Get coupon details</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <span class="path">/validate/</span>
+                    <div class="description">Validate a coupon code</div>
+                </div>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/user_coupons/</span>
+                    <span class="auth-badge">AUTH</span>
+                    <div class="description">Get user's available coupons</div>
+                </div>
+            </div>
+            
+            <!-- Admin -->
+            <div class="api-card">
+                <h2><span class="emoji">⚙️</span> Admin</h2>
+                <span class="base-url">/admin/</span>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <span class="path">/admin/</span>
+                    <div class="description">Django Admin Panel</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Built with <span class="emoji">💜</span> using Django REST Framework</p>
+            <p style="margin-top: 10px;">Happy Groceries API &copy; 2025</p>
+        </div>
+    </div>
+</body>
+</html>
