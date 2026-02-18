@@ -15,6 +15,10 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Soft delete fields
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    
     USERNAME_FIELD = 'phone'
     REQUIRED_FIELDS = ['username', 'email']
     
@@ -29,3 +33,17 @@ class User(AbstractUser):
     @property
     def name(self):
         return f"{self.first_name} {self.last_name}".strip() or self.username
+    
+    def soft_delete(self):
+        """Perform soft delete on the user."""
+        self.is_deleted = True
+        self.deleted_at = models.functions.Now()
+        self.is_active = False
+        self.save(update_fields=['is_deleted', 'deleted_at', 'is_active', 'updated_at'])
+    
+    def restore(self):
+        """Restore a soft-deleted user."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.is_active = True
+        self.save(update_fields=['is_deleted', 'deleted_at', 'is_active', 'updated_at'])
