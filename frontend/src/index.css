@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap');
 
 :root {
-    --primary-pink: #6c5ce7;
-    --primary-blue: #74b9ff;
-    --primary-green: #55efc4;
-    --primary-yellow: #ffeaa7;
-    --primary-orange: #fab1a0;
+    --primary-pink: #1877f2;
+    --primary-blue: #42a5f5;
+    --primary-green: #66bb6a;
+    --primary-yellow: #ffca28;
+    --primary-orange: #ff9800;
     --text-dark: #2d2a3b;
     --text-light: #fff;
     --bg-light: #f4f5fb;
@@ -21,11 +21,11 @@ body.dark-mode {
     --text-light: #181724;
     --bg-light: #151420;
     --bg-white: #221f33;
-    --primary-pink: #7f6bff;
-    --primary-blue: #5fa8ff;
-    --primary-green: #47d8b1;
-    --primary-yellow: #f4d98a;
-    --primary-orange: #f2a38f;
+    --primary-pink: #1e88e5;
+    --primary-blue: #64b5f6;
+    --primary-green: #81c784;
+    --primary-yellow: #ffd54f;
+    --primary-orange: #ffb74d;
     --shadow: 0 6px 14px rgba(10, 8, 20, 0.55);
     --shadow-hover: 0 10px 22px rgba(10, 8, 20, 0.75);
 }
@@ -840,11 +840,50 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.2rem;
 }
 
+.phone-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.phone-input-wrapper input {
+    padding-left: 3.5rem;
+}
+
+.country-code {
+    position: absolute;
+    left: 0.75rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    pointer-events: none;
+}
+
 .error-message {
-    color: #ff4444;
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
+    color: #d32f2f;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    background: #ffebee;
+    border-left: 4px solid #d32f2f;
+    border-radius: 0 8px 8px 0;
     display: none;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+body.dark-mode .error-message {
+    background: rgba(211, 47, 47, 0.15);
+    color: #ef9a9a;
 }
 
 .error-message.show {

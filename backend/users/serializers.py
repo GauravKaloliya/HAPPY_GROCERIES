@@ -34,6 +34,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         if not data['phone'].isdigit() or len(data['phone']) != 10:
             raise serializers.ValidationError("Phone must be 10 digits")
         
+        # Ensure phone starts with 6, 7, 8, or 9 (Indian mobile numbers)
+        if not data['phone'][0] in ['6', '7', '8', '9']:
+            raise serializers.ValidationError("Please enter a valid Indian phone number (starts with 6, 7, 8, or 9)")
+        
         return data
     
     def create(self, validated_data):
@@ -61,7 +65,17 @@ class LoginSerializer(serializers.Serializer):
     
     def validate_phone(self, value):
         # Remove any non-digit characters from phone
-        return ''.join(filter(str.isdigit, value))
+        phone = ''.join(filter(str.isdigit, value))
+        
+        # Check if phone is 10 digits
+        if len(phone) != 10:
+            raise serializers.ValidationError("Phone must be 10 digits")
+        
+        # Ensure phone starts with 6, 7, 8, or 9 (Indian mobile numbers)
+        if not phone[0] in ['6', '7', '8', '9']:
+            raise serializers.ValidationError("Please enter a valid Indian phone number (starts with 6, 7, 8, or 9)")
+        
+        return phone
     
     def validate(self, data):
         phone = data.get('phone')

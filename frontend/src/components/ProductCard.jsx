@@ -20,11 +20,80 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const displayQuantity = cartItem ? cartItem.quantity : 0;
 
   const categoryEmojis = {
-    fruits: '🍎',
-    vegetables: '🥕',
-    dairy: '🥛',
-    snacks: '🍪',
-    beverages: '🧃',
+    'fruits': '🍎',
+    'vegetables': '🥕',
+    'dairy': '🥛',
+    'snacks': '🍪',
+    'beverages': '🧃',
+    'bakery': '🥖',
+    'meat': '🥩',
+    'seafood': '🐟',
+    'grains': '🌾',
+    'spices': '🌶️',
+    'oils': '🫒',
+    'nuts': '🥜',
+    'frozen': '🧊',
+    'organic': '🌱',
+    'condiments': '🧂',
+    'cereals': '🥣',
+    'pasta': '🍝',
+    'rice': '🍚',
+    'bread': '🍞',
+    'eggs': '🥚',
+  };
+
+  const getProductEmoji = (product) => {
+    const name = product.name?.toLowerCase() || '';
+    const category = product.category?.toLowerCase() || '';
+    
+    if (name.includes('apple') || name.includes('mango') || name.includes('banana') || name.includes('orange') || name.includes('grapes')) {
+      if (name.includes('apple')) return '🍎';
+      if (name.includes('mango')) return '🥭';
+      if (name.includes('banana')) return '🍌';
+      if (name.includes('orange')) return '🍊';
+      if (name.includes('grapes')) return '🍇';
+      if (name.includes('strawberry')) return '🍓';
+      if (name.includes('watermelon')) return '🍉';
+      if (name.includes('pineapple')) return '🍍';
+      return '🍎';
+    }
+    
+    if (name.includes('tomato') || name.includes('potato') || name.includes('onion') || name.includes('carrot') || name.includes('lettuce')) {
+      if (name.includes('tomato')) return '🍅';
+      if (name.includes('potato')) return '🥔';
+      if (name.includes('onion')) return '🧅';
+      if (name.includes('carrot')) return '🥕';
+      if (name.includes('lettuce') || name.includes('cabbage')) return '🥬';
+      if (name.includes('cucumber')) return '🥒';
+      if (name.includes('pepper') || name.includes('chili')) return '🌶️';
+      return '🥕';
+    }
+    
+    if (name.includes('bread') || name.includes('toast')) return '🍞';
+    if (name.includes('milk')) return '🥛';
+    if (name.includes('cheese')) return '🧀';
+    if (name.includes('butter')) return '🧈';
+    if (name.includes('yogurt') || name.includes('curd')) return '🥛';
+    if (name.includes('biscuit') || name.includes('cookie')) return '🍪';
+    if (name.includes('chips')) return '🥔';
+    if (name.includes('chocolate')) return '🍫';
+    if (name.includes('rice')) return '🍚';
+    if (name.includes('pasta') || name.includes('noodles')) return '🍝';
+    if (name.includes('oil')) return '🫒';
+    if (name.includes('egg')) return '🥚';
+    if (name.includes('chicken')) return '🍗';
+    if (name.includes('fish')) return '🐟';
+    if (name.includes('sugar')) return '🧂';
+    if (name.includes('salt')) return '🧂';
+    if (name.includes('coffee')) return '☕';
+    if (name.includes('tea')) return '🍵';
+    if (name.includes('juice')) return '🧃';
+    if (name.includes('water')) return '💧';
+    if (name.includes('ice cream')) return '🍦';
+    if (name.includes('pizza')) return '🍕';
+    if (name.includes('burger')) return '🍔';
+    
+    return categoryEmojis[category] || '📦';
   };
 
   useEffect(() => {
@@ -134,7 +203,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
 
       <Link to={`/product/${product.id}`} className="product-card-link">
         <div className="product-image">
-          {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
+          {product.emoji || getProductEmoji(product)}
         </div>
       </Link>
 

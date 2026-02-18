@@ -26,14 +26,22 @@ const Signup = () => {
   }, [dispatch]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (formErrors[e.target.name]) {
-      setFormErrors({ ...formErrors, [e.target.name]: '' });
+    const { name, value } = e.target;
+    
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '');
+      setFormData({ ...formData, [name]: numericValue.slice(0, 10) });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+    
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: '' });
     }
     if (error) dispatch(clearError());
     
-    if (e.target.name === 'password') {
-      checkPasswordStrength(e.target.value);
+    if (name === 'password') {
+      checkPasswordStrength(value);
     }
   };
 
@@ -49,22 +57,31 @@ const Signup = () => {
 
   const validateForm = () => {
     const errors = {};
+    
     if (!formData.name.trim()) {
-      errors.name = 'Full name is required';
+      errors.name = '👤 Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      errors.name = '👤 Name must be at least 2 characters';
     }
+    
     if (!formData.phone) {
-      errors.phone = 'Phone number is required';
+      errors.phone = '📱 Phone number is required';
     } else if (formData.phone.length !== 10) {
-      errors.phone = 'Phone number must be 10 digits';
+      errors.phone = '📱 Phone number must be 10 digits';
+    } else if (!/^[6-9]/.test(formData.phone)) {
+      errors.phone = '📱 Please enter a valid Indian phone number (starts with 6, 7, 8, or 9)';
     }
+    
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = '🔒 Password is required';
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+      errors.password = '🔒 Password must be at least 6 characters';
     }
+    
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+      errors.email = '📧 Please enter a valid email address';
     }
+    
     return errors;
   };
 
@@ -95,7 +112,20 @@ const Signup = () => {
       toast.success('Welcome to Happy Groceries! 🎉');
       navigate('/');
     } catch (err) {
-      const errorMessage = err || 'Registration failed. Please try again.';
+      let errorMessage = '❌ Registration failed. Please try again.';
+      
+      if (err?.phone) {
+        errorMessage = `📱 ${err.phone[0]}`;
+      } else if (err?.email) {
+        errorMessage = `📧 ${err.email[0]}`;
+      } else if (err?.password) {
+        errorMessage = `🔐 ${err.password[0]}`;
+      } else if (err?.non_field_errors) {
+        errorMessage = `❌ ${err.non_field_errors[0]}`;
+      } else if (typeof err === 'string') {
+        errorMessage = `❌ ${err}`;
+      }
+      
       setFormErrors({ submit: errorMessage });
     }
   };
@@ -128,17 +158,20 @@ const Signup = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter 10-digit phone number"
-              maxLength="10"
-              required
-            />
+            <label htmlFor="phone">Phone Number (India)</label>
+            <div className="phone-input-wrapper">
+              <span className="country-code">+91</span>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Enter 10-digit mobile number"
+                maxLength="10"
+                required
+              />
+            </div>
             {formErrors.phone && (
               <div className="error-message show">{formErrors.phone}</div>
             )}
