@@ -36,11 +36,11 @@ api.interceptors.response.use(
           throw new Error('No refresh token');
         }
         
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh/`, {
+        const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh/`, {
           refresh: refreshToken,
         });
         
-        const { access } = response.data;
+        const { access } = refreshResponse.data;
         localStorage.setItem('access_token', access);
         
         originalRequest.headers.Authorization = `Bearer ${access}`;

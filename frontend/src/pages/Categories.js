@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/UI/ProductCard';
 import { productsAPI, wishlistAPI } from '../services/api';
@@ -13,6 +13,21 @@ const Categories = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || null);
   const { isAuthenticated } = useAuth();
+
+  const fetchProductsByCategory = useCallback(async (categoryName) => {
+    setLoading(true);
+    try {
+      const category = categories.find(c => c.name === categoryName);
+      if (category) {
+        const response = await productsAPI.getByCategory(category.id);
+        setProducts(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [categories]);
 
   useEffect(() => {
     fetchCategories();
@@ -30,7 +45,7 @@ const Categories = () => {
       setSelectedCategory(null);
       setProducts([]);
     }
-  }, [searchParams]);
+  }, [searchParams, fetchProductsByCategory]);
 
   const fetchCategories = async () => {
     try {
@@ -38,21 +53,6 @@ const Categories = () => {
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchProductsByCategory = async (categoryName) => {
-    setLoading(true);
-    try {
-      const category = categories.find(c => c.name === categoryName);
-      if (category) {
-        const response = await productsAPI.getByCategory(category.id);
-        setProducts(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
     } finally {
       setLoading(false);
     }

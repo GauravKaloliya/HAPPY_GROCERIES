@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { couponsAPI } from '../services/api';
@@ -22,20 +22,20 @@ const Cart = () => {
   const [suggestedCoupons, setSuggestedCoupons] = useState([]);
   const totals = calculateTotals();
 
-  useEffect(() => {
-    if (cart?.items?.length > 0) {
-      fetchSuggestedCoupons();
-    }
-  }, [cart, appliedCoupon]);
-
-  const fetchSuggestedCoupons = async () => {
+  const fetchSuggestedCoupons = useCallback(async () => {
     try {
       const response = await couponsAPI.getSuggested(appliedCoupon?.code || '');
       setSuggestedCoupons(response.data.suggestions);
     } catch (error) {
       console.error('Failed to fetch suggested coupons:', error);
     }
-  };
+  }, [appliedCoupon?.code]);
+
+  useEffect(() => {
+    if (cart?.items?.length > 0) {
+      fetchSuggestedCoupons();
+    }
+  }, [cart, appliedCoupon, fetchSuggestedCoupons]);
 
   const handleQuantityChange = async (itemId, newQuantity) => {
     const result = await updateQuantity(itemId, newQuantity);
