@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, selectAuthLoading, selectAuthError, clearError } from '../store/slices/authSlice';
@@ -18,9 +18,18 @@ const Signup = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState('');
+  const [formErrors, setFormErrors] = useState({});
+
+  useEffect(() => {
+    dispatch(clearError());
+    setFormErrors({});
+  }, [dispatch]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (formErrors[e.target.name]) {
+      setFormErrors({ ...formErrors, [e.target.name]: '' });
+    }
     if (error) dispatch(clearError());
     
     if (e.target.name === 'password') {
@@ -38,16 +47,33 @@ const Signup = () => {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) {
+      errors.name = 'Full name is required';
+    }
+    if (!formData.phone) {
+      errors.phone = 'Phone number is required';
+    } else if (formData.phone.length !== 10) {
+      errors.phone = 'Phone number must be 10 digits';
+    }
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.phone || !formData.password) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    if (formData.phone.length !== 10) {
-      toast.error('Phone number must be 10 digits');
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
@@ -69,8 +95,14 @@ const Signup = () => {
       toast.success('Welcome to Happy Groceries! 🎉');
       navigate('/');
     } catch (err) {
-      toast.error(err || 'Registration failed');
+      const errorMessage = err || 'Registration failed. Please try again.';
+      setFormErrors({ submit: errorMessage });
     }
+  };
+
+  const handleLoginClick = () => {
+    dispatch(clearError());
+    setFormErrors({});
   };
 
   return (
@@ -90,6 +122,9 @@ const Signup = () => {
               placeholder="Enter your full name"
               required
             />
+            {formErrors.name && (
+              <div className="error-message show">{formErrors.name}</div>
+            )}
           </div>
 
           <div className="form-group">
@@ -104,6 +139,9 @@ const Signup = () => {
               maxLength="10"
               required
             />
+            {formErrors.phone && (
+              <div className="error-message show">{formErrors.phone}</div>
+            )}
           </div>
 
           <div className="form-group">
@@ -116,6 +154,9 @@ const Signup = () => {
               onChange={handleChange}
               placeholder="Enter your email"
             />
+            {formErrors.email && (
+              <div className="error-message show">{formErrors.email}</div>
+            )}
           </div>
 
           <div className="form-group">
@@ -138,6 +179,9 @@ const Signup = () => {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+            {formErrors.password && (
+              <div className="error-message show">{formErrors.password}</div>
+            )}
             {formData.password && (
               <div className="password-strength">
                 <div className={`password-strength-bar ${passwordStrength}`}></div>
@@ -145,9 +189,9 @@ const Signup = () => {
             )}
           </div>
 
-          {error && (
+          {(error || formErrors.submit) && (
             <div className="error-message show" style={{ marginBottom: '1rem' }}>
-              {error}
+              {error || formErrors.submit}
             </div>
           )}
 
@@ -161,7 +205,7 @@ const Signup = () => {
         </form>
 
         <p className="auth-link">
-          Already have an account? <Link to="/login">Login</Link>
+          Already have an account? <Link to="/login" onClick={handleLoginClick}>Login</Link>
         </p>
 
         <p className="auth-link" style={{ marginTop: '0.5rem' }}>
