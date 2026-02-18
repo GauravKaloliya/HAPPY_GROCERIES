@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
@@ -25,6 +25,10 @@ import Offers from './pages/Offers';
 import About from './pages/About';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ActivityLogs from './pages/ActivityLogs';
+import NotFound from './pages/NotFound';
+import ErrorPage from './pages/ErrorPage';
+import ContactUs from './pages/ContactUs';
 
 // Initialize theme
 store.dispatch(initializeTheme());
@@ -52,6 +56,7 @@ function App() {
               <Route path="/categories" element={<Categories />} />
               <Route path="/offers" element={<Offers />} />
               <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<ContactUs />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
 
@@ -99,6 +104,18 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/activity-logs"
+                element={
+                  <ProtectedRoute>
+                    <ActivityLogs />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Error Pages */}
+              <Route path="/404" element={<NotFound />} />
+              <Route path="/error" element={<ErrorPage />} />
 
               {/* Catch all */}
               <Route path="*" element={<Navigate to="/" replace />} />
