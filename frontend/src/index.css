@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap');
 
 :root {
-    --primary-pink: #6c5ce7;
+    --primary-pink: #1877f2;
     --primary-blue: #74b9ff;
     --primary-green: #55efc4;
     --primary-yellow: #ffeaa7;
@@ -21,7 +21,7 @@ body.dark-mode {
     --text-light: #181724;
     --bg-light: #151420;
     --bg-white: #221f33;
-    --primary-pink: #7f6bff;
+    --primary-pink: #1877f2;
     --primary-blue: #5fa8ff;
     --primary-green: #47d8b1;
     --primary-yellow: #f4d98a;
@@ -600,7 +600,7 @@ h1, h2, h3, h4, h5, h6 {
     border: 2px solid var(--primary-pink);
     border-radius: var(--border-radius);
     padding: 0.25rem;
-    width: fit-content;
+    width: 140px;
 }
 
 .qty-btn {
@@ -842,13 +842,25 @@ h1, h2, h3, h4, h5, h6 {
 
 .error-message {
     color: #ff4444;
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 68, 68, 0.1);
+    border-left: 4px solid #ff4444;
+    border-radius: var(--border-radius);
+    margin-top: 0.5rem;
     display: none;
 }
 
 .error-message.show {
     display: block;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
 .password-strength {
@@ -1138,6 +1150,29 @@ h1, h2, h3, h4, h5, h6 {
     height: fit-content;
     position: sticky;
     top: 100px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-pink) rgba(0, 0, 0, 0.1);
+}
+
+.shop-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.shop-sidebar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.shop-sidebar::-webkit-scrollbar-thumb {
+    background: var(--primary-pink);
+    border-radius: 4px;
+}
+
+.shop-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-pink);
+    opacity: 0.8;
 }
 
 .sidebar-section {
