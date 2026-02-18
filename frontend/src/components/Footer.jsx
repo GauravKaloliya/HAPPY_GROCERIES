@@ -6,10 +6,7 @@ const Footer = () => {
   return (
     <footer className="footer">
       <p>
-        © {currentYear} Happy Groceries 🛒 | Made with 💖 for fresh food lovers! | 
-        <Link to="/about" style={{ color: 'var(--primary-pink)', textDecoration: 'none', marginLeft: '0.5rem' }}>
-          Contact Us
-        </Link>
+        © {currentYear} Happy Groceries 🛒 | Created by Gaurav Kaloliya
       </p>
     </footer>
   );
