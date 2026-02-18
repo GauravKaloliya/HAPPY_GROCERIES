@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom';
 import { ordersAPI } from '../api/orders';
 import { formatPrice, formatDateTime } from '../utils/helpers';
 import { PageLoader } from '../components/LoadingSpinner';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
+
+  useActivityLog('page_view', { section: 'orders' });
 
   useEffect(() => {
     const fetchOrders = async () => {

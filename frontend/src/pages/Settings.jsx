@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { selectUser, selectIsAuthenticated, updateProfile, changePassword } from '../store/slices/authSlice';
 import { toggleTheme, selectIsDarkMode } from '../store/slices/themeSlice';
 import toast from 'react-hot-toast';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Settings = () => {
   const dispatch = useDispatch();
@@ -13,7 +14,9 @@ const Settings = () => {
 
   const [activeSection, setActiveSection] = useState('account');
   const [loading, setLoading] = useState(false);
-  
+
+  useActivityLog('page_view', { section: 'settings' });
+
   // Profile form state
   const [profileForm, setProfileForm] = useState({
     first_name: '',

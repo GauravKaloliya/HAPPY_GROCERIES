@@ -5,12 +5,15 @@ import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { PageLoader } from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Wishlist = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const navigate = useNavigate();
+
+  useActivityLog('page_view', { section: 'wishlist' });
 
   useEffect(() => {
     if (!isAuthenticated) {
