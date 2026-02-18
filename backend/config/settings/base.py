@@ -32,13 +32,6 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
 ]
 
-THIRD_PARTY_APPS = [
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-    'django_filters',
-]
-
 LOCAL_APPS = [
     'users',
     'products',
@@ -48,14 +41,10 @@ LOCAL_APPS = [
     'wishlist',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    # 'config.security_middleware.SecurityMiddleware',
-    # 'config.security_middleware.APIKeyMiddleware',
-    # 'config.security_middleware.JWTAuthenticationMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -69,7 +58,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'backend' / 'config' / 'templates'],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -93,7 +82,7 @@ try:
     if database_url and database_url.startswith('postgres://'):
         # Convert postgres:// to postgresql:// for dj-database-url
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
+
     if database_url:
         DATABASES = {
             'default': dj_database_url.parse(
@@ -167,54 +156,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Django REST Framework
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
-    ],
-}
-
-# JWT Settings
-from datetime import timedelta
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-}
-
-# Redis Configuration for token blacklisting
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-
-# CORS Settings
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://happygroceries.vercel.app',
-]
-CORS_ALLOW_ALL_ORIGINS = False
-
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
-
-# Rate Limiting
-RATELIMIT_USE_CACHE = 'default'
 
 # Logging
 LOGGING = {
@@ -242,35 +185,6 @@ LOGGING = {
 
 # Security Headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# Cache Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': REDIS_URL,
-    }
-}
-
-# Session Configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
-SESSION_COOKIE_AGE = 1800  # 30 minutes
-
-# Security Configuration
-RATE_LIMIT_REQUESTS = 100  # requests per window
-RATE_LIMIT_WINDOW = 60     # seconds
-BLOCK_DURATION = 300       # seconds (5 minutes)
-MAX_REQUEST_SIZE = 10 * 1024 * 1024  # 10MB
-TRUSTED_HOSTS = []
-API_KEYS = [
-    'your-api-key-1',
-    'your-api-key-2',
-]
-
-# Additional Security Settings
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
 
 # SSL Settings (for production)
 SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
