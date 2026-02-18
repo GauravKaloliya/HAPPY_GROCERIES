@@ -1,5 +1,5 @@
 """
-Base Django settings for happygroceries_backend project.
+Base Django settings for backend project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/6.0/topics/settings/

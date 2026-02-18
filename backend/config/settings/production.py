@@ -1,5 +1,5 @@
 """
-Production settings for happygroceries_backend project.
+Production settings for backend project.
 """
 
 from .base import *
