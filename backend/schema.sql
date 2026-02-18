@@ -5,72 +5,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
--- AUTH TABLES (Django Built-in)
--- =====================================================
-
--- Django sessions table
-CREATE TABLE IF NOT EXISTS django_session (
-    session_key VARCHAR(40) NOT NULL PRIMARY KEY,
-    session_data TEXT NOT NULL,
-    expire_date TIMESTAMP WITH TIME ZONE NOT NULL
-);
-
-CREATE INDEX django_session_expire_date_idx ON django_session(expire_date);
-CREATE INDEX django_session_session_key_idx ON django_session(session_key);
-
--- Django admin log
-CREATE TABLE IF NOT EXISTS django_admin_log (
-    id BIGSERIAL PRIMARY KEY,
-    action_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    object_id TEXT,
-    object_repr VARCHAR(200) NOT NULL,
-    action_flag SMALLINT NOT NULL CHECK (action_flag >= 0),
-    change_message TEXT NOT NULL,
-    content_type_id INTEGER REFERENCES django_content_type(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
-    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
-);
-
--- Django content type
-CREATE TABLE IF NOT EXISTS django_content_type (
-    id SERIAL PRIMARY KEY,
-    app_label VARCHAR(100) NOT NULL,
-    model VARCHAR(100) NOT NULL,
-    UNIQUE(app_label, model)
-);
-
--- Django migrations
-CREATE TABLE IF NOT EXISTS django_migrations (
-    id BIGSERIAL PRIMARY KEY,
-    app VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    applied TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
--- =====================================================
--- AUTH PERMISSIONS (Django Built-in)
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS auth_permission (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    content_type_id INTEGER NOT NULL REFERENCES django_content_type(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    codename VARCHAR(100) NOT NULL,
-    UNIQUE(content_type_id, codename)
-);
-
-CREATE TABLE IF NOT EXISTS auth_group (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(150) NOT NULL UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS auth_group_permissions (
-    id BIGSERIAL PRIMARY KEY,
-    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    UNIQUE(group_id, permission_id)
-);
-
--- =====================================================
 -- USERS
 -- =====================================================
 
@@ -91,29 +25,12 @@ CREATE TABLE IF NOT EXISTS users (
     is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TIMESTAMP WITH TIME ZONE,
-    first_order BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX users_phone_idx ON users(phone);
 CREATE INDEX users_username_idx ON users(username);
-
--- User groups many-to-many
-CREATE TABLE IF NOT EXISTS users_groups (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    UNIQUE(user_id, group_id)
-);
-
--- User permissions many-to-many
-CREATE TABLE IF NOT EXISTS users_user_permissions (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    UNIQUE(user_id, permission_id)
-);
 
 -- =====================================================
 -- CATEGORIES
@@ -137,7 +54,7 @@ CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
     emoji VARCHAR(10) NOT NULL DEFAULT '',
     rating DECIMAL(2, 1) NOT NULL DEFAULT 4.0 CHECK (rating >= 0 AND rating <= 5),
     reviews_count INTEGER NOT NULL DEFAULT 0 CHECK (reviews_count >= 0),
@@ -188,8 +105,10 @@ CREATE INDEX cart_items_product_idx ON cart_items(product_id);
 CREATE TABLE IF NOT EXISTS orders (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    order_id VARCHAR(20) NOT NULL UNIQUE,
+    order_id VARCHAR(20) NOT NULL UNIQUE CHECK (order_id ~ '^HG[0-9]{8}$'),
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled')),
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'authorized', 'paid', 'failed', 'refunded')),
+    payment_reference VARCHAR(100),
     delivery_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (delivery_type IN ('standard', 'express')),
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
     tax DECIMAL(10, 2) NOT NULL CHECK (tax >= 0),
@@ -209,7 +128,7 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX orders_order_id_idx ON orders(order_id);
 CREATE INDEX orders_user_idx ON orders(user_id);
 CREATE INDEX orders_status_idx ON orders(status);
-CREATE INDEX orders_created_at_idx ON orders(created_at DESC);
+CREATE INDEX orders_user_created_idx ON orders(user_id, created_at DESC);
 
 -- =====================================================
 -- ORDER ITEMS
@@ -254,6 +173,8 @@ CREATE TABLE IF NOT EXISTS coupons (
 
 CREATE INDEX coupons_code_idx ON coupons(code);
 CREATE INDEX coupons_is_active_idx ON coupons(is_active);
+CREATE INDEX coupons_active_valid_idx ON coupons(is_active, valid_until);
+CREATE INDEX coupons_categories_gin ON coupons USING GIN (applicable_categories);
 
 -- =====================================================
 -- COUPON USAGES
@@ -265,8 +186,7 @@ CREATE TABLE IF NOT EXISTS coupon_usages (
     coupon_id INTEGER NOT NULL REFERENCES coupons(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     discount_amount DECIMAL(10, 2) NOT NULL CHECK (discount_amount >= 0),
-    used_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    UNIQUE(user_id, coupon_id)
+    used_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX coupon_usages_user_idx ON coupon_usages(user_id);
