@@ -100,7 +100,7 @@
                 }
             });
 
-            loginForm.addEventListener('submit', function(e) {
+            loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
                 phoneError.classList.remove('show');
@@ -135,16 +135,32 @@
 
                 if (!isValid) return;
 
-                const result = loginUser(phone, password);
+                // Show loading state
+                const loginBtn = document.getElementById('loginBtn');
+                const originalText = loginBtn.textContent;
+                loginBtn.textContent = 'Logging in...';
+                loginBtn.disabled = true;
 
-                if (result.success) {
-                    showToast('Login successful! 🎉');
-                    setTimeout(() => {
-                        window.location.href = '../index.html';
-                    }, 1000);
-                } else {
-                    passwordError.textContent = result.error;
+                try {
+                    const result = await loginUser(phone, password);
+
+                    if (result.success) {
+                        showToast('Login successful! 🎉');
+                        setTimeout(() => {
+                            window.location.href = '../index.html';
+                        }, 1000);
+                    } else {
+                        passwordError.textContent = result.error;
+                        passwordError.classList.add('show');
+                        loginBtn.textContent = originalText;
+                        loginBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    passwordError.textContent = 'An error occurred. Please try again.';
                     passwordError.classList.add('show');
+                    loginBtn.textContent = originalText;
+                    loginBtn.disabled = false;
                 }
             });
         });

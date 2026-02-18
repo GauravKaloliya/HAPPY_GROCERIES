@@ -70,20 +70,15 @@
             const filterButtons = document.querySelectorAll('.filter-btn');
             const sortSelect = document.getElementById('sortSelect');
 
-            const debouncedSearch = debounce(function(query) {
-                currentQuery = query;
-                loadProducts();
-            }, 500);
-
+            // Search only on Enter key press
             searchInput.addEventListener('keyup', function(e) {
                 if (e.key === 'Enter') {
                     currentQuery = e.target.value;
                     loadProducts();
-                } else {
-                    debouncedSearch(e.target.value);
                 }
             });
 
+            // Search on button click
             const searchBtn = document.getElementById('searchBtn');
             if (searchBtn) {
                 searchBtn.addEventListener('click', function() {

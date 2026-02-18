@@ -87,7 +87,14 @@ function addToCart(product, quantity = 1) {
     }
 
     saveCart(cart);
-    showToast('Added to cart 🛒');
+
+    // Show appropriate message for guest or logged-in users
+    if (!isUserLoggedIn()) {
+        showToast(`Added to cart 🛒 (Guest mode - ${getCartCount()} items)`);
+    } else {
+        showToast('Added to cart 🛒');
+    }
+
     return true;
 }
 

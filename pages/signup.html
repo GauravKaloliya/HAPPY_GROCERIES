@@ -226,7 +226,7 @@
 
             confirmPasswordInput.addEventListener('blur', validateConfirmPasswordField);
 
-            signupForm.addEventListener('submit', function(e) {
+            signupForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
                 // Clear all errors
@@ -297,16 +297,32 @@
 
                 if (!isValid) return;
 
-                const result = registerUser(name, phone, email, password);
+                // Show loading state
+                const signupBtn = document.getElementById('signupBtn');
+                const originalText = signupBtn.textContent;
+                signupBtn.textContent = 'Creating account...';
+                signupBtn.disabled = true;
 
-                if (result.success) {
-                    showToast('Account created successfully! 🎉');
-                    setTimeout(() => {
-                        window.location.href = '../index.html';
-                    }, 1000);
-                } else {
-                    phoneError.textContent = result.error;
+                try {
+                    const result = await registerUser(name, phone, email, password);
+
+                    if (result.success) {
+                        showToast('Account created successfully! 🎉');
+                        setTimeout(() => {
+                            window.location.href = '../index.html';
+                        }, 1000);
+                    } else {
+                        phoneError.textContent = result.error;
+                        phoneError.classList.add('show');
+                        signupBtn.textContent = originalText;
+                        signupBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Registration error:', error);
+                    phoneError.textContent = 'An error occurred. Please try again.';
                     phoneError.classList.add('show');
+                    signupBtn.textContent = originalText;
+                    signupBtn.disabled = false;
                 }
             });
         });
