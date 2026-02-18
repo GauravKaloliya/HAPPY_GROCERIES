@@ -153,16 +153,6 @@ User wishlist management. **All endpoints require authentication.**
 | GET | `/{product_id}/check/` | Check if product is in wishlist |
 | POST | `/clear/` | Clear entire wishlist |
 
-### Activity Logs (`/api/activity-logs/`)
-
-Track and review user activity. **List endpoints require authentication.**
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/log_activity/` | No | Log user activity events (page_view, add_to_cart, etc.) |
-| GET | `/` | Yes | List activity logs for the current user |
-| GET | `/statistics/` | Yes | Summary of activity totals and counts |
-
 ### Contact & Support (`/api/contact/`)
 
 Customer support messaging. **Submitting is public, listing requires authentication.**
