@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { addToCart, selectCartItems } from '../store/slices/cartSlice';
+import { addToCart, updateCartItem, selectCartItems } from '../store/slices/cartSlice';
 import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
@@ -10,6 +10,15 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const dispatch = useDispatch();
   const cartItems = useSelector(selectCartItems);
+
+  // Find if product is in cart (handles both authenticated and guest carts)
+  const cartItem = cartItems.find(item => 
+    item.product?.id === product.id || item.id === product.id
+  );
+  const inCart = !!cartItem;
+
+  // Use cart item quantity if available, otherwise use local quantity
+  const displayQuantity = cartItem ? cartItem.quantity : quantity;
 
   const categoryEmojis = {
     fruits: '🍎',
@@ -34,15 +43,47 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     toast.success(isWishlisted ? 'Removed from wishlist 💔' : 'Added to wishlist ❤️');
   };
 
-  const incrementQuantity = () => {
-    if (quantity < 99) setQuantity(q => q + 1);
+  const incrementQuantity = async () => {
+    const newQuantity = quantity + 1;
+    if (newQuantity > 99) {
+      toast.error('Maximum quantity reached!');
+      return;
+    }
+    
+    if (inCart && cartItem) {
+      // Update cart directly if item is already in cart
+      // Use item.id directly for guest carts (which equals product.id)
+      const itemId = cartItem.product?.id || cartItem.id;
+      try {
+        await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
+        setQuantity(newQuantity);
+      } catch {
+        toast.error('Failed to update quantity');
+      }
+    } else {
+      setQuantity(newQuantity);
+    }
   };
 
-  const decrementQuantity = () => {
-    if (quantity > 1) setQuantity(q => q - 1);
+  const decrementQuantity = async () => {
+    if (quantity <= 1) return;
+    
+    const newQuantity = quantity - 1;
+    
+    if (inCart && cartItem) {
+      // Update cart directly if item is already in cart
+      // Use item.id directly for guest carts (which equals product.id)
+      const itemId = cartItem.product?.id || cartItem.id;
+      try {
+        await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
+        setQuantity(newQuantity);
+      } catch {
+        toast.error('Failed to update quantity');
+      }
+    } else {
+      setQuantity(newQuantity);
+    }
   };
-
-  const inCart = cartItems.find(item => item.product?.id === product.id);
 
   const isOnSale = product.effective_price && parseFloat(product.effective_price) < parseFloat(product.price);
   const displayPrice = isOnSale ? product.effective_price : product.price;
@@ -106,32 +147,47 @@ const ProductCard = ({ product, showAddToCart = true }) => {
 
       {showAddToCart && product.stock > 0 && (
         <div className="product-actions">
-          <div className="quantity-controls">
-            <button className="qty-btn" onClick={decrementQuantity} disabled={quantity <= 1}>
-              −
-            </button>
-            <input 
-              type="text" 
-              className="qty-input" 
-              value={quantity} 
-              readOnly 
-            />
-            <button className="qty-btn" onClick={incrementQuantity}>
-              +
-            </button>
-          </div>
-          <button 
-            className="btn-add-cart"
-            onClick={handleAddToCart}
-          >
-            Add to Cart
-          </button>
-        </div>
-      )}
-
-      {inCart && (
-        <div style={{ textAlign: 'center', marginTop: '0.5rem', color: 'var(--primary-green)', fontWeight: 600 }}>
-          ✓ {inCart.quantity} in cart
+          {inCart ? (
+            // Show quantity controls if product is already in cart
+            <div className="quantity-controls">
+              <button className="qty-btn" onClick={decrementQuantity} disabled={displayQuantity <= 1}>
+                −
+              </button>
+              <input 
+                type="text" 
+                className="qty-input" 
+                value={displayQuantity} 
+                readOnly 
+              />
+              <button className="qty-btn" onClick={incrementQuantity}>
+                +
+              </button>
+            </div>
+          ) : (
+            // Show add to cart button if product is not in cart
+            <>
+              <div className="quantity-controls">
+                <button className="qty-btn" onClick={decrementQuantity} disabled={quantity <= 1}>
+                  −
+                </button>
+                <input 
+                  type="text" 
+                  className="qty-input" 
+                  value={quantity} 
+                  readOnly 
+                />
+                <button className="qty-btn" onClick={incrementQuantity}>
+                  +
+                </button>
+              </div>
+              <button 
+                className="btn-add-cart"
+                onClick={handleAddToCart}
+              >
+                Add to Cart
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
