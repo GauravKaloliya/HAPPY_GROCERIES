@@ -5,6 +5,7 @@ import { categoriesAPI } from '../api/categories';
 import { selectCartSubtotal } from '../store/slices/cartSlice';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Offers = () => {
   const [coupons, setCoupons] = useState([]);
@@ -12,6 +13,8 @@ const Offers = () => {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const cartTotal = useSelector(selectCartSubtotal);
+
+  useActivityLog('page_view', { section: 'offers' });
 
   useEffect(() => {
     const fetchData = async () => {

@@ -39,12 +39,12 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         # Category filter
         category = self.request.query_params.get('category')
         if category and category != 'All':
             queryset = queryset.filter(category__name=category)
-        
+
         # Search filter
         search = self.request.query_params.get('search')
         if search:
@@ -53,27 +53,28 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(description__icontains=search) |
                 Q(category__name__icontains=search)
             )
-        
-        # Min/Max price filter (use discounted price)
+
+        # Min/Max price filter (use annotated discounted price)
         min_price = self.request.query_params.get('min_price')
         max_price = self.request.query_params.get('max_price')
 
-        effective_price_expression = ExpressionWrapper(
-            F('price') * (Value(1) - (F('discount_percent') / Value(100.0))),
-            output_field=DecimalField(max_digits=10, decimal_places=2)
-        )
-        queryset = queryset.annotate(effective_price=effective_price_expression)
+        if min_price or max_price:
+            annotated_price_expression = ExpressionWrapper(
+                F('price') * (Value(1) - (F('discount_percent') / Value(100.0))),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            )
+            queryset = queryset.annotate(annotated_effective_price=annotated_price_expression)
 
-        if min_price:
-            queryset = queryset.filter(effective_price__gte=min_price)
-        if max_price:
-            queryset = queryset.filter(effective_price__lte=max_price)
-        
+            if min_price:
+                queryset = queryset.filter(annotated_effective_price__gte=min_price)
+            if max_price:
+                queryset = queryset.filter(annotated_effective_price__lte=max_price)
+
         # In stock filter
         in_stock = self.request.query_params.get('in_stock')
         if in_stock and in_stock.lower() == 'true':
             queryset = queryset.filter(stock__gt=0)
-        
+
         return queryset
     
     @action(detail=False, methods=['get'])

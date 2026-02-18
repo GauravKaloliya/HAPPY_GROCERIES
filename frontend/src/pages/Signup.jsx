@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, selectAuthLoading, selectAuthError, clearError } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const { logCustomActivity } = useActivityLog('page_view', { section: 'signup' });
 
   useEffect(() => {
     dispatch(clearError());

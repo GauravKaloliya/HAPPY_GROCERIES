@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { contactAPI } from '../api/contact';
+import useActivityLog from '../hooks/useActivityLog';
 
 const About = () => {
   const [contactForm, setContactForm] = useState({
@@ -7,15 +9,28 @@ const About = () => {
     email: '',
     message: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  useActivityLog('page_view', { section: 'about' });
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    toast.success('Message sent! We\'ll get back to you soon 💌');
-    setContactForm({ name: '', email: '', message: '' });
+    setIsSubmitting(true);
+
+    try {
+      await contactAPI.submitMessage(contactForm);
+      toast.success('Message sent! We\'ll get back to you soon 💌');
+      setContactForm({ name: '', email: '', message: '' });
+    } catch (error) {
+      toast.error('Failed to send message. Please try again.');
+      console.error('Error submitting contact form:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const team = [
-    { name: 'Alice Johnson', role: 'Founder & CEO', emoji: '👩‍💼' },
+    { name: 'Gaurav Kaloliya', role: 'Founder & CEO', emoji: '👨‍💼' },
     { name: 'Bob Smith', role: 'Head of Operations', emoji: '👨‍🌾' },
     { name: 'Carol White', role: 'Customer Success', emoji: '👩‍💻' },
     { name: 'David Brown', role: 'Delivery Manager', emoji: '👨‍🚚' },
@@ -82,8 +97,8 @@ const About = () => {
               required
             />
           </div>
-          <button type="submit" className="btn-submit">
-            Send Message
+          <button type="submit" className="btn-submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Sending...' : 'Send Message'}
           </button>
         </form>
       </section>
