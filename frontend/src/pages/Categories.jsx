@@ -70,9 +70,12 @@ const Categories = () => {
         {allCategories.map((category) => (
           <button
             key={category.id || category.name}
-            onClick={() => setSelectedCategory(category.name)}
+            onClick={(e) => {
+              e.preventDefault();
+              setSelectedCategory(category.name);
+            }}
             className="category-card"
-            style={{ 
+            style={{
               background: getCategoryColor(category.name),
               border: selectedCategory === category.name ? '4px solid var(--text-dark)' : 'none',
               transform: selectedCategory === category.name ? 'scale(1.05)' : 'scale(1)'
