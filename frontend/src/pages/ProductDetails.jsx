@@ -57,7 +57,7 @@ const ProductDetails = () => {
 
   const handleAddToCart = async () => {
     try {
-      await dispatch(addToCart({ productId: product.id, quantity })).unwrap();
+      await dispatch(addToCart({ productId: product.id, quantity, product })).unwrap();
       toast.success(`Added ${quantity} ${product.name} to cart! 🛒`);
       setQuantity(1);
     } catch (error) {

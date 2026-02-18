@@ -13,7 +13,9 @@ const Shop = () => {
   const [totalCount, setTotalCount] = useState(0);
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const initialSearch = searchParams.get('search') || '';
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || '');
 
@@ -61,6 +63,7 @@ const Shop = () => {
   }, [searchQuery, selectedCategory, sortBy]);
 
   const clearFilters = () => {
+    setSearchInput('');
     setSearchQuery('');
     setSelectedCategory('');
     setSortBy('');
@@ -76,8 +79,9 @@ const Shop = () => {
         <div className="search-bar">
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyUp={(e) => setSearchQuery(e.target.value)}
             placeholder="Search for products..."
           />
         </div>
