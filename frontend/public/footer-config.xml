@@ -8,17 +8,5 @@
     <author>Gaurav Kaloliya</author>
   </copyright>
   <links>
-    <link>
-      <label>Home</label>
-      <href>/</href>
-    </link>
-    <link>
-      <label>Shop</label>
-      <href>/shop</href>
-    </link>
-    <link>
-      <label>About</label>
-      <href>/about</href>
-    </link>
   </links>
 </footer>
