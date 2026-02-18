@@ -2,17 +2,23 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
+import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const productsRes = await productsAPI.getAll({ limit: 8 });
+        const [productsRes, categoriesRes] = await Promise.all([
+          productsAPI.getAll({ limit: 8 }),
+          categoriesAPI.getAll(),
+        ]);
         setFeaturedProducts(productsRes.data.results || productsRes.data);
+        setCategories(categoriesRes.data.results || categoriesRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -22,15 +28,29 @@ const Home = () => {
     fetchData();
   }, []);
 
-  if (loading) return <PageLoader />;
+  const getCategoryEmoji = (name) => {
+    const emojis = {
+      'Fruits': '🍎',
+      'Vegetables': '🥕',
+      'Dairy': '🥛',
+      'Snacks': '🍪',
+      'Beverages': '🧃',
+    };
+    return emojis[name] || '🛒';
+  };
 
-  const categories = [
-    { name: 'Fruits', emoji: '🍎', color: 'var(--primary-pink)' },
-    { name: 'Vegetables', emoji: '🥕', color: 'var(--primary-green)' },
-    { name: 'Dairy', emoji: '🥛', color: 'var(--primary-blue)' },
-    { name: 'Snacks', emoji: '🍪', color: 'var(--primary-yellow)' },
-    { name: 'Beverages', emoji: '🧃', color: 'var(--primary-orange)' },
-  ];
+  const getCategoryColor = (name) => {
+    const colors = {
+      'Fruits': 'var(--primary-pink)',
+      'Vegetables': 'var(--primary-green)',
+      'Dairy': 'var(--primary-blue)',
+      'Snacks': 'var(--primary-yellow)',
+      'Beverages': 'var(--primary-orange)',
+    };
+    return colors[name] || 'var(--primary-pink)';
+  };
+
+  if (loading) return <PageLoader />;
 
   return (
     <main>
@@ -70,12 +90,12 @@ const Home = () => {
           <div className="categories-grid">
             {categories.map((category) => (
               <Link 
-                key={category.name}
+                key={category.id || category.name}
                 to={`/categories?category=${category.name}`} 
                 className="category-card" 
-                style={{ background: category.color }}
+                style={{ background: getCategoryColor(category.name) }}
               >
-                <span className="category-emoji">{category.emoji}</span>
+                <span className="category-emoji">{category.emoji || getCategoryEmoji(category.name)}</span>
                 <h3>{category.name}</h3>
               </Link>
             ))}

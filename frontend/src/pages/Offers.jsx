@@ -1,87 +1,36 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { couponsAPI } from '../api/coupons';
+import { categoriesAPI } from '../api/categories';
 import { selectCartSubtotal } from '../store/slices/cartSlice';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 
 const Offers = () => {
   const [coupons, setCoupons] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const cartTotal = useSelector(selectCartSubtotal);
 
   useEffect(() => {
-    const fetchCoupons = async () => {
+    const fetchData = async () => {
       try {
-        const response = await couponsAPI.getAll();
-        setCoupons(response.data);
-      } catch (error) {
-        console.error('Error fetching coupons:', error);
-        // Use fallback coupons if API fails
-        setCoupons([
-          {
-            code: 'SAVE20',
-            description: '20% off orders above ₹500',
-            coupon_type: 'percentage',
-            value: 20,
-            min_order_value: 500,
-            max_discount: 100,
-            active: true,
-            expiry_date: '2027-12-31',
-            applicable_categories: [],
-          },
-          {
-            code: 'FRESH15',
-            description: '15% off on fruits & vegetables',
-            coupon_type: 'category',
-            value: 15,
-            min_order_value: 200,
-            max_discount: 75,
-            active: true,
-            expiry_date: '2027-12-31',
-            applicable_categories: ['Fruits', 'Vegetables'],
-          },
-          {
-            code: 'WELCOME50',
-            description: '₹50 off first order',
-            coupon_type: 'fixed',
-            value: 50,
-            min_order_value: 300,
-            max_discount: 50,
-            active: true,
-            expiry_date: '2027-12-31',
-            first_order_only: true,
-          },
-          {
-            code: 'DAIRY10',
-            description: '10% off on dairy products',
-            coupon_type: 'category',
-            value: 10,
-            min_order_value: 150,
-            max_discount: 50,
-            active: true,
-            expiry_date: '2027-12-31',
-            applicable_categories: ['Dairy'],
-          },
-          {
-            code: 'SNACKS25',
-            description: '₹25 off snacks orders',
-            coupon_type: 'fixed',
-            value: 25,
-            min_order_value: 100,
-            max_discount: 25,
-            active: true,
-            expiry_date: '2027-12-31',
-            applicable_categories: ['Snacks'],
-          },
+        const [couponsRes, categoriesRes] = await Promise.all([
+          couponsAPI.getAll(),
+          categoriesAPI.getAll(),
         ]);
+        setCoupons(couponsRes.data.results || couponsRes.data);
+        setCategories(categoriesRes.data.results || categoriesRes.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load offers');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCoupons();
+    fetchData();
   }, []);
 
   const handleCopyCode = (code) => {
@@ -115,8 +64,6 @@ const Offers = () => {
     ? coupons 
     : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
 
-  const categories = ['all', 'Fruits', 'Vegetables', 'Dairy', 'Snacks', 'Beverages'];
-
   if (loading) return <PageLoader />;
 
   return (
@@ -145,162 +92,184 @@ const Offers = () => {
 
       {/* Category Filter */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '2rem' }}>
+        <button
+          onClick={() => setActiveCategory('all')}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '20px',
+            border: '2px solid var(--primary-pink)',
+            background: activeCategory === 'all' ? 'var(--primary-pink)' : 'transparent',
+            color: activeCategory === 'all' ? 'white' : 'var(--text-dark)',
+            cursor: 'pointer',
+            fontWeight: 600,
+            transition: 'var(--transition)',
+          }}
+        >
+          All Coupons
+        </button>
         {categories.map((cat) => (
           <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
+            key={cat.id || cat.name}
+            onClick={() => setActiveCategory(cat.name)}
             style={{
               padding: '0.5rem 1rem',
               borderRadius: '20px',
               border: '2px solid var(--primary-pink)',
-              background: activeCategory === cat ? 'var(--primary-pink)' : 'transparent',
-              color: activeCategory === cat ? 'white' : 'var(--text-dark)',
+              background: activeCategory === cat.name ? 'var(--primary-pink)' : 'transparent',
+              color: activeCategory === cat.name ? 'white' : 'var(--text-dark)',
               cursor: 'pointer',
               fontWeight: 600,
               transition: 'var(--transition)',
-              textTransform: 'capitalize',
             }}
           >
-            {cat === 'all' ? 'All Coupons' : cat}
+            {cat.name}
           </button>
         ))}
       </div>
 
       {/* Coupons Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '1.5rem',
-        marginBottom: '3rem',
-      }}>
-        {filteredCoupons.filter(c => c.active).map((coupon) => {
-          const eligibility = getEligibilityStatus(coupon);
-          const daysLeft = calculateDaysLeft(coupon.expiry_date);
-          const isExpiringSoon = daysLeft <= 7;
+      {coupons.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">🎫</div>
+          <h3>No coupons available</h3>
+          <p>Check back later for exciting offers!</p>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '3rem',
+        }}>
+          {filteredCoupons.filter(c => c.active).map((coupon) => {
+            const eligibility = getEligibilityStatus(coupon);
+            const daysLeft = calculateDaysLeft(coupon.expiry_date || coupon.valid_until);
+            const isExpiringSoon = daysLeft <= 7;
 
-          return (
-            <div
-              key={coupon.code}
-              style={{
-                background: 'var(--bg-white)',
-                borderRadius: 'var(--border-radius)',
-                boxShadow: 'var(--shadow)',
-                overflow: 'hidden',
-                transition: 'var(--transition)',
-                border: `2px solid ${
-                  eligibility.status === 'applicable' ? 'var(--primary-green)' : 
-                  eligibility.status === 'almost' ? 'var(--primary-yellow)' : '#ddd'
-                }`,
-              }}
-            >
-              {/* Header */}
-              <div style={{
-                background: 'var(--primary-pink)',
-                color: 'white',
-                padding: '1.5rem',
-                textAlign: 'center',
-                position: 'relative',
-              }}>
-                <h3 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '3px', margin: 0 }}>
-                  {coupon.code}
-                </h3>
-                {coupon.first_order_only && (
-                  <span style={{
-                    display: 'inline-block',
-                    background: 'var(--primary-yellow)',
-                    color: 'var(--text-dark)',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '12px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    marginTop: '0.5rem',
-                  }}>
-                    First Order Only
-                  </span>
-                )}
-              </div>
-
-              {/* Body */}
-              <div style={{ padding: '1.5rem' }}>
-                <p style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-dark)' }}>
-                  {coupon.description}
-                </p>
-
-                {/* Eligibility Badge */}
+            return (
+              <div
+                key={coupon.code}
+                style={{
+                  background: 'var(--bg-white)',
+                  borderRadius: 'var(--border-radius)',
+                  boxShadow: 'var(--shadow)',
+                  overflow: 'hidden',
+                  transition: 'var(--transition)',
+                  border: `2px solid ${
+                    eligibility.status === 'applicable' ? 'var(--primary-green)' : 
+                    eligibility.status === 'almost' ? 'var(--primary-yellow)' : '#ddd'
+                  }`,
+                }}
+              >
+                {/* Header */}
                 <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  marginBottom: '1rem',
-                  background: 
-                    eligibility.status === 'applicable' ? 'var(--primary-green)' :
-                    eligibility.status === 'almost' ? 'var(--primary-yellow)' : '#ddd',
-                  color: eligibility.status === 'locked' ? '#666' : 'var(--text-dark)',
+                  background: 'var(--primary-pink)',
+                  color: 'white',
+                  padding: '1.5rem',
+                  textAlign: 'center',
+                  position: 'relative',
                 }}>
-                  {eligibility.icon} {eligibility.text}
-                </div>
-
-                {eligibility.status === 'almost' && (
-                  <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-light)', borderRadius: 'var(--border-radius)' }}>
-                    <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                      Add ₹{(coupon.min_order_value - cartTotal).toFixed(0)} more to unlock this offer!
-                    </p>
-                  </div>
-                )}
-
-                {/* Coupon Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
-                    <strong>Minimum Order:</strong>
-                    <span>₹{coupon.min_order_value}</span>
-                  </div>
-                  {coupon.coupon_type === 'percentage' && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
-                      <strong>Max Discount:</strong>
-                      <span>₹{coupon.max_discount}</span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
-                    <strong>Expires:</strong>
-                    <span style={{ color: isExpiringSoon ? '#ff4444' : 'inherit', fontWeight: isExpiringSoon ? 700 : 400 }}>
-                      {isExpiringSoon ? `${daysLeft} days left!` : new Date(coupon.expiry_date).toLocaleDateString()}
+                  <h3 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '3px', margin: 0 }}>
+                    {coupon.code}
+                  </h3>
+                  {coupon.first_order_only && (
+                    <span style={{
+                      display: 'inline-block',
+                      background: 'var(--primary-yellow)',
+                      color: 'var(--text-dark)',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      marginTop: '0.5rem',
+                    }}>
+                      First Order Only
                     </span>
-                  </div>
-                  {coupon.applicable_categories?.length > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
-                      <strong>Valid for:</strong>
-                      <span>{coupon.applicable_categories.join(', ')}</span>
-                    </div>
                   )}
                 </div>
 
-                {/* Copy Button */}
-                <button
-                  onClick={() => handleCopyCode(coupon.code)}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: 'var(--primary-green)',
-                    color: 'var(--text-dark)',
-                    border: 'none',
-                    borderRadius: 'var(--border-radius)',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'var(--transition)',
-                  }}
-                >
-                  Copy Code
-                </button>
+                {/* Body */}
+                <div style={{ padding: '1.5rem' }}>
+                  <p style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-dark)' }}>
+                    {coupon.description}
+                  </p>
+
+                  {/* Eligibility Badge */}
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '20px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    marginBottom: '1rem',
+                    background: 
+                      eligibility.status === 'applicable' ? 'var(--primary-green)' :
+                      eligibility.status === 'almost' ? 'var(--primary-yellow)' : '#ddd',
+                    color: eligibility.status === 'locked' ? '#666' : 'var(--text-dark)',
+                  }}>
+                    {eligibility.icon} {eligibility.text}
+                  </div>
+
+                  {eligibility.status === 'almost' && (
+                    <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-light)', borderRadius: 'var(--border-radius)' }}>
+                      <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                        Add ₹{(coupon.min_order_value - cartTotal).toFixed(0)} more to unlock this offer!
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Coupon Info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
+                      <strong>Minimum Order:</strong>
+                      <span>₹{coupon.min_order_value}</span>
+                    </div>
+                    {coupon.coupon_type === 'percentage' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
+                        <strong>Max Discount:</strong>
+                        <span>₹{coupon.max_discount}</span>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
+                      <strong>Expires:</strong>
+                      <span style={{ color: isExpiringSoon ? '#ff4444' : 'inherit', fontWeight: isExpiringSoon ? 700 : 400 }}>
+                        {isExpiringSoon ? `${daysLeft} days left!` : new Date(coupon.expiry_date || coupon.valid_until).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {coupon.applicable_categories?.length > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
+                        <strong>Valid for:</strong>
+                        <span>{coupon.applicable_categories.join(', ')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Copy Button */}
+                  <button
+                    onClick={() => handleCopyCode(coupon.code)}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'var(--primary-green)',
+                      color: 'var(--text-dark)',
+                      border: 'none',
+                      borderRadius: 'var(--border-radius)',
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'var(--transition)',
+                    }}
+                  >
+                    Copy Code
+                  </button>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* How to Use */}
       <div style={{
