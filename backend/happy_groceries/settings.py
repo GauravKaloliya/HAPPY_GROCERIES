@@ -80,14 +80,19 @@ WSGI_APPLICATION = 'happy_groceries.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Neon PostgreSQL Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'happy_groceries',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'localhost',
+        'NAME': 'neondb',
+        'USER': 'neondb_owner',
+        'PASSWORD': 'npg_H5utRe6ISzbf',
+        'HOST': 'ep-little-meadow-aiuaw4j8-pooler.c-4.us-east-1.aws.neon.tech',
         'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
+            'channel_binding': 'require',
+        },
     }
 }
 
