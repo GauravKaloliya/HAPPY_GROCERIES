@@ -53,6 +53,7 @@ const Offers = () => {
   };
 
   const calculateDaysLeft = (expiryDate) => {
+    if (!expiryDate) return 0;
     const today = new Date();
     const expiry = new Date(expiryDate);
     const diffTime = expiry - today;
@@ -141,10 +142,10 @@ const Offers = () => {
           gap: '1.5rem',
           marginBottom: '3rem',
         }}>
-          {filteredCoupons.filter(c => c.active).map((coupon) => {
+          {filteredCoupons.filter(c => c.is_active).map((coupon) => {
             const eligibility = getEligibilityStatus(coupon);
-            const daysLeft = calculateDaysLeft(coupon.expiry_date || coupon.valid_until);
-            const isExpiringSoon = daysLeft <= 7;
+            const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
+            const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
 
             return (
               <div
@@ -235,7 +236,9 @@ const Offers = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
                       <strong>Expires:</strong>
                       <span style={{ color: isExpiringSoon ? '#ff4444' : 'inherit', fontWeight: isExpiringSoon ? 700 : 400 }}>
-                        {isExpiringSoon ? `${daysLeft} days left!` : new Date(coupon.expiry_date || coupon.valid_until).toLocaleDateString()}
+                        {coupon.valid_until
+                          ? (isExpiringSoon ? `${daysLeft} days left!` : new Date(coupon.valid_until).toLocaleDateString())
+                          : 'No expiry'}
                       </span>
                     </div>
                     {coupon.applicable_categories?.length > 0 && (
