@@ -70,7 +70,7 @@
             const togglePasswordBtn = document.getElementById('togglePassword');
 
             phoneInput.addEventListener('input', function(e) {
-                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                e.target.value = e.target.value.replace(/\D/g, '');
             });
 
             togglePasswordBtn.addEventListener('click', function() {
@@ -79,61 +79,26 @@
                 togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
             });
 
-            // Real-time validation
-            phoneInput.addEventListener('blur', function() {
-                const phone = phoneInput.value.trim();
-                if (phone && !validatePhone(phone)) {
-                    phoneError.textContent = 'Phone number must be exactly 10 digits';
-                    phoneError.classList.add('show');
-                } else {
-                    phoneError.classList.remove('show');
-                }
-            });
-
-            passwordInput.addEventListener('blur', function() {
-                const password = passwordInput.value;
-                if (password && password.length < 6) {
-                    passwordError.textContent = 'Password must be at least 6 characters';
-                    passwordError.classList.add('show');
-                } else {
-                    passwordError.classList.remove('show');
-                }
-            });
-
             loginForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-
+                
                 phoneError.classList.remove('show');
                 passwordError.classList.remove('show');
 
                 const phone = phoneInput.value.trim();
                 const password = passwordInput.value;
 
-                let isValid = true;
-
-                // Validate phone
-                if (!phone) {
-                    phoneError.textContent = 'Phone number is required';
+                if (!validatePhone(phone)) {
+                    phoneError.textContent = 'Phone number must be 10 digits';
                     phoneError.classList.add('show');
-                    isValid = false;
-                } else if (!validatePhone(phone)) {
-                    phoneError.textContent = 'Phone number must be exactly 10 digits';
-                    phoneError.classList.add('show');
-                    isValid = false;
+                    return;
                 }
 
-                // Validate password
                 if (!password) {
                     passwordError.textContent = 'Password is required';
                     passwordError.classList.add('show');
-                    isValid = false;
-                } else if (password.length < 6) {
-                    passwordError.textContent = 'Password must be at least 6 characters';
-                    passwordError.classList.add('show');
-                    isValid = false;
+                    return;
                 }
-
-                if (!isValid) return;
 
                 const result = loginUser(phone, password);
 

@@ -73,7 +73,6 @@ function saveCart(cart) {
 }
 
 function addToCart(product, quantity = 1) {
-    // Allow guest mode - no login required
     const cart = getCart();
     const existingItem = cart.find(item => item.id === product.id);
 
@@ -89,21 +88,6 @@ function addToCart(product, quantity = 1) {
     saveCart(cart);
     showToast('Added to cart 🛒');
     return true;
-}
-
-// Helper function to check if cart is in guest mode
-function isGuestCart() {
-    return !isUserLoggedIn() && getCart().length > 0;
-}
-
-// Function to merge guest cart with user cart after login
-function mergeGuestCartWithUser() {
-    const guestCart = getCart();
-    if (guestCart.length === 0) return;
-
-    // Cart is already in localStorage, just update UI
-    updateCartCounter();
-    showToast(`Welcome back! You have ${getCartCount()} items in your cart 🛒`);
 }
 
 function removeFromCart(productId) {

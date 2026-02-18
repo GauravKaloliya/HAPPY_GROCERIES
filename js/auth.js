@@ -64,11 +64,6 @@ function validateName(name) {
 }
 
 function registerUser(name, phone, email, password) {
-    // Frontend validation - check required fields first
-    if (!name || !phone || !password) {
-        return { success: false, error: 'Name, phone, and password are required' };
-    }
-
     if (typeof HGValidation !== 'undefined' && HGValidation.checkRateLimit) {
         const rateCheck = HGValidation.checkRateLimit('register', phone);
         if (!rateCheck.allowed) {
@@ -81,23 +76,23 @@ function registerUser(name, phone, email, password) {
     const safePhone = (phone || '').replace(/\D/g, '');
 
     if (!validateName(safeName)) {
-        return { success: false, error: 'Name must be 3-50 characters and contain only letters, numbers, and spaces' };
+        return { success: false, error: 'Name must be 3-50 characters and contain only letters/numbers/spaces' };
     }
 
     if (!validatePhone(safePhone)) {
-        return { success: false, error: 'Phone number must be exactly 10 digits' };
+        return { success: false, error: 'Phone number must be 10 digits' };
     }
 
     if (safeEmail && !validateEmail(safeEmail)) {
-        return { success: false, error: 'Please enter a valid email address (e.g., user@example.com)' };
+        return { success: false, error: 'Invalid email format' };
     }
 
     if (!validatePassword(password)) {
-        return { success: false, error: 'Password must be at least 6 characters long' };
+        return { success: false, error: 'Password must be at least 6 characters' };
     }
 
     if (findUserByPhone(safePhone)) {
-        return { success: false, error: 'This phone number is already registered. Please login instead.' };
+        return { success: false, error: 'Phone number already registered' };
     }
 
     const hashedPassword = (typeof HGSecurity !== 'undefined' && HGSecurity.hashPassword)
@@ -127,20 +122,10 @@ function registerUser(name, phone, email, password) {
         HGValidation.resetRateLimit('register', phone);
     }
 
-    // Merge guest cart with new user if exists
-    if (typeof mergeGuestCartWithUser === 'function') {
-        mergeGuestCartWithUser();
-    }
-
     return { success: true, user };
 }
 
 function loginUser(phone, password) {
-    // Frontend validation
-    if (!phone || !password) {
-        return { success: false, error: 'Phone and password are required' };
-    }
-
     if (typeof HGValidation !== 'undefined' && HGValidation.checkRateLimit) {
         const rateCheck = HGValidation.checkRateLimit('login', phone);
         if (!rateCheck.allowed) {
@@ -149,7 +134,7 @@ function loginUser(phone, password) {
     }
 
     if (!validatePhone(phone)) {
-        return { success: false, error: 'Invalid phone number. Must be 10 digits.' };
+        return { success: false, error: 'Invalid phone number' };
     }
 
     const user = findUserByPhone(phone);
@@ -188,11 +173,6 @@ function loginUser(phone, password) {
 
     if (typeof HGValidation !== 'undefined' && HGValidation.resetRateLimit) {
         HGValidation.resetRateLimit('login', phone);
-    }
-
-    // Merge guest cart with user if exists
-    if (typeof mergeGuestCartWithUser === 'function') {
-        mergeGuestCartWithUser();
     }
 
     return { success: true, user };
