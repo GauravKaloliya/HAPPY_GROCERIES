@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<footer>
+  <brand>
+    <logo>🛒</logo>
+    <name>Happy Groceries</name>
+  </brand>
+  <copyright>
+    <author>Gaurav Kaloliya</author>
+  </copyright>
+  <links>
+    <link>
+      <label>Home</label>
+      <href>/</href>
+    </link>
+    <link>
+      <label>Shop</label>
+      <href>/shop</href>
+    </link>
+    <link>
+      <label>About</label>
+      <href>/about</href>
+    </link>
+  </links>
+</footer>
