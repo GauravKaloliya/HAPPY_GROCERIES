@@ -6,9 +6,10 @@ import toast from 'react-hot-toast';
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
   const product = item.product || {};
-  const price = product.price || item.price || 0;
-  const isOnSale = product.discount_price && product.discount_price < price;
-  const displayPrice = isOnSale ? product.discount_price : price;
+  const price = parseFloat(product.price || item.price || 0);
+  const effectivePrice = parseFloat(product.effective_price || price);
+  const isOnSale = effectivePrice < price;
+  const displayPrice = isOnSale ? effectivePrice : price;
 
   const handleUpdateQuantity = async (newQuantity) => {
     if (newQuantity < 1) return;

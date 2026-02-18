@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { cartAPI } from '../../api/cart';
+import { couponsAPI } from '../../api/coupons';
 import { TAX_RATE, DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from '../../utils/constants';
 
 const initialState = {
@@ -66,6 +67,18 @@ export const clearCart = createAsyncThunk(
       return [];
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to clear cart');
+    }
+  }
+);
+
+export const validateCoupon = createAsyncThunk(
+  'cart/validateCoupon',
+  async ({ code, cartTotal }, { rejectWithValue }) => {
+    try {
+      const response = await couponsAPI.validate(code, cartTotal);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Invalid coupon code');
     }
   }
 );
@@ -143,6 +156,20 @@ const cartSlice = createSlice({
         state.items = [];
         state.coupon = null;
         state.appliedCoupon = null;
+      })
+      // Validate Coupon
+      .addCase(validateCoupon.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(validateCoupon.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload.valid) {
+          state.appliedCoupon = action.payload.coupon;
+        }
+      })
+      .addCase(validateCoupon.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
@@ -151,8 +178,9 @@ const cartSlice = createSlice({
 export const selectCartItems = (state) => state.cart.items;
 export const selectCartLoading = (state) => state.cart.loading;
 export const selectCartError = (state) => state.cart.error;
-export const selectCartCount = (state) => 
+export const selectCartCount = (state) =>
   state.cart.items.reduce((total, item) => total + item.quantity, 0);
+export const selectAppliedCoupon = (state) => state.cart.appliedCoupon;
 
 export const selectCartSubtotal = (state) =>
   state.cart.items.reduce((total, item) => {
@@ -170,13 +198,19 @@ export const selectDeliveryCharge = (state) => {
 export const selectDiscount = (state) => {
   const subtotal = selectCartSubtotal(state);
   const coupon = state.cart.appliedCoupon;
-  
+
   if (!coupon) return 0;
-  
-  if (coupon.type === 'percentage') {
-    return subtotal * (coupon.discount / 100);
+
+  const potentialDiscount = state.cart.coupon?.potential_discount || 0;
+
+  // Calculate discount based on coupon type
+  if (coupon.coupon_type === 'percentage') {
+    return subtotal * (parseFloat(coupon.value) / 100);
+  } else if (coupon.coupon_type === 'fixed') {
+    return parseFloat(coupon.value);
   }
-  return coupon.discount;
+
+  return potentialDiscount;
 };
 
 export const selectCartTotal = (state) => {
