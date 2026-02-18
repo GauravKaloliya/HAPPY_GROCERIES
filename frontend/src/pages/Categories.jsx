@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
 
 const Categories = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+
+  const selectedCategory = searchParams.get('category') || 'All';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,6 +31,14 @@ const Categories = () => {
     };
     fetchData();
   }, [selectedCategory]);
+
+  const handleCategorySelect = (categoryName) => {
+    if (categoryName === 'All') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ category: categoryName });
+    }
+  };
 
   const getCategoryEmoji = (name) => {
     const emojis = {
@@ -67,7 +76,7 @@ const Categories = () => {
         {allCategories.map((category) => (
           <button
             key={category.id || category.name}
-            onClick={() => setSelectedCategory(category.name)}
+            onClick={() => handleCategorySelect(category.name)}
             className="category-card"
             style={{ 
               background: getCategoryColor(category.name),
