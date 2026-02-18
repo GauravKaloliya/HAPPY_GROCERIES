@@ -6,20 +6,55 @@ import { logout, selectIsAuthenticated, selectUser } from '../store/slices/authS
 import { selectCartCount } from '../store/slices/cartSlice';
 import toast from 'react-hot-toast';
 
+const parseXML = (xmlText) => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'application/xml');
+
+  const getTextContent = (parent, tag) => parent.querySelector(tag)?.textContent || '';
+
+  const navItems = Array.from(doc.querySelectorAll('navigation navItem')).map((item) => ({
+    label: getTextContent(item, 'label'),
+    href: getTextContent(item, 'href'),
+  }));
+
+  const userMenuItems = Array.from(doc.querySelectorAll('userMenu menuItem')).map((item) => ({
+    icon: getTextContent(item, 'icon'),
+    label: getTextContent(item, 'label'),
+    href: getTextContent(item, 'href'),
+  }));
+
+  return {
+    brand: {
+      logo: getTextContent(doc, 'brand logo'),
+      name: getTextContent(doc, 'brand name'),
+      href: getTextContent(doc, 'brand href'),
+    },
+    navItems,
+    userMenuItems,
+  };
+};
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [config, setConfig] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
   const dropdownRef = useRef(null);
-  
+
   const isDarkMode = useSelector(selectIsDarkMode);
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
   const cartCount = useSelector(selectCartCount);
 
-  // Close dropdown when clicking outside
+  useEffect(() => {
+    fetch('/header-config.xml')
+      .then((res) => res.text())
+      .then((text) => setConfig(parseXML(text)))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -30,7 +65,6 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menu on route change
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     setIsMenuOpen(false);
@@ -53,24 +87,44 @@ const Header = () => {
 
   const isActive = (path) => location.pathname === path ? 'active' : '';
 
+  const navItems = config?.navItems || [
+    { label: 'Home', href: '/' },
+    { label: 'Shop', href: '/shop' },
+    { label: 'Categories', href: '/categories' },
+    { label: '🎉 Offers', href: '/offers' },
+    { label: 'About', href: '/about' },
+  ];
+
+  const userMenuItems = config?.userMenuItems || [
+    { icon: '👤', label: 'Profile', href: '/profile' },
+    { icon: '📦', label: 'Orders', href: '/orders' },
+    { icon: '❤️', label: 'Wishlist', href: '/wishlist' },
+    { icon: '⚙️', label: 'Settings', href: '/settings' },
+  ];
+
+  const brandName = config?.brand?.name || 'Happy Groceries';
+  const brandLogo = config?.brand?.logo || '🛒';
+
   return (
     <nav className="navbar">
       <div className="nav-container">
         <div className="nav-logo">
-          <Link to="/">🛒 Happy Groceries</Link>
+          <Link to="/">{brandLogo} {brandName}</Link>
         </div>
 
         <ul className={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
-          <li><Link to="/" className={`nav-link ${isActive('/')}`}>Home</Link></li>
-          <li><Link to="/shop" className={`nav-link ${isActive('/shop')}`}>Shop</Link></li>
-          <li><Link to="/categories" className={`nav-link ${isActive('/categories')}`}>Categories</Link></li>
-          <li><Link to="/offers" className={`nav-link ${isActive('/offers')}`}>🎉 Offers</Link></li>
-          <li><Link to="/about" className={`nav-link ${isActive('/about')}`}>About</Link></li>
+          {navItems.map((item) => (
+            <li key={item.href}>
+              <Link to={item.href} className={`nav-link ${isActive(item.href)}`}>
+                {item.label}
+              </Link>
+            </li>
+          ))}
         </ul>
 
         <div className="nav-actions">
-          <button 
-            className="theme-toggle" 
+          <button
+            className="theme-toggle"
             onClick={handleThemeToggle}
             aria-label="Toggle theme"
           >
@@ -84,17 +138,18 @@ const Header = () => {
 
           {isAuthenticated ? (
             <div className="user-profile" ref={dropdownRef}>
-              <button 
+              <button
                 className="profile-btn"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
               >
                 {user?.first_name || user?.username || 'User'} ▼
               </button>
               <div className={`profile-dropdown ${isProfileOpen ? 'active' : ''}`}>
-                <Link to="/profile" onClick={() => setIsProfileOpen(false)}>👤 Profile</Link>
-                <Link to="/orders" onClick={() => setIsProfileOpen(false)}>📦 Orders</Link>
-                <Link to="/wishlist" onClick={() => setIsProfileOpen(false)}>❤️ Wishlist</Link>
-                <Link to="/settings" onClick={() => setIsProfileOpen(false)}>⚙️ Settings</Link>
+                {userMenuItems.map((item) => (
+                  <Link key={item.href} to={item.href} onClick={() => setIsProfileOpen(false)}>
+                    {item.icon} {item.label}
+                  </Link>
+                ))}
                 <hr />
                 <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
                   🚪 Logout
@@ -108,7 +163,7 @@ const Header = () => {
             </div>
           )}
 
-          <button 
+          <button
             className={`hamburger ${isMenuOpen ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"

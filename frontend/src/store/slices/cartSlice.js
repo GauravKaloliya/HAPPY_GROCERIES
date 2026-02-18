@@ -279,8 +279,10 @@ export const selectAppliedCoupon = (state) => state.cart.appliedCoupon;
 
 export const selectCartSubtotal = (state) =>
   state.cart.items.reduce((total, item) => {
-    const price = item.product?.price || item.price || 0;
-    return total + price * item.quantity;
+    const regularPrice = parseFloat(item.product?.price || item.price || 0);
+    const effectivePrice = parseFloat(item.product?.effective_price || regularPrice);
+    const itemPrice = effectivePrice < regularPrice ? effectivePrice : regularPrice;
+    return total + itemPrice * item.quantity;
   }, 0);
 
 export const selectCartTax = (state) => selectCartSubtotal(state) * TAX_RATE;
@@ -296,16 +298,13 @@ export const selectDiscount = (state) => {
 
   if (!coupon) return 0;
 
-  const potentialDiscount = state.cart.coupon?.potential_discount || 0;
-
-  // Calculate discount based on coupon type
   if (coupon.coupon_type === 'percentage') {
     return subtotal * (parseFloat(coupon.value) / 100);
   } else if (coupon.coupon_type === 'fixed') {
-    return parseFloat(coupon.value);
+    return Math.min(parseFloat(coupon.value), subtotal);
   }
 
-  return potentialDiscount;
+  return parseFloat(coupon.discount_amount || coupon.potential_discount || 0);
 };
 
 export const selectCartTotal = (state) => {
@@ -313,8 +312,8 @@ export const selectCartTotal = (state) => {
   const tax = selectCartTax(state);
   const delivery = selectDeliveryCharge(state);
   const discount = selectDiscount(state);
-  
-  return subtotal + tax + delivery - discount;
+
+  return Math.max(0, subtotal + tax + delivery - discount);
 };
 
 export const { setCoupon, clearCoupon, applyCoupon, clearCartState } = cartSlice.actions;

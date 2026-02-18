@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<header>
+  <brand>
+    <logo>🛒</logo>
+    <name>Happy Groceries</name>
+    <href>/</href>
+  </brand>
+  <navigation>
+    <navItem>
+      <label>Home</label>
+      <href>/</href>
+    </navItem>
+    <navItem>
+      <label>Shop</label>
+      <href>/shop</href>
+    </navItem>
+    <navItem>
+      <label>Categories</label>
+      <href>/categories</href>
+    </navItem>
+    <navItem>
+      <label>🎉 Offers</label>
+      <href>/offers</href>
+    </navItem>
+    <navItem>
+      <label>About</label>
+      <href>/about</href>
+    </navItem>
+  </navigation>
+  <userMenu>
+    <menuItem>
+      <icon>👤</icon>
+      <label>Profile</label>
+      <href>/profile</href>
+    </menuItem>
+    <menuItem>
+      <icon>📦</icon>
+      <label>Orders</label>
+      <href>/orders</href>
+    </menuItem>
+    <menuItem>
+      <icon>❤️</icon>
+      <label>Wishlist</label>
+      <href>/wishlist</href>
+    </menuItem>
+    <menuItem>
+      <icon>⚙️</icon>
+      <label>Settings</label>
+      <href>/settings</href>
+    </menuItem>
+  </userMenu>
+</header>

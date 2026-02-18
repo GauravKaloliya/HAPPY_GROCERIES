@@ -12,12 +12,19 @@ const CartItem = ({ item }) => {
   const displayPrice = isOnSale ? effectivePrice : price;
 
   const handleUpdateQuantity = async (newQuantity) => {
-    if (newQuantity < 1) return;
+    if (newQuantity <= 0) {
+      try {
+        await dispatch(removeFromCart(item.id)).unwrap();
+        toast.success('Item removed from cart');
+      } catch {
+        toast.error('Failed to remove item');
+      }
+      return;
+    }
     if (newQuantity > product.stock) {
       toast.error('Maximum stock reached!');
       return;
     }
-    
     try {
       await dispatch(updateCartItem({ itemId: item.id, quantity: newQuantity })).unwrap();
     } catch {
@@ -63,23 +70,22 @@ const CartItem = ({ item }) => {
             formatPrice(price)
           )}
         </div>
-        
+
         <div className="quantity-controls" style={{ marginTop: '0.5rem' }}>
-          <button 
-            className="qty-btn" 
+          <button
+            className="qty-btn"
             onClick={() => handleUpdateQuantity(item.quantity - 1)}
-            disabled={item.quantity <= 1}
           >
             −
           </button>
-          <input 
-            type="text" 
-            className="qty-input" 
-            value={item.quantity} 
-            readOnly 
+          <input
+            type="text"
+            className="qty-input"
+            value={item.quantity}
+            readOnly
           />
-          <button 
-            className="qty-btn" 
+          <button
+            className="qty-btn"
             onClick={() => handleUpdateQuantity(item.quantity + 1)}
             disabled={item.quantity >= product.stock}
           >
