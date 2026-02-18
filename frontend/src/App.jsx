@@ -14,11 +14,14 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import Categories from './pages/Categories';
+import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Wishlist from './pages/Wishlist';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import Offers from './pages/Offers';
 import About from './pages/About';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -45,13 +48,17 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/offers" element={<Offers />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             
-            {/* Protected Routes */}
+            {/* Cart is accessible to all, but checkout requires auth */}
             <Route path="/cart" element={<Cart />} />
+            
+            {/* Protected Routes */}
             <Route
               path="/checkout"
               element={
@@ -88,7 +95,7 @@ function App() {
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <Profile />
+                  <Settings />
                 </ProtectedRoute>
               }
             />
