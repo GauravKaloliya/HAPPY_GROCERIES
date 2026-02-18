@@ -10,8 +10,9 @@ const ConnectivityCheck = ({ children }) => {
   const checkConnectivity = async () => {
     setIsChecking(true);
     try {
-      const response = await api.get('/status/', { timeout: 5000 });
-      if (response.status === 200 && response.data?.status === 'ok') {
+      const response = await api.get('/health/', { timeout: 5000 });
+      const statusValue = response.data?.status;
+      if (response.status === 200 && (!statusValue || ['healthy', 'operational', 'ok'].includes(statusValue))) {
         setIsConnected(true);
         setHasFailed(false);
       } else {

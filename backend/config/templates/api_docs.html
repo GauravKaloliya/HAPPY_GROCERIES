@@ -5,511 +5,718 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Happy Groceries API Documentation</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --navy: #0f172a;
+            --blue: #2563eb;
+            --indigo: #6366f1;
+            --slate: #475569;
+            --light: #f8fafc;
+            --card: #ffffff;
+            --border: rgba(148, 163, 184, 0.3);
+            --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: 'Inter', sans-serif;
+            background: var(--light);
+            color: var(--navy);
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
         }
-        
-        .container {
-            max-width: 1400px;
+
+        .hero {
+            background: linear-gradient(120deg, #0f172a 0%, #1e293b 45%, #1d4ed8 100%);
+            color: #fff;
+            padding: 70px 20px 90px;
+        }
+
+        .hero-content {
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-            color: white;
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
         }
-        
-        .header h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+
+        .hero h1 {
+            font-size: clamp(2.4rem, 4vw, 3.6rem);
+            margin: 20px 0 12px;
         }
-        
-        .header p {
-            font-size: 1.2rem;
+
+        .hero p {
+            max-width: 720px;
+            font-size: 1.1rem;
             opacity: 0.9;
         }
-        
-        .api-version {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-top: 15px;
-            font-size: 0.9rem;
-        }
-        
-        .security-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 25px;
-            margin-top: 15px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .endpoints-grid {
+
+        .meta-grid {
+            margin-top: 32px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
         }
-        
-        .api-card {
-            background: white;
+
+        .meta-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 16px 18px;
         }
-        
-        .api-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
-        }
-        
-        .api-card h2 {
-            color: #667eea;
-            margin-bottom: 8px;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .api-card .base-url {
-            color: #888;
-            font-size: 0.85rem;
-            font-family: 'Courier New', monospace;
-            margin-bottom: 20px;
+
+        .meta-card span {
             display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            opacity: 0.75;
         }
-        
-        .endpoint {
-            border-left: 3px solid #e0e0e0;
-            padding-left: 15px;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #f0f0f0;
+
+        .meta-card strong {
+            font-size: 1rem;
+            display: block;
+            margin-top: 6px;
         }
-        
-        .endpoint:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
+
+        .container {
+            max-width: 1200px;
+            margin: -60px auto 80px;
+            padding: 0 20px;
         }
-        
+
+        .section {
+            background: var(--card);
+            border-radius: 22px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .section-header h2 {
+            font-size: 1.6rem;
+        }
+
+        .section-header span {
+            font-size: 0.85rem;
+            color: var(--slate);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+        }
+
+        .info-card h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .info-card p {
+            font-size: 0.95rem;
+            color: var(--slate);
+        }
+
+        .endpoint-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .endpoint-table th,
+        .endpoint-table td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .endpoint-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--slate);
+        }
+
         .method {
             display: inline-block;
-            padding: 3px 10px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 999px;
             font-size: 0.75rem;
-            font-weight: bold;
+            font-weight: 600;
             text-transform: uppercase;
-            margin-right: 8px;
         }
-        
-        .method.get { background: #61affe; color: white; }
-        .method.post { background: #49cc90; color: white; }
-        .method.put { background: #fca130; color: white; }
-        .method.patch { 
-            background: #50e3c2; 
-            color: white;
-            border: 2px solid #1a936f;
-        }
-        .method.delete { 
-            background: #f93e3e; 
-            color: white;
-            border: 2px solid #c70039;
-            opacity: 0.7;
-        }
-        
-        .path {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            color: #333;
-        }
-        
-        .description {
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-        
-        .auth-badge {
-            display: inline-block;
-            background: #ffd700;
-            color: #333;
+
+        .method.get { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+        .method.post { background: rgba(34, 197, 94, 0.12); color: #15803d; }
+        .method.patch { background: rgba(14, 116, 144, 0.12); color: #0e7490; }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
             padding: 2px 8px;
-            border-radius: 4px;
+            border-radius: 8px;
             font-size: 0.7rem;
-            margin-left: 8px;
-            font-weight: bold;
+            font-weight: 600;
+            background: rgba(99, 102, 241, 0.12);
+            color: #4338ca;
+            margin-left: 6px;
         }
-        
+
+        .code-block {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 14px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+
+        .list {
+            list-style: none;
+            padding-left: 0;
+            color: var(--slate);
+            display: grid;
+            gap: 6px;
+        }
+
         .footer {
             text-align: center;
-            margin-top: 50px;
-            color: white;
-            opacity: 0.8;
+            color: var(--slate);
+            font-size: 0.9rem;
+            margin-top: 40px;
         }
-        
-        .footer a {
-            color: #ffd700;
-            text-decoration: none;
-        }
-        
-        .emoji {
-            font-size: 1.3em;
-        }
-        
-        .security-section {
-            background: white;
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-        
-        .security-section h2 {
-            color: #f5576c;
-            margin-bottom: 20px;
-            font-size: 2rem;
-        }
-        
-        .security-list {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .security-list li {
-            padding: 10px 0;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .security-list li:last-child {
-            border-bottom: none;
-        }
-        
-        .security-icon {
-            font-size: 1.5em;
-        }
-        
+
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
+            .section {
+                padding: 24px;
             }
-            
-            .endpoints-grid {
-                grid-template-columns: 1fr;
+
+            .endpoint-table th,
+            .endpoint-table td {
+                padding: 10px 6px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><span class="emoji">🛒</span> Happy Groceries API</h1>
-            <p>REST API documentation - Frontend-optimized endpoints</p>
-            <div class="api-version">Version 3.0 - Frontend Aligned</div>
-            <div class="security-badge">🔒 Enterprise Security Enabled</div>
+    <header class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">🛒 Happy Groceries API</div>
+            <h1>Frontend-Focused API Documentation</h1>
+            <p>All endpoints listed below are actively used by the Happy Groceries customer experience. This documentation covers authentication, shopping, orders, promotions, and customer engagement features.</p>
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <span>Base URL</span>
+                    <strong>/api</strong>
+                </div>
+                <div class="meta-card">
+                    <span>Version</span>
+                    <strong>3.1 - End User Routes</strong>
+                </div>
+                <div class="meta-card">
+                    <span>Authentication</span>
+                    <strong>Bearer JWT Tokens</strong>
+                </div>
+                <div class="meta-card">
+                    <span>Support</span>
+                    <strong>hello@happygroceries.com</strong>
+                </div>
+            </div>
         </div>
-        
-        <div class="security-section">
-            <h2>🔐 Security Features</h2>
-            <ul class="security-list">
-                <li><span class="security-icon">✅</span> Rate Limiting (100 requests/minute)</li>
-                <li><span class="security-icon">✅</span> SQL Injection Protection</li>
-                <li><span class="security-icon">✅</span> XSS Prevention</li>
-                <li><span class="security-icon">✅</span> CSRF Token Generation</li>
-                <li><span class="security-icon">✅</span> IP Blocking for Suspicious Activity</li>
-                <li><span class="security-icon">✅</span> Request Size Validation</li>
-                <li><span class="security-icon">✅</span> Path Traversal Protection</li>
-                <li><span class="security-icon">✅</span> JWT Token Validation</li>
-                <li><span class="security-icon">✅</span> API Key Authentication</li>
-                <li><span class="security-icon">✅</span> Security Headers (CSP, HSTS, X-Frame-Options)</li>
+    </header>
+
+    <main class="container">
+        <section class="section">
+            <div class="section-header">
+                <h2>Getting Started</h2>
+                <span>Core conventions used by every endpoint</span>
+            </div>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Authentication</h3>
+                    <p>Send <strong>Authorization: Bearer &lt;access_token&gt;</strong> for all protected routes. Access tokens expire after 15 minutes.</p>
+                </div>
+                <div class="info-card">
+                    <h3>Pagination</h3>
+                    <p>List endpoints return paginated results when supported by the backend. Use <strong>?page</strong> and <strong>?page_size</strong> when available.</p>
+                </div>
+                <div class="info-card">
+                    <h3>Errors</h3>
+                    <p>Errors follow <strong>{"error": "message"}</strong>. Always check HTTP status codes to handle failures gracefully.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Authentication</h2>
+                <span>/api/auth/</span>
+            </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/register/</td>
+                        <td>Public</td>
+                        <td>Create a new customer account.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/login/</td>
+                        <td>Public</td>
+                        <td>Login and receive access + refresh tokens.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/logout/</td>
+                        <td>Required</td>
+                        <td>Invalidate the current session tokens.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/refresh/</td>
+                        <td>Public</td>
+                        <td>Refresh an expired access token.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span> <span class="method patch">PATCH</span></td>
+                        <td>/auth/profile/</td>
+                        <td>Required</td>
+                        <td>Fetch or update customer profile details.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/change-password/</td>
+                        <td>Required</td>
+                        <td>Update the current password.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Login example</strong></p>
+            <div class="code-block">{
+  "phone": "9876543210",
+  "password": "your_password"
+}</div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Products</h2>
+                <span>/api/products/</span>
+            </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/</td>
+                        <td>Public</td>
+                        <td>List products with filters (category, search, min_price, max_price, in_stock, ordering).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/{id}/</td>
+                        <td>Public</td>
+                        <td>Fetch full details for a single product.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/featured/</td>
+                        <td>Public</td>
+                        <td>Return featured items (rating ≥ 4.5).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/{id}/related/</td>
+                        <td>Public</td>
+                        <td>Get related products from the same category.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Popular filters</strong></p>
+            <ul class="list">
+                <li>• ?category=Fruits</li>
+                <li>• ?search=organic</li>
+                <li>• ?min_price=10&amp;max_price=120&amp;ordering=-price</li>
             </ul>
-        </div>
-        
-        <div class="endpoints-grid">
-            <!-- Authentication -->
-            <div class="api-card">
-                <h2><span class="emoji">🔐</span> Authentication</h2>
-                <span class="base-url">/api/auth/</span>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/register/</span>
-                    <div class="description">Register a new user account</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/login/</span>
-                    <div class="description">Authenticate user and receive JWT tokens</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/logout/</span>
-                    <span class="auth-badge">AUTH</span>
-                    <div class="description">Logout and blacklist tokens</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/refresh/</span>
-                    <div class="description">Refresh access token</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="method patch">PATCH</span>
-                    <span class="path">/profile/</span>
-                    <span class="auth-badge">AUTH</span>
-                    <div class="description">Get or update user profile</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/change-password/</span>
-                    <span class="auth-badge">AUTH</span>
-                    <div class="description">Change user password</div>
-                </div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Categories</h2>
+                <span>/api/products/categories/</span>
             </div>
-            
-            <!-- Products -->
-            <div class="api-card">
-                <h2><span class="emoji">🍎</span> Products</h2>
-                <span class="base-url">/api/products/</span>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/</span>
-                    <div class="description">List all products with filtering & search</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/{id}/</span>
-                    <div class="description">Get product details</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/categories/</span>
-                    <div class="description">List all categories</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/featured/</span>
-                    <div class="description">Get featured products</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/{id}/related/</span>
-                    <div class="description">Get related products from same category</div>
-                </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/categories/</td>
+                        <td>Public</td>
+                        <td>List every available category.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/categories/{id}/</td>
+                        <td>Public</td>
+                        <td>Return a single category with metadata.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Shopping Cart</h2>
+                <span>/api/cart/ <span class="tag">Auth required</span></span>
             </div>
-            
-            <!-- Categories -->
-            <div class="api-card">
-                <h2><span class="emoji">📂</span> Categories</h2>
-                <span class="base-url">/api/products/categories/</span>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/</span>
-                    <div class="description">List all categories</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/{id}/</span>
-                    <div class="description">Get category details</div>
-                </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/cart/</td>
+                        <td>Required</td>
+                        <td>Get cart items, subtotal, tax, delivery charge, and total.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/cart/add/</td>
+                        <td>Required</td>
+                        <td>Add an item (product_id, quantity).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/cart/update_item/</td>
+                        <td>Required</td>
+                        <td>Update quantity for a cart item (item_id, quantity).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/cart/remove_item/</td>
+                        <td>Required</td>
+                        <td>Remove a single cart item (item_id).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/cart/clear/</td>
+                        <td>Required</td>
+                        <td>Remove all items from the cart.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Orders</h2>
+                <span>/api/orders/ <span class="tag">Auth required</span></span>
             </div>
-            
-            <!-- Cart -->
-            <div class="api-card">
-                <h2><span class="emoji">🛒</span> Shopping Cart</h2>
-                <span class="base-url">/api/cart/</span>
-                <span class="auth-badge">AUTH REQUIRED</span>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/</span>
-                    <div class="description">Get user's cart with totals, tax, and delivery charge</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/add/</span>
-                    <div class="description">Add item to cart (product_id, quantity)</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/update_item/</span>
-                    <div class="description">Update cart item quantity (item_id, quantity)</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/remove_item/</span>
-                    <div class="description">Remove item from cart (item_id)</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/clear/</span>
-                    <div class="description">Clear all cart items</div>
-                </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/orders/</td>
+                        <td>Required</td>
+                        <td>List customer orders (supports status and delivery_type filters).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/orders/{id}/</td>
+                        <td>Required</td>
+                        <td>Retrieve a single order with items and totals.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/orders/</td>
+                        <td>Required</td>
+                        <td>Create a new order with delivery details.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Create order payload</strong></p>
+            <div class="code-block">{
+  "items": [
+    { "product_id": 1, "quantity": 2, "price": 99.99 }
+  ],
+  "delivery_name": "John Doe",
+  "delivery_phone": "9876543210",
+  "delivery_address": "123 Main St",
+  "delivery_type": "standard",
+  "subtotal": 199.98,
+  "tax": 15.99,
+  "delivery_charge": 50,
+  "discount": 0,
+  "total": 265.97,
+  "coupon_code": "WELCOME10"
+}</div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Coupons</h2>
+                <span>/api/coupons/</span>
             </div>
-            
-            <!-- Orders -->
-            <div class="api-card">
-                <h2><span class="emoji">📦</span> Orders</h2>
-                <span class="base-url">/api/orders/</span>
-                <span class="auth-badge">AUTH REQUIRED</span>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/</span>
-                    <div class="description">List user's orders</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/{id}/</span>
-                    <div class="description">Get order details</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/</span>
-                    <div class="description">Create new order (items, delivery info, coupon)</div>
-                </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/coupons/</td>
+                        <td>Public</td>
+                        <td>List available coupons.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/coupons/{id}/</td>
+                        <td>Public</td>
+                        <td>Get a coupon by ID.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/coupons/validate/</td>
+                        <td>Public</td>
+                        <td>Validate coupon code against current cart.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/coupons/apply/</td>
+                        <td>Required</td>
+                        <td>Apply a coupon to the authenticated cart.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/coupons/remove/</td>
+                        <td>Required</td>
+                        <td>Remove the currently applied coupon.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/coupons/suggested/</td>
+                        <td>Public</td>
+                        <td>Return suggested coupons based on cart totals.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Validate coupon example</strong></p>
+            <div class="code-block">{
+  "code": "WELCOME10",
+  "cart_total": 500,
+  "cart_items": []
+}</div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Wishlist</h2>
+                <span>/api/wishlist/ <span class="tag">Auth required</span></span>
             </div>
-            
-            <!-- Coupons -->
-            <div class="api-card">
-                <h2><span class="emoji">🏷️</span> Coupons</h2>
-                <span class="base-url">/api/coupons/</span>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/</span>
-                    <div class="description">List available coupons</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/{id}/</span>
-                    <div class="description">Get coupon details</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/validate/</span>
-                    <div class="description">Validate coupon code against cart (code, cart_total, cart_items)</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/apply/</span>
-                    <span class="auth-badge">AUTH</span>
-                    <div class="description">Apply coupon to cart (code)</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/remove/</span>
-                    <span class="auth-badge">AUTH</span>
-                    <div class="description">Remove applied coupon from cart</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/suggested/</span>
-                    <div class="description">Get suggested coupons for cart (cart_total, cart_items)</div>
-                </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/wishlist/</td>
+                        <td>Required</td>
+                        <td>Return all wishlist items.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/wishlist/add/</td>
+                        <td>Required</td>
+                        <td>Add product to wishlist (product_id).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/wishlist/remove/</td>
+                        <td>Required</td>
+                        <td>Remove product from wishlist (product_id).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/wishlist/{product_id}/check/</td>
+                        <td>Required</td>
+                        <td>Check if a product is saved.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/wishlist/clear/</td>
+                        <td>Required</td>
+                        <td>Clear the entire wishlist.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Activity Logs</h2>
+                <span>/api/activity-logs/ <span class="tag">Auth required</span></span>
             </div>
-            
-            <!-- Wishlist -->
-            <div class="api-card">
-                <h2><span class="emoji">❤️</span> Wishlist</h2>
-                <span class="base-url">/api/wishlist/</span>
-                <span class="auth-badge">AUTH REQUIRED</span>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/</span>
-                    <div class="description">Get user's wishlist items</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/add/</span>
-                    <div class="description">Add product to wishlist (product_id)</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/remove/</span>
-                    <div class="description">Remove product from wishlist (product_id)</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/{product_id}/check/</span>
-                    <div class="description">Check if product is in wishlist</div>
-                </div>
-                
-                <div class="endpoint">
-                    <span class="method post">POST</span>
-                    <span class="path">/clear/</span>
-                    <div class="description">Clear entire wishlist</div>
-                </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/activity-logs/log_activity/</td>
+                        <td>Public</td>
+                        <td>Capture page views and user actions.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/activity-logs/</td>
+                        <td>Required</td>
+                        <td>List activity logs for the authenticated user.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/activity-logs/statistics/</td>
+                        <td>Required</td>
+                        <td>Return aggregate activity metrics.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Filters</strong></p>
+            <ul class="list">
+                <li>• ?days=7 for the last 7 days</li>
+                <li>• ?action=page_view</li>
+                <li>• ?page=/shop</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Contact & Support</h2>
+                <span>/api/contact/</span>
             </div>
-            
-            <!-- Admin -->
-            <div class="api-card">
-                <h2><span class="emoji">⚙️</span> Admin</h2>
-                <span class="base-url">/admin/</span>
-                
-                <div class="endpoint">
-                    <span class="method get">GET</span>
-                    <span class="path">/admin/</span>
-                    <div class="description">Django Admin Panel</div>
-                </div>
-            </div>
-        </div>
-        
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/contact/messages/submit/</td>
+                        <td>Public</td>
+                        <td>Submit a contact form message.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/contact/messages/</td>
+                        <td>Required</td>
+                        <td>Retrieve customer support messages for the user.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Contact payload</strong></p>
+            <div class="code-block">{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "message": "Need help with my last order"
+}</div>
+        </section>
+
         <div class="footer">
-            <p>Built with <span class="emoji">💜</span> using Django REST Framework</p>
-            <p style="margin-top: 10px;">Optimized for Frontend Integration • Version 3.0</p>
-            <p style="margin-top: 10px;">Happy Groceries API © 2025</p>
+            <p>Happy Groceries API • Built with Django REST Framework</p>
+            <p>Updated for the customer-facing experience (2025)</p>
         </div>
-    </div>
+    </main>
 </body>
 </html>
