@@ -224,7 +224,7 @@ function handleQuantityInput(e) {
 
 function handleWishlistToggle(e) {
     e.stopPropagation();
-    
+
     if (!isUserLoggedIn()) {
         showToast('Please login to use wishlist');
         setTimeout(() => {
@@ -235,16 +235,24 @@ function handleWishlistToggle(e) {
         }, 1000);
         return;
     }
-    
+
     const productId = parseInt(e.target.dataset.productId);
     const isCurrentlyWishlisted = isInWishlist(productId);
-    
+
     updateUserWishlist(productId, !isCurrentlyWishlisted);
-    
+
     e.target.textContent = !isCurrentlyWishlisted ? '💖' : '🤍';
     e.target.classList.toggle('active');
-    
+
     showToast(!isCurrentlyWishlisted ? 'Added to wishlist 💖' : 'Removed from wishlist');
+}
+
+// Guest cart notification helper
+function showGuestCartNotification() {
+    if (!isUserLoggedIn() && getCart().length > 0) {
+        const cartCount = getCartCount();
+        console.log(`Guest mode: ${cartCount} items in cart`);
+    }
 }
 
 function renderProductGrid(products, containerId) {

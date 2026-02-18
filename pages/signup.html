@@ -97,15 +97,100 @@
             const passwordError = document.getElementById('passwordError');
             const confirmPasswordError = document.getElementById('confirmPasswordError');
 
+            // Real-time validation functions
+            function validateNameField() {
+                const name = nameInput.value.trim();
+                if (name && name.length < 3) {
+                    nameError.textContent = 'Name must be at least 3 characters';
+                    nameError.classList.add('show');
+                    return false;
+                } else {
+                    nameError.classList.remove('show');
+                    return name.length >= 3;
+                }
+            }
+
+            function validatePhoneField() {
+                const phone = phoneInput.value.trim();
+                if (phone && !validatePhone(phone)) {
+                    phoneError.textContent = 'Phone must be exactly 10 digits';
+                    phoneError.classList.add('show');
+                    return false;
+                } else {
+                    phoneError.classList.remove('show');
+                    return validatePhone(phone);
+                }
+            }
+
+            function validateEmailField() {
+                const email = emailInput.value.trim();
+                if (email && !validateEmail(email)) {
+                    emailError.textContent = 'Please enter a valid email address';
+                    emailError.classList.add('show');
+                    return false;
+                } else {
+                    emailError.classList.remove('show');
+                    return true;
+                }
+            }
+
+            function validatePasswordField() {
+                const password = passwordInput.value;
+                const strength = getPasswordStrength(password);
+                strengthBar.className = 'password-strength-bar ' + strength;
+
+                if (password && password.length < 6) {
+                    passwordError.textContent = 'Password must be at least 6 characters';
+                    passwordError.classList.add('show');
+                    return false;
+                } else {
+                    passwordError.classList.remove('show');
+                    return password.length >= 6;
+                }
+            }
+
+            function validateConfirmPasswordField() {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                if (confirmPassword && password !== confirmPassword) {
+                    confirmPasswordError.textContent = 'Passwords do not match';
+                    confirmPasswordError.classList.add('show');
+                    return false;
+                } else {
+                    confirmPasswordError.classList.remove('show');
+                    return password === confirmPassword && confirmPassword.length > 0;
+                }
+            }
+
+            function checkFormValidity() {
+                const name = nameInput.value.trim();
+                const phone = phoneInput.value.trim();
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                let isValid = true;
+
+                if (name.length < 3) isValid = false;
+                if (!validatePhone(phone)) isValid = false;
+                if (email && !validateEmail(email)) isValid = false;
+                if (password.length < 6) isValid = false;
+                if (password !== confirmPassword) isValid = false;
+
+                signupBtn.disabled = !isValid;
+                return isValid;
+            }
+
             phoneInput.addEventListener('input', function(e) {
-                e.target.value = e.target.value.replace(/\D/g, '');
-                validateForm();
+                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                validatePhoneField();
+                checkFormValidity();
             });
 
             passwordInput.addEventListener('input', function() {
-                const strength = getPasswordStrength(passwordInput.value);
-                strengthBar.className = 'password-strength-bar ' + strength;
-                validateForm();
+                validatePasswordField();
+                validateConfirmPasswordField();
+                checkFormValidity();
             });
 
             togglePasswordBtn.addEventListener('click', function() {
@@ -120,45 +205,31 @@
                 toggleConfirmPasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
             });
 
-            nameInput.addEventListener('input', validateForm);
-            emailInput.addEventListener('input', validateForm);
-            confirmPasswordInput.addEventListener('input', validateForm);
+            nameInput.addEventListener('input', function() {
+                validateNameField();
+                checkFormValidity();
+            });
 
-            function validateForm() {
-                const name = nameInput.value.trim();
-                const phone = phoneInput.value.trim();
-                const email = emailInput.value.trim();
-                const password = passwordInput.value;
-                const confirmPassword = confirmPasswordInput.value;
+            nameInput.addEventListener('blur', validateNameField);
 
-                let isValid = true;
+            emailInput.addEventListener('input', function() {
+                validateEmailField();
+                checkFormValidity();
+            });
 
-                if (name.length < 3) {
-                    isValid = false;
-                }
+            emailInput.addEventListener('blur', validateEmailField);
 
-                if (!validatePhone(phone)) {
-                    isValid = false;
-                }
+            confirmPasswordInput.addEventListener('input', function() {
+                validateConfirmPasswordField();
+                checkFormValidity();
+            });
 
-                if (email && !validateEmail(email)) {
-                    isValid = false;
-                }
-
-                if (!validatePassword(password)) {
-                    isValid = false;
-                }
-
-                if (password !== confirmPassword) {
-                    isValid = false;
-                }
-
-                signupBtn.disabled = !isValid;
-            }
+            confirmPasswordInput.addEventListener('blur', validateConfirmPasswordField);
 
             signupForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
+                // Clear all errors
                 nameError.classList.remove('show');
                 phoneError.classList.remove('show');
                 emailError.classList.remove('show');
@@ -171,35 +242,60 @@
                 const password = passwordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
 
-                if (!validateName(name)) {
+                let isValid = true;
+
+                // Validate name
+                if (!name) {
+                    nameError.textContent = 'Name is required';
+                    nameError.classList.add('show');
+                    isValid = false;
+                } else if (name.length < 3) {
                     nameError.textContent = 'Name must be at least 3 characters';
                     nameError.classList.add('show');
-                    return;
+                    isValid = false;
                 }
 
-                if (!validatePhone(phone)) {
-                    phoneError.textContent = 'Phone number must be 10 digits';
+                // Validate phone
+                if (!phone) {
+                    phoneError.textContent = 'Phone number is required';
                     phoneError.classList.add('show');
-                    return;
+                    isValid = false;
+                } else if (!validatePhone(phone)) {
+                    phoneError.textContent = 'Phone number must be exactly 10 digits';
+                    phoneError.classList.add('show');
+                    isValid = false;
                 }
 
+                // Validate email (optional)
                 if (email && !validateEmail(email)) {
-                    emailError.textContent = 'Invalid email format';
+                    emailError.textContent = 'Please enter a valid email address';
                     emailError.classList.add('show');
-                    return;
+                    isValid = false;
                 }
 
-                if (!validatePassword(password)) {
+                // Validate password
+                if (!password) {
+                    passwordError.textContent = 'Password is required';
+                    passwordError.classList.add('show');
+                    isValid = false;
+                } else if (password.length < 6) {
                     passwordError.textContent = 'Password must be at least 6 characters';
                     passwordError.classList.add('show');
-                    return;
+                    isValid = false;
                 }
 
-                if (password !== confirmPassword) {
+                // Validate confirm password
+                if (!confirmPassword) {
+                    confirmPasswordError.textContent = 'Please confirm your password';
+                    confirmPasswordError.classList.add('show');
+                    isValid = false;
+                } else if (password !== confirmPassword) {
                     confirmPasswordError.textContent = 'Passwords do not match';
                     confirmPasswordError.classList.add('show');
-                    return;
+                    isValid = false;
                 }
+
+                if (!isValid) return;
 
                 const result = registerUser(name, phone, email, password);
 
