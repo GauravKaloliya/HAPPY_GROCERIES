@@ -597,9 +597,10 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    border: 1px solid var(--primary-pink);
+    border: 2px solid var(--primary-pink);
     border-radius: var(--border-radius);
     padding: 0.25rem;
+    width: fit-content;
 }
 
 .qty-btn {
@@ -622,14 +623,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .qty-input {
-    width: 40px;
+    width: 50px;
     text-align: center;
     border: none;
     background: transparent;
     font-weight: 600;
     color: var(--text-dark);
     font-size: 1rem;
-    padding: 0;
+    padding: 0.25rem;
 }
 
 .btn-add-cart {
