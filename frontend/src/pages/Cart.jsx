@@ -17,6 +17,7 @@ import {
 import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -31,6 +32,7 @@ const Cart = () => {
   const discount = useSelector(selectDiscount);
   const total = useSelector(selectCartTotal);
   const appliedCoupon = useSelector(state => state.cart.appliedCoupon);
+  const { logCustomActivity } = useActivityLog('page_view', { section: 'cart' });
 
   useEffect(() => {
     const loadCart = async () => {

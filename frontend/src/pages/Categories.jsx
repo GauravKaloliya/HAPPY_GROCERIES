@@ -4,6 +4,7 @@ import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
+import useActivityLog from '../hooks/useActivityLog';
 
 const Categories = () => {
   const [searchParams] = useSearchParams();
@@ -11,6 +12,8 @@ const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+
+  useActivityLog('page_view', { section: 'categories' });
 
   useEffect(() => {
     const fetchData = async () => {
