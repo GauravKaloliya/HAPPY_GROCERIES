@@ -192,7 +192,7 @@ function renderProduct(product, root) {
     const isWishlisted = isInWishlist(product.id);
     const stockInfo = getStockInfo(product);
     const categoryBg = typeof getCategoryColor === 'function' ? getCategoryColor(product.category) : 'var(--primary-blue)';
-    
+
     // Calculate discount information
     const hasDiscount = product.discountPercent && product.discountPercent > 0;
     const discountedPrice = hasDiscount ? calculateDiscountedPrice(product.price, product.discountPercent) : product.price;
@@ -211,7 +211,7 @@ function renderProduct(product, root) {
                         ` : ''}
                     </div>
 
-                    <div>
+                    <div class="product-details-info">
                         <h1 class="product-details-name">${product.name}</h1>
 
                         <div class="product-details-meta">

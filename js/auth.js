@@ -1,5 +1,11 @@
 const AUTH_STORAGE_KEY = 'happyGroceries_users';
 const SESSION_STORAGE_KEY = 'happyGroceries_session';
+const TOKEN_STORAGE_KEY = 'happyGroceries_access_token';
+
+// API base URL - adjust based on your backend deployment
+const API_BASE_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : 'https://your-production-api.com';
 
 function hashPasswordLegacy(password) {
     let hash = 0;
@@ -63,17 +69,25 @@ function validateName(name) {
     return name && name.length >= 3;
 }
 
-function registerUser(name, phone, email, password) {
+// Get stored access token
+function getAccessToken() {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+// Set access token
+function setAccessToken(token) {
+    if (token) {
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+}
+
+// Register user via backend API
+async function registerUser(name, phone, email, password) {
     // Frontend validation - check required fields first
     if (!name || !phone || !password) {
         return { success: false, error: 'Name, phone, and password are required' };
-    }
-
-    if (typeof HGValidation !== 'undefined' && HGValidation.checkRateLimit) {
-        const rateCheck = HGValidation.checkRateLimit('register', phone);
-        if (!rateCheck.allowed) {
-            return { success: false, error: rateCheck.message };
-        }
     }
 
     const safeName = (typeof HGValidation !== 'undefined' && HGValidation.sanitizeInput) ? HGValidation.sanitizeInput(name) : (name || '').trim();
@@ -96,7 +110,72 @@ function registerUser(name, phone, email, password) {
         return { success: false, error: 'Password must be at least 6 characters long' };
     }
 
-    if (findUserByPhone(safePhone)) {
+    try {
+        // Call backend API for registration
+        const response = await fetch(`${API_BASE_URL}/api/auth/register/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: safeName,
+                phone: safePhone,
+                email: safeEmail || '',
+                password: password
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Handle specific error messages from backend
+            if (data.phone) {
+                return { success: false, error: 'This phone number is already registered. Please login instead.' };
+            }
+            if (data.error) {
+                return { success: false, error: data.error };
+            }
+            return { success: false, error: 'Registration failed. Please try again.' };
+        }
+
+        // Store user data and tokens
+        const user = {
+            id: data.user.id,
+            name: data.user.name,
+            phone: data.user.phone,
+            email: data.user.email || '',
+            createdAt: new Date().toISOString(),
+            orders: [],
+            wishlist: []
+        };
+
+        // Also save to localStorage for offline compatibility
+        saveUser(user);
+
+        // Store tokens
+        if (data.access_token) {
+            setAccessToken(data.access_token);
+        }
+
+        // Create session
+        createSession(user);
+
+        // Merge guest cart with new user if exists
+        if (typeof mergeGuestCartWithUser === 'function') {
+            mergeGuestCartWithUser();
+        }
+
+        return { success: true, user };
+    } catch (error) {
+        console.error('Registration error:', error);
+        // Fallback to localStorage-based auth if backend is unavailable
+        return registerUserLocal(safeName, safePhone, safeEmail, password);
+    }
+}
+
+// Local fallback registration (when backend is unavailable)
+function registerUserLocal(name, phone, email, password) {
+    if (findUserByPhone(phone)) {
         return { success: false, error: 'This phone number is already registered. Please login instead.' };
     }
 
@@ -106,9 +185,9 @@ function registerUser(name, phone, email, password) {
 
     const user = {
         id: Date.now().toString(),
-        name: safeName,
-        phone: safePhone,
-        email: safeEmail || '',
+        name: name,
+        phone: phone,
+        email: email || '',
         password: hashedPassword,
         createdAt: new Date().toISOString(),
         orders: [],
@@ -116,18 +195,8 @@ function registerUser(name, phone, email, password) {
     };
 
     saveUser(user);
+    createSession(user);
 
-    if (typeof HGSession !== 'undefined' && HGSession.createSession) {
-        HGSession.createSession(user);
-    } else {
-        createSession(user);
-    }
-
-    if (typeof HGValidation !== 'undefined' && HGValidation.resetRateLimit) {
-        HGValidation.resetRateLimit('register', phone);
-    }
-
-    // Merge guest cart with new user if exists
     if (typeof mergeGuestCartWithUser === 'function') {
         mergeGuestCartWithUser();
     }
@@ -135,23 +204,84 @@ function registerUser(name, phone, email, password) {
     return { success: true, user };
 }
 
-function loginUser(phone, password) {
+// Login user via backend API
+async function loginUser(phone, password) {
     // Frontend validation
     if (!phone || !password) {
         return { success: false, error: 'Phone and password are required' };
-    }
-
-    if (typeof HGValidation !== 'undefined' && HGValidation.checkRateLimit) {
-        const rateCheck = HGValidation.checkRateLimit('login', phone);
-        if (!rateCheck.allowed) {
-            return { success: false, error: rateCheck.message };
-        }
     }
 
     if (!validatePhone(phone)) {
         return { success: false, error: 'Invalid phone number. Must be 10 digits.' };
     }
 
+    try {
+        // Call backend API for login
+        const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include', // Include cookies for refresh token
+            body: JSON.stringify({
+                phone: phone,
+                password: password
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            if (data.error) {
+                return { success: false, error: data.error };
+            }
+            return { success: false, error: 'Invalid credentials' };
+        }
+
+        // Store user data and tokens
+        const user = {
+            id: data.user.id,
+            name: data.user.name,
+            phone: data.user.phone,
+            email: data.user.email || '',
+            createdAt: data.user.date_joined || new Date().toISOString(),
+            orders: [],
+            wishlist: []
+        };
+
+        // Save user to localStorage for compatibility
+        const existingUsers = getAllUsers();
+        const existingIndex = existingUsers.findIndex(u => u.phone === user.phone);
+        if (existingIndex >= 0) {
+            existingUsers[existingIndex] = { ...existingUsers[existingIndex], ...user };
+        } else {
+            existingUsers.push(user);
+        }
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(existingUsers));
+
+        // Store access token
+        if (data.access_token) {
+            setAccessToken(data.access_token);
+        }
+
+        // Create session
+        createSession(user);
+
+        // Merge guest cart with user if exists
+        if (typeof mergeGuestCartWithUser === 'function') {
+            mergeGuestCartWithUser();
+        }
+
+        return { success: true, user };
+    } catch (error) {
+        console.error('Login error:', error);
+        // Fallback to localStorage-based auth if backend is unavailable
+        return loginUserLocal(phone, password);
+    }
+}
+
+// Local fallback login (when backend is unavailable)
+function loginUserLocal(phone, password) {
     const user = findUserByPhone(phone);
     if (!user) {
         return { success: false, error: 'User not found' };
@@ -180,22 +310,55 @@ function loginUser(phone, password) {
         return { success: false, error: 'Invalid password' };
     }
 
-    if (typeof HGSession !== 'undefined' && HGSession.createSession) {
-        HGSession.createSession(user);
-    } else {
-        createSession(user);
-    }
+    createSession(user);
 
-    if (typeof HGValidation !== 'undefined' && HGValidation.resetRateLimit) {
-        HGValidation.resetRateLimit('login', phone);
-    }
-
-    // Merge guest cart with user if exists
     if (typeof mergeGuestCartWithUser === 'function') {
         mergeGuestCartWithUser();
     }
 
     return { success: true, user };
+}
+
+// Logout user via backend API
+async function logoutUser() {
+    try {
+        const accessToken = getAccessToken();
+
+        // Call backend logout API
+        const response = await fetch(`${API_BASE_URL}/api/auth/logout/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            credentials: 'include'
+        });
+
+        // Clear local session regardless of API response
+        clearLocalSession();
+
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Still clear local session on error
+        clearLocalSession();
+    }
+}
+
+// Clear local session data
+function clearLocalSession() {
+    if (typeof HGSession !== 'undefined' && HGSession.endSession) {
+        HGSession.endSession();
+    } else {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+
+    // Clear access token
+    setAccessToken(null);
+
+    // Determine correct redirect path based on current location
+    const currentPath = window.location.pathname;
+    const inPagesDir = currentPath.includes('/pages/');
+    window.location.href = inPagesDir ? '../index.html' : 'index.html';
 }
 
 function createSession(user) {
@@ -229,19 +392,6 @@ function isUserLoggedIn() {
         return HGSession.validateSession();
     }
     return getCurrentUser() !== null;
-}
-
-function logoutUser() {
-    if (typeof HGSession !== 'undefined' && HGSession.endSession) {
-        HGSession.endSession();
-    } else {
-        localStorage.removeItem(SESSION_STORAGE_KEY);
-    }
-    
-    // Determine correct redirect path based on current location
-    const currentPath = window.location.pathname;
-    const inPagesDir = currentPath.includes('/pages/');
-    window.location.href = inPagesDir ? '../index.html' : 'index.html';
 }
 
 function getPasswordStrength(password) {
@@ -291,8 +441,8 @@ function addOrder(order) {
     const isExpress = order.delivery > 0 && order.delivery === getDeliveryCharge().express;
     const deliveryMinutes = calculateDeliveryMinutes(cart, isExpress);
     const deliveryTime = formatDeliveryTime(deliveryMinutes);
-    
-    order.estimatedDelivery = isExpress ? 
+
+    order.estimatedDelivery = isExpress ?
         `Express delivery: ${deliveryMinutes} minutes (by ${deliveryTime})` :
         `Standard delivery: ${deliveryMinutes} minutes (by ${deliveryTime})`;
 
@@ -325,4 +475,71 @@ function updateUserProfile(updates) {
     }
 
     return false;
+}
+
+// Make API request with automatic token refresh
+async function apiRequest(url, options = {}) {
+    const accessToken = getAccessToken();
+
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken && { 'Authorization': `Bearer ${accessToken}` })
+        },
+        credentials: 'include'
+    };
+
+    const mergedOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers
+        }
+    };
+
+    try {
+        let response = await fetch(url, mergedOptions);
+
+        // If token expired, try to refresh
+        if (response.status === 401) {
+            const refreshed = await refreshToken();
+            if (refreshed) {
+                // Retry with new token
+                mergedOptions.headers['Authorization'] = `Bearer ${getAccessToken()}`;
+                response = await fetch(url, mergedOptions);
+            } else {
+                // Refresh failed, logout user
+                clearLocalSession();
+                return null;
+            }
+        }
+
+        return response;
+    } catch (error) {
+        console.error('API request error:', error);
+        throw error;
+    }
+}
+
+// Refresh access token using refresh token cookie
+async function refreshToken() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh/`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.access_token) {
+                setAccessToken(data.access_token);
+                return true;
+            }
+        }
+        return false;
+    } catch (error) {
+        console.error('Token refresh error:', error);
+        return false;
+    }
 }

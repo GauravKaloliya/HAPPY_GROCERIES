@@ -38,123 +38,106 @@
     <script src="../js/layout-loader.js"></script>
     <script src="../js/main.js"></script>
     <script>
-        // Available coupons - defined here to ensure visibility
-        const AVAILABLE_COUPONS = [
-            {
-                code: 'SAVE20',
-                description: '20% off orders above ₹500',
-                type: 'percentage',
-                value: 20,
-                minOrderValue: 500,
-                maxDiscount: 100,
-                active: true,
-                expiryDate: '2027-12-31'
-            },
-            {
-                code: 'FRESH15',
-                description: '15% off on fruits & vegetables',
-                type: 'category',
-                value: 15,
-                applicableCategories: ['Fruits', 'Vegetables'],
-                minOrderValue: 200,
-                maxDiscount: 75,
-                active: true,
-                expiryDate: '2027-12-31'
-            },
-            {
-                code: 'WELCOME50',
-                description: '₹50 off first order',
-                type: 'fixed',
-                value: 50,
-                minOrderValue: 300,
-                maxDiscount: 50,
-                active: true,
-                expiryDate: '2027-12-31',
-                firstOrderOnly: true
-            },
-            {
-                code: 'DAIRY10',
-                description: '10% off on dairy products',
-                type: 'category',
-                value: 10,
-                applicableCategories: ['Dairy'],
-                minOrderValue: 150,
-                maxDiscount: 50,
-                active: true,
-                expiryDate: '2027-12-31'
-            },
-            {
-                code: 'SNACKS25',
-                description: '₹25 off snacks orders',
-                type: 'fixed',
-                value: 25,
-                applicableCategories: ['Snacks'],
-                minOrderValue: 100,
-                maxDiscount: 25,
-                active: true,
-                expiryDate: '2027-12-31'
-            }
-        ];
+        // API base URL - adjust based on your backend deployment
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000' 
+            : 'https://your-production-api.com';
 
         document.addEventListener('DOMContentLoaded', function() {
             loadCoupons();
         });
 
-        function loadCoupons() {
+        async function loadCoupons() {
             const couponsList = document.getElementById('couponsList');
             if (!couponsList) return;
 
-            const activeCoupons = AVAILABLE_COUPONS.filter(c => c.active);
+            // Show loading state
+            couponsList.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <div class="loading-emoji">🔄</div>
+                    <h3>Loading coupons...</h3>
+                </div>
+            `;
 
-            if (activeCoupons.length === 0) {
-                couponsList.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="empty-state-icon">🎫</div>
-                        <h3>No active coupons</h3>
-                        <p>Check back later for new offers!</p>
-                    </div>
-                `;
-                return;
-            }
+            try {
+                // Fetch coupons from backend API
+                const response = await fetch(`${API_BASE_URL}/api/coupons/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
 
-            couponsList.innerHTML = activeCoupons.map(coupon => {
-                const categoryText = coupon.applicableCategories 
-                    ? `Applicable to: ${coupon.applicableCategories.join(', ')}` 
-                    : 'Applicable to: All products';
+                if (!response.ok) {
+                    throw new Error('Failed to fetch coupons');
+                }
 
-                const isExpired = new Date(coupon.expiryDate) < new Date();
+                const coupons = await response.json();
 
-                return `
-                <div class="coupon-card ${isExpired ? 'expired' : ''}">
-                    <div class="coupon-header">
-                        <h3 class="coupon-code">${coupon.code}</h3>
-                    </div>
-                    <div class="coupon-body">
-                        <p class="coupon-description">${coupon.description}</p>
-                        <p class="coupon-details">${categoryText}</p>
-                        <div class="coupon-info">
-                            <span class="coupon-info-item">
-                                <strong>Minimum Order:</strong> ₹${coupon.minOrderValue}
-                            </span>
-                            ${coupon.type === 'percentage' ? `
-                            <span class="coupon-info-item">
-                                <strong>Max Discount:</strong> ₹${coupon.maxDiscount}
-                            </span>
-                            ` : ''}
-                            <span class="coupon-info-item">
-                                <strong>Expires:</strong> ${new Date(coupon.expiryDate).toLocaleDateString()}
-                            </span>
+                if (!coupons || coupons.length === 0) {
+                    couponsList.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1;">
+                            <div class="empty-state-icon">🎫</div>
+                            <h3>No active coupons</h3>
+                            <p>Check back later for new offers!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                couponsList.innerHTML = coupons.map(coupon => {
+                    const categoryText = coupon.applicable_categories 
+                        ? `Applicable to: ${coupon.applicable_categories.join(', ')}` 
+                        : 'Applicable to: All products';
+
+                    const expiryDate = coupon.valid_until || coupon.expiry_date;
+                    const isExpired = expiryDate ? new Date(expiryDate) < new Date() : false;
+                    const couponType = coupon.coupon_type || coupon.type || 'fixed';
+                    const maxDiscount = coupon.max_discount || coupon.maxDiscount;
+
+                    return `
+                    <div class="coupon-card ${isExpired ? 'expired' : ''}">
+                        <div class="coupon-header">
+                            <h3 class="coupon-code">${coupon.code}</h3>
+                        </div>
+                        <div class="coupon-body">
+                            <p class="coupon-description">${coupon.description}</p>
+                            <p class="coupon-details">${categoryText}</p>
+                            <div class="coupon-info">
+                                <span class="coupon-info-item">
+                                    <strong>Minimum Order:</strong> ₹${coupon.min_order_value || coupon.minOrderValue || 0}
+                                </span>
+                                ${couponType === 'percentage' && maxDiscount ? `
+                                <span class="coupon-info-item">
+                                    <strong>Max Discount:</strong> ₹${maxDiscount}
+                                </span>
+                                ` : ''}
+                                ${expiryDate ? `
+                                <span class="coupon-info-item">
+                                    <strong>Expires:</strong> ${new Date(expiryDate).toLocaleDateString()}
+                                </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="coupon-footer">
+                            <button class="btn-copy-coupon" data-code="${coupon.code}" ${isExpired ? 'disabled' : ''}>
+                                ${isExpired ? 'Expired' : 'Copy Code'}
+                            </button>
                         </div>
                     </div>
-                    <div class="coupon-footer">
-                        <button class="btn-copy-coupon" data-code="${coupon.code}" ${isExpired ? 'disabled' : ''}>
-                            ${isExpired ? 'Expired' : 'Copy Code'}
-                        </button>
-                    </div>
-                </div>
-            `}).join('');
+                `}).join('');
 
-            setupCouponButtons();
+                setupCouponButtons();
+            } catch (error) {
+                console.error('Error loading coupons:', error);
+                couponsList.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>Failed to load coupons</h3>
+                        <p>Please try again later. Error: ${error.message}</p>
+                    </div>
+                `;
+            }
         }
 
         function setupCouponButtons() {

@@ -206,9 +206,14 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:5173',
+    'http://localhost',
+    'http://localhost:8000',
+    'http://127.0.0.1',
+    'http://127.0.0.1:8000',
     'https://happygroceries.vercel.app',
 ]
-CORS_ALLOW_ALL_ORIGINS = False
+# Allow requests from file:// protocol (null origin) for local development
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
