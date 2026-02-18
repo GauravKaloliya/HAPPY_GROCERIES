@@ -1,33 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap');
 
 :root {
-    --primary-pink: #1877f2;
-    --primary-blue: #B3E5FC;
-    --primary-green: #C8E6C9;
-    --primary-yellow: #FFECB3;
-    --primary-orange: #FFD9B3;
-    --text-dark: #333;
+    --primary-pink: #6c5ce7;
+    --primary-blue: #74b9ff;
+    --primary-green: #55efc4;
+    --primary-yellow: #ffeaa7;
+    --primary-orange: #fab1a0;
+    --text-dark: #2d2a3b;
     --text-light: #fff;
-    --bg-light: #f9f9f9;
+    --bg-light: #f4f5fb;
     --bg-white: #ffffff;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2);
+    --shadow: 0 6px 14px rgba(45, 42, 59, 0.1);
+    --shadow-hover: 0 10px 22px rgba(45, 42, 59, 0.18);
     --border-radius: 15px;
     --transition: all 0.3s ease;
 }
 
 body.dark-mode {
-    --text-dark: #f0f0f0;
-    --text-light: #1a1a1a;
-    --bg-light: #1a1a1a;
-    --bg-white: #2d2d2d;
-    --primary-pink: #1877f2;
-    --primary-blue: #7db8d1;
-    --primary-green: #a1c79e;
-    --primary-yellow: #d9c993;
-    --primary-orange: #d9ae8f;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-    --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.7);
+    --text-dark: #f5f6ff;
+    --text-light: #181724;
+    --bg-light: #151420;
+    --bg-white: #221f33;
+    --primary-pink: #7f6bff;
+    --primary-blue: #5fa8ff;
+    --primary-green: #47d8b1;
+    --primary-yellow: #f4d98a;
+    --primary-orange: #f2a38f;
+    --shadow: 0 6px 14px rgba(10, 8, 20, 0.55);
+    --shadow-hover: 0 10px 22px rgba(10, 8, 20, 0.75);
 }
 
 * {
