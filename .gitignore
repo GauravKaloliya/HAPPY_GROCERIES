@@ -13,3 +13,7 @@ backend/venv/
 *.log
 .DS_Store
 .playwright-cli/
+CHANGES_SUMMARY.md
+IMPLEMENTATION_CHECKLIST.md
+IMPLEMENTATION_SUMMARY.md
+
