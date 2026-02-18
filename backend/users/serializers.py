@@ -43,6 +43,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         # Extract password
         password = validated_data.pop('password')
         
+        validated_data.setdefault('username', validated_data.get('phone'))
+        
         # Create user
         user = User.objects.create(**validated_data)
         user.set_password(password)
