@@ -37,8 +37,9 @@ const ProductDetails = () => {
         if (isAuthenticated) {
           try {
             const wishlistRes = await wishlistAPI.getWishlist();
-            const wishlistIds = wishlistRes.data.map(item => item.product.id);
-            setIsWishlisted(wishlistIds.includes(parseInt(id)));
+            const wishlistItems = wishlistRes.data.results || wishlistRes.data;
+            const wishlistIds = wishlistItems.map(item => item.product.id);
+            setIsWishlisted(wishlistIds.includes(parseInt(id, 10)));
           } catch (error) {
             console.error('Error fetching wishlist:', error);
           }

@@ -1,33 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Nunito:wght@300;400;600;700&family=Comic+Neue:wght@400;700&display=swap');
 
 :root {
-    --primary-pink: #1877f2;
-    --primary-blue: #B3E5FC;
-    --primary-green: #C8E6C9;
-    --primary-yellow: #FFECB3;
-    --primary-orange: #FFD9B3;
-    --text-dark: #333;
+    --primary-pink: #6c5ce7;
+    --primary-blue: #74b9ff;
+    --primary-green: #55efc4;
+    --primary-yellow: #ffeaa7;
+    --primary-orange: #fab1a0;
+    --text-dark: #2d2a3b;
     --text-light: #fff;
-    --bg-light: #f9f9f9;
+    --bg-light: #f4f5fb;
     --bg-white: #ffffff;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2);
+    --shadow: 0 6px 14px rgba(45, 42, 59, 0.1);
+    --shadow-hover: 0 10px 22px rgba(45, 42, 59, 0.18);
     --border-radius: 15px;
     --transition: all 0.3s ease;
 }
 
 body.dark-mode {
-    --text-dark: #f0f0f0;
-    --text-light: #1a1a1a;
-    --bg-light: #1a1a1a;
-    --bg-white: #2d2d2d;
-    --primary-pink: #1877f2;
-    --primary-blue: #7db8d1;
-    --primary-green: #a1c79e;
-    --primary-yellow: #d9c993;
-    --primary-orange: #d9ae8f;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-    --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.7);
+    --text-dark: #f5f6ff;
+    --text-light: #181724;
+    --bg-light: #151420;
+    --bg-white: #221f33;
+    --primary-pink: #7f6bff;
+    --primary-blue: #5fa8ff;
+    --primary-green: #47d8b1;
+    --primary-yellow: #f4d98a;
+    --primary-orange: #f2a38f;
+    --shadow: 0 6px 14px rgba(10, 8, 20, 0.55);
+    --shadow-hover: 0 10px 22px rgba(10, 8, 20, 0.75);
 }
 
 * {
@@ -623,7 +623,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .qty-input {
-    width: 50px;
+    width: 70px;
     text-align: center;
     border: none;
     background: transparent;
@@ -944,6 +944,15 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 1rem;
 }
 
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+}
+
 .search-bar input {
     flex: 1;
     padding: 0.75rem 1rem;
@@ -955,9 +964,64 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-dark);
 }
 
+.search-bar input::placeholder {
+    color: transparent;
+}
+
 .search-bar input:focus {
     outline: none;
     border-color: var(--primary-pink);
+}
+
+.search-placeholder {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #8a8a8a;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.search-placeholder-label {
+    color: #a0a0a0;
+}
+
+.search-placeholder-rotator {
+    height: 1.2rem;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.rotator-track {
+    display: block;
+    animation: search-placeholder-scroll 8s infinite;
+}
+
+.rotator-track span {
+    display: block;
+    height: 1.2rem;
+}
+
+@keyframes search-placeholder-scroll {
+    0%, 18% {
+        transform: translateY(0);
+    }
+    22%, 38% {
+        transform: translateY(-1.2rem);
+    }
+    42%, 58% {
+        transform: translateY(-2.4rem);
+    }
+    62%, 78% {
+        transform: translateY(-3.6rem);
+    }
+    82%, 100% {
+        transform: translateY(-4.8rem);
+    }
 }
 
 .filters {
@@ -992,6 +1056,44 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--bg-white);
     color: var(--text-dark);
     cursor: pointer;
+}
+
+.price-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.price-input {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid #ddd;
+    border-radius: var(--border-radius);
+    font-family: 'Nunito', sans-serif;
+    width: 90px;
+    background: var(--bg-white);
+    color: var(--text-dark);
+}
+
+.price-input:focus {
+    outline: none;
+    border-color: var(--primary-pink);
+}
+
+.price-separator {
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+.stock-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.clear-filters {
+    margin-left: auto;
 }
 
 .results-count {

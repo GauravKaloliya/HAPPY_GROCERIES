@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, updateCartItem, removeFromCart, selectCartItems } from '../store/slices/cartSlice';
+import { wishlistAPI } from '../api/wishlist';
+import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
@@ -9,6 +11,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const dispatch = useDispatch();
   const cartItems = useSelector(selectCartItems);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const cartItem = cartItems.find(item =>
     item.product?.id === product.id || item.id === product.id
@@ -24,6 +27,23 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     beverages: '🧃',
   };
 
+  useEffect(() => {
+    const fetchWishlistStatus = async () => {
+      try {
+        const response = await wishlistAPI.checkWishlist(product.id);
+        setIsWishlisted(response.data.is_in_wishlist);
+      } catch {
+        setIsWishlisted(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchWishlistStatus();
+    } else {
+      setIsWishlisted(false);
+    }
+  }, [isAuthenticated, product.id]);
+
   const handleAddToCart = async () => {
     try {
       await dispatch(addToCart({ productId: product.id, quantity: 1, product })).unwrap();
@@ -33,9 +53,22 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     }
   };
 
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    toast.success(isWishlisted ? 'Removed from wishlist 💔' : 'Added to wishlist ❤️');
+  const handleWishlist = async () => {
+    if (!isAuthenticated) return;
+
+    try {
+      if (isWishlisted) {
+        await wishlistAPI.removeFromWishlist(product.id);
+        setIsWishlisted(false);
+        toast.success('Removed from wishlist 💔');
+      } else {
+        await wishlistAPI.addToWishlist(product.id);
+        setIsWishlisted(true);
+        toast.success('Added to wishlist ❤️');
+      }
+    } catch {
+      toast.error('Failed to update wishlist');
+    }
   };
 
   const handleIncrement = async () => {
@@ -89,13 +122,15 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     <div className={`product-card ${isOnSale ? 'on-sale' : ''}`}>
       {isOnSale && <span className="sale-badge">Sale</span>}
 
-      <button
-        onClick={handleWishlist}
-        className={`wishlist-btn ${isWishlisted ? 'active' : ''}`}
-        style={{ color: isWishlisted ? '#ff4444' : 'inherit' }}
-      >
-        {isWishlisted ? '❤️' : '🤍'}
-      </button>
+      {isAuthenticated && (
+        <button
+          onClick={handleWishlist}
+          className={`wishlist-btn ${isWishlisted ? 'active' : ''}`}
+          style={{ color: isWishlisted ? '#ff4444' : 'inherit' }}
+        >
+          {isWishlisted ? '❤️' : '🤍'}
+        </button>
+      )}
 
       <Link to={`/product/${product.id}`} className="product-card-link">
         <div className="product-image">

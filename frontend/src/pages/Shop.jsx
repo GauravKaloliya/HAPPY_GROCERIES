@@ -23,6 +23,8 @@ const Shop = () => {
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
   const [inStock, setInStock] = useState(searchParams.get('in_stock') === 'true');
 
+  const placeholderItems = ['Apples', 'Bananas', 'Milk', 'Chips', 'Tomatoes'];
+
   // Fetch categories only once
   useEffect(() => {
     const fetchCategories = async () => {
@@ -109,20 +111,34 @@ const Shop = () => {
     <div className="container">
       <div className="search-section">
         <div className="search-bar">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setSearchQuery(e.target.value);
+                }
+              }}
+              onBlur={(e) => {
                 setSearchQuery(e.target.value);
-              }
-            }}
-            onBlur={(e) => {
-              setSearchQuery(e.target.value);
-            }}
-            placeholder="Search for products... (Press Enter or blur to search)"
-          />
+              }}
+              placeholder="Search"
+            />
+            {!searchInput && (
+              <div className="search-placeholder" aria-hidden="true">
+                <span className="search-placeholder-label">Search</span>
+                <span className="search-placeholder-rotator">
+                  <span className="rotator-track">
+                    {placeholderItems.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="filters">
@@ -154,27 +170,25 @@ const Shop = () => {
             <option value="-rating">Rating: High to Low</option>
           </select>
 
-          <div className="price-filters" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div className="price-filters">
             <input
               type="number"
-              placeholder="Min Price"
+              placeholder="Min"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
               className="price-input"
-              style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', width: '100px' }}
             />
-            <span>-</span>
+            <span className="price-separator">-</span>
             <input
               type="number"
-              placeholder="Max Price"
+              placeholder="Max"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
               className="price-input"
-              style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', width: '100px' }}
             />
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <label className="stock-filter">
             <input
               type="checkbox"
               checked={inStock}
@@ -186,8 +200,7 @@ const Shop = () => {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="filter-btn"
-              style={{ marginLeft: 'auto' }}
+              className="filter-btn clear-filters"
             >
               Clear Filters
             </button>
