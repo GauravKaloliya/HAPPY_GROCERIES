@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ordersAPI } from '../api/orders';
-import { 
-  selectCartItems, 
+import {
+  selectCartItems,
   selectCartTotal,
   selectCartSubtotal,
   selectCartTax,
   selectDeliveryCharge,
   selectDiscount,
   clearCartState,
+  selectAppliedCoupon,
 } from '../store/slices/cartSlice';
 import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
@@ -28,6 +29,7 @@ const Checkout = () => {
   const delivery = useSelector(selectDeliveryCharge);
   const discount = useSelector(selectDiscount);
   const total = useSelector(selectCartTotal);
+  const appliedCoupon = useSelector(selectAppliedCoupon);
 
   const [deliveryInfo, setDeliveryInfo] = useState({
     name: '',
@@ -69,15 +71,18 @@ const Checkout = () => {
         items: items.map(item => ({
           product_id: item.product.id,
           quantity: item.quantity,
-          price: item.product.discount_price || item.product.price,
+          price: item.product.effective_price || item.product.price,
         })),
         delivery_address: `${deliveryInfo.address}, ${deliveryInfo.city}`,
         delivery_phone: deliveryInfo.phone,
+        delivery_name: deliveryInfo.name,
+        delivery_type: deliveryInfo.deliveryType,
         subtotal,
         tax,
         delivery_charge: delivery,
         discount,
         total,
+        coupon_code: appliedCoupon?.code || null,
       };
 
       const response = await ordersAPI.create(orderData);
