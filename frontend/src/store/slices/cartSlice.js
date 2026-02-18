@@ -1,10 +1,32 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { cartAPI } from '../../api/cart';
 import { couponsAPI } from '../../api/coupons';
+import { productsAPI } from '../../api/products';
 import { TAX_RATE, DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from '../../utils/constants';
 
+const GUEST_CART_KEY = 'guestCart';
+
+const getGuestCart = () => {
+  try {
+    const stored = localStorage.getItem(GUEST_CART_KEY);
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveGuestCart = (items) => {
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+};
+
+const getInitialItems = () => {
+  const accessToken = localStorage.getItem('accessToken');
+  return accessToken ? [] : getGuestCart();
+};
+
 const initialState = {
-  items: [],
+  items: getInitialItems(),
   loading: false,
   error: null,
   coupon: null,
@@ -13,8 +35,13 @@ const initialState = {
 
 export const fetchCart = createAsyncThunk(
   'cart/fetchCart',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
+      const isAuthenticated = getState().auth.isAuthenticated;
+      if (!isAuthenticated) {
+        return getGuestCart();
+      }
+
       const response = await cartAPI.getCart();
       return response.data;
     } catch (error) {
@@ -25,8 +52,35 @@ export const fetchCart = createAsyncThunk(
 
 export const addToCart = createAsyncThunk(
   'cart/addToCart',
-  async ({ productId, quantity = 1 }, { rejectWithValue }) => {
+  async ({ productId, quantity = 1, product }, { rejectWithValue, getState }) => {
     try {
+      const isAuthenticated = getState().auth.isAuthenticated;
+      if (!isAuthenticated) {
+        const items = getGuestCart();
+        const existingItem = items.find(item => item.id === productId || item.product?.id === productId);
+        let productData = product || existingItem?.product;
+
+        if (!productData) {
+          const response = await productsAPI.getById(productId);
+          productData = response.data;
+        }
+
+        const maxQuantity = productData?.stock ? Math.min(productData.stock, 99) : 99;
+
+        if (existingItem) {
+          existingItem.quantity = Math.min(existingItem.quantity + quantity, maxQuantity);
+        } else {
+          items.push({
+            id: productData.id,
+            product: productData,
+            quantity: Math.min(quantity, maxQuantity),
+          });
+        }
+
+        saveGuestCart(items);
+        return { items };
+      }
+
       const response = await cartAPI.addItem(productId, quantity);
       return response.data;
     } catch (error) {
@@ -37,8 +91,28 @@ export const addToCart = createAsyncThunk(
 
 export const updateCartItem = createAsyncThunk(
   'cart/updateCartItem',
-  async ({ itemId, quantity }, { rejectWithValue }) => {
+  async ({ itemId, quantity }, { rejectWithValue, getState }) => {
     try {
+      const isAuthenticated = getState().auth.isAuthenticated;
+      if (!isAuthenticated) {
+        const items = getGuestCart();
+        const itemIndex = items.findIndex(item => item.id === itemId || item.product?.id === itemId);
+        if (itemIndex === -1) {
+          return rejectWithValue('Cart item not found');
+        }
+
+        if (quantity <= 0) {
+          items.splice(itemIndex, 1);
+        } else {
+          const item = items[itemIndex];
+          const maxQuantity = item.product?.stock ? Math.min(item.product.stock, 99) : 99;
+          item.quantity = Math.min(quantity, maxQuantity);
+        }
+
+        saveGuestCart(items);
+        return { items };
+      }
+
       const response = await cartAPI.updateItem(itemId, quantity);
       return response.data;
     } catch (error) {
@@ -49,8 +123,15 @@ export const updateCartItem = createAsyncThunk(
 
 export const removeFromCart = createAsyncThunk(
   'cart/removeFromCart',
-  async (itemId, { rejectWithValue }) => {
+  async (itemId, { rejectWithValue, getState }) => {
     try {
+      const isAuthenticated = getState().auth.isAuthenticated;
+      if (!isAuthenticated) {
+        const items = getGuestCart().filter(item => item.id !== itemId && item.product?.id !== itemId);
+        saveGuestCart(items);
+        return { items };
+      }
+
       await cartAPI.removeItem(itemId);
       return itemId;
     } catch (error) {
@@ -61,8 +142,14 @@ export const removeFromCart = createAsyncThunk(
 
 export const clearCart = createAsyncThunk(
   'cart/clearCart',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
+      const isAuthenticated = getState().auth.isAuthenticated;
+      if (!isAuthenticated) {
+        saveGuestCart([]);
+        return [];
+      }
+
       await cartAPI.clearCart();
       return [];
     } catch (error) {
@@ -141,6 +228,10 @@ const cartSlice = createSlice({
       })
       // Update Cart Item
       .addCase(updateCartItem.fulfilled, (state, action) => {
+        if (action.payload.items) {
+          state.items = action.payload.items;
+          return;
+        }
         const updatedItem = action.payload;
         const index = state.items.findIndex(item => item.id === updatedItem.id);
         if (index !== -1) {
@@ -149,6 +240,10 @@ const cartSlice = createSlice({
       })
       // Remove from Cart
       .addCase(removeFromCart.fulfilled, (state, action) => {
+        if (action.payload?.items) {
+          state.items = action.payload.items;
+          return;
+        }
         state.items = state.items.filter(item => item.id !== action.payload);
       })
       // Clear Cart

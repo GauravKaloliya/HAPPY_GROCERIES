@@ -1882,10 +1882,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .product-details-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    align-items: start;
+   display: grid;
+   grid-template-columns: minmax(260px, 1fr) 1.6fr;
+   gap: 2rem;
+   align-items: start;
 }
 
 .product-image-section {

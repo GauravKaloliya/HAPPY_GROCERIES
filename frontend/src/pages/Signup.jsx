@@ -52,7 +52,20 @@ const Signup = () => {
     }
 
     try {
-      await dispatch(register(formData)).unwrap();
+      const nameParts = formData.name.trim().split(' ').filter(Boolean);
+      const firstName = nameParts.shift() || '';
+      const lastName = nameParts.join(' ');
+
+      const payload = {
+        phone: formData.phone,
+        email: formData.email,
+        first_name: firstName,
+        last_name: lastName,
+        password: formData.password,
+        password_confirm: formData.password,
+      };
+
+      await dispatch(register(payload)).unwrap();
       toast.success('Welcome to Happy Groceries! 🎉');
       navigate('/');
     } catch (err) {
