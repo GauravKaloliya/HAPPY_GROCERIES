@@ -46,6 +46,8 @@ LOCAL_APPS = [
     'orders',
     'coupons',
     'wishlist',
+    'activity_logs',
+    'contact',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -243,11 +245,14 @@ LOGGING = {
 # Security Headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Cache Configuration
+# Cache Configuration - uses REDIS_URL only
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': REDIS_URL,
+        'LOCATION': os.environ.get('REDIS_URL'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }
 
