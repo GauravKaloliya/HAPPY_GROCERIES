@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ordersAPI } from '../api/orders';
 import {
   selectCartItems,
-  selectCartTotal,
   selectCartSubtotal,
   selectCartTax,
   selectDeliveryCharge,
@@ -12,10 +11,14 @@ import {
   clearCartState,
   selectAppliedCoupon,
 } from '../store/slices/cartSlice';
+import { selectUser } from '../store/slices/authSlice';
 import { formatPrice } from '../utils/helpers';
+import { DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
+
+const EXPRESS_CHARGE = 50;
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -23,16 +26,18 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [fetchingLocation, setFetchingLocation] = useState(false);
 
+  const user = useSelector(selectUser);
   const items = useSelector(selectCartItems);
   const subtotal = useSelector(selectCartSubtotal);
   const tax = useSelector(selectCartTax);
-  const delivery = useSelector(selectDeliveryCharge);
+  const baseDelivery = useSelector(selectDeliveryCharge);
   const discount = useSelector(selectDiscount);
+  const appliedCoupon = useSelector(selectAppliedCoupon);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'checkout' });
-  const total = useSelector(selectCartTotal);
-  const appliedCoupon = useSelector(selectAppliedCoupon);
 
   const [deliveryInfo, setDeliveryInfo] = useState({
     name: '',
@@ -41,6 +46,28 @@ const Checkout = () => {
     city: '',
     deliveryType: 'standard',
   });
+
+  useEffect(() => {
+    if (user) {
+      setDeliveryInfo(prev => ({
+        ...prev,
+        name: user.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : prev.name,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user]);
+
+  const deliveryCharge = deliveryInfo.deliveryType === 'express'
+    ? EXPRESS_CHARGE
+    : baseDelivery;
+
+  const computedTotal = (() => {
+    const base = subtotal + tax - discount;
+    if (deliveryInfo.deliveryType === 'express') {
+      return Math.max(0, base + EXPRESS_CHARGE);
+    }
+    return Math.max(0, base + baseDelivery);
+  })();
 
   if (items.length === 0 && !orderSuccess) {
     return (
@@ -58,13 +85,68 @@ const Checkout = () => {
   }
 
   const handleInputChange = (e) => {
-    setDeliveryInfo({ ...deliveryInfo, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setDeliveryInfo(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await response.json();
+          const address = data.display_name || `${latitude}, ${longitude}`;
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || '';
+          setDeliveryInfo(prev => ({
+            ...prev,
+            address,
+            city,
+          }));
+          setFieldErrors(prev => ({ ...prev, address: '', city: '' }));
+          toast.success('Location fetched successfully! 📍');
+        } catch {
+          toast.error('Failed to fetch address from location');
+        } finally {
+          setFetchingLocation(false);
+        }
+      },
+      (error) => {
+        setFetchingLocation(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error('Location permission denied. Please allow access.');
+        } else {
+          toast.error('Failed to get location');
+        }
+      }
+    );
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!deliveryInfo.name.trim()) errors.name = 'Full name is required';
+    if (!deliveryInfo.phone.trim()) errors.phone = 'Phone number is required';
+    else if (!/^\d{10}$/.test(deliveryInfo.phone.trim())) errors.phone = 'Enter a valid 10-digit phone number';
+    if (!deliveryInfo.address.trim()) errors.address = 'Delivery address is required';
+    if (!deliveryInfo.city.trim()) errors.city = 'City is required';
+    return errors;
   };
 
   const handlePlaceOrder = async () => {
-    const required = ['name', 'phone', 'address', 'city'];
-    if (!required.every(field => deliveryInfo[field].trim() !== '')) {
-      toast.error('Please fill in all delivery information');
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -82,23 +164,32 @@ const Checkout = () => {
         delivery_type: deliveryInfo.deliveryType,
         subtotal,
         tax,
-        delivery_charge: delivery,
+        delivery_charge: deliveryCharge,
         discount,
-        total,
+        total: computedTotal,
         coupon_code: appliedCoupon?.code || null,
       };
 
       const response = await ordersAPI.create(orderData);
-      setOrderId(response.data.id);
+      setOrderId(response.data.id || response.data.order_id);
       setOrderSuccess(true);
       dispatch(clearCartState());
-      logCustomActivity('checkout', { order_id: response.data.id, total, items_count: items.length });
+      logCustomActivity('checkout', { order_id: response.data.id, total: computedTotal, items_count: items.length });
       toast.success('Order placed successfully! 🎉');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to place order');
     } finally {
       setLoading(false);
     }
+  };
+
+  const isFormValid = () => {
+    return (
+      deliveryInfo.name.trim() &&
+      deliveryInfo.phone.trim() &&
+      deliveryInfo.address.trim() &&
+      deliveryInfo.city.trim()
+    );
   };
 
   if (orderSuccess) {
@@ -124,7 +215,7 @@ const Checkout = () => {
     <div className="checkout-container">
       <div className="checkout-form">
         <h2 style={{ marginBottom: '1.5rem' }}>Delivery Information</h2>
-        
+
         <div className="form-group">
           <label>Full Name</label>
           <input
@@ -133,8 +224,8 @@ const Checkout = () => {
             value={deliveryInfo.name}
             onChange={handleInputChange}
             placeholder="Enter your full name"
-            required
           />
+          {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
         </div>
 
         <div className="form-group">
@@ -145,19 +236,43 @@ const Checkout = () => {
             value={deliveryInfo.phone}
             onChange={handleInputChange}
             placeholder="Enter your phone number"
-            required
+            maxLength="10"
           />
+          {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
         </div>
 
         <div className="form-group">
-          <label>Delivery Address</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <label style={{ margin: 0 }}>Delivery Address</label>
+            <button
+              type="button"
+              onClick={handleGetLocation}
+              disabled={fetchingLocation}
+              style={{
+                background: 'var(--primary-pink)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0.3rem 0.75rem',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: fetchingLocation ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+              }}
+            >
+              {fetchingLocation ? '⏳ Fetching...' : '📍 Use My Location'}
+            </button>
+          </div>
           <textarea
             name="address"
             value={deliveryInfo.address}
             onChange={handleInputChange}
             placeholder="Enter your complete address"
-            required
+            rows="3"
           />
+          {fieldErrors.address && <div className="field-error">{fieldErrors.address}</div>}
         </div>
 
         <div className="form-group">
@@ -168,8 +283,8 @@ const Checkout = () => {
             value={deliveryInfo.city}
             onChange={handleInputChange}
             placeholder="Enter your city"
-            required
           />
+          {fieldErrors.city && <div className="field-error">{fieldErrors.city}</div>}
         </div>
 
         <div className="form-group">
@@ -185,7 +300,9 @@ const Checkout = () => {
               />
               <span className="delivery-option-text">
                 <strong>Standard Delivery</strong>
-                <small>Free delivery on orders over $50</small>
+                <small>
+                  {subtotal >= FREE_DELIVERY_THRESHOLD ? 'FREE delivery' : `₹${DELIVERY_CHARGE} delivery charge`}
+                </small>
               </span>
             </label>
             <label className={`delivery-option ${deliveryInfo.deliveryType === 'express' ? 'selected' : ''}`}>
@@ -197,18 +314,22 @@ const Checkout = () => {
                 onChange={handleInputChange}
               />
               <span className="delivery-option-text">
-                <strong>Express Delivery (+$5)</strong>
+                <strong>Express Delivery (+₹{EXPRESS_CHARGE})</strong>
                 <small>Get it within 2 hours</small>
               </span>
             </label>
           </div>
         </div>
 
-        <button 
-          onClick={handlePlaceOrder} 
+        <button
+          onClick={handlePlaceOrder}
           className="btn-submit"
-          disabled={loading}
-          style={{ marginTop: '1rem' }}
+          disabled={loading || !isFormValid()}
+          style={{
+            marginTop: '1rem',
+            opacity: isFormValid() ? 1 : 0.5,
+            cursor: isFormValid() ? 'pointer' : 'not-allowed',
+          }}
         >
           {loading ? 'Placing Order...' : 'Place Order'}
         </button>
@@ -216,12 +337,12 @@ const Checkout = () => {
 
       <div className="order-summary">
         <h2 style={{ marginBottom: '1.5rem' }}>Order Summary</h2>
-        
+
         <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem' }}>
           {items.map((item) => (
             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
               <span>{item.product.name} x {item.quantity}</span>
-              <span>{formatPrice((item.product.discount_price || item.product.price) * item.quantity)}</span>
+              <span>{formatPrice((item.product.effective_price || item.product.price) * item.quantity)}</span>
             </div>
           ))}
         </div>
@@ -246,17 +367,13 @@ const Checkout = () => {
         <div className="summary-row">
           <span>Delivery</span>
           <span>
-            {deliveryInfo.deliveryType === 'express' 
-              ? formatPrice(5) 
-              : (delivery === 0 ? 'FREE' : formatPrice(delivery))}
+            {deliveryCharge === 0 ? 'FREE' : formatPrice(deliveryCharge)}
           </span>
         </div>
 
         <div className="summary-row total">
           <span>Total</span>
-          <span>
-            {formatPrice(total + (deliveryInfo.deliveryType === 'express' && delivery === 0 ? 5 : 0))}
-          </span>
+          <span>{formatPrice(computedTotal)}</span>
         </div>
       </div>
     </div>

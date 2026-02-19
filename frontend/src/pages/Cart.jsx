@@ -32,7 +32,7 @@ const Cart = () => {
   const discount = useSelector(selectDiscount);
   const total = useSelector(selectCartTotal);
   const appliedCoupon = useSelector(state => state.cart.appliedCoupon);
-  const { logCustomActivity } = useActivityLog('page_view', { section: 'cart' });
+  useActivityLog('page_view', { section: 'cart' });
 
   useEffect(() => {
     const loadCart = async () => {
@@ -108,7 +108,7 @@ const Cart = () => {
           <CartItem key={item.id} item={item} />
         ))}
 
-        <Link to="/shop" style={{ color: 'var(--primary-pink)', textDecoration: 'none', fontWeight: 600 }}>
+        <Link to="/shop" style={{ color: 'var(--primary-pink)', textDecoration: 'none', fontWeight: 600, marginTop: '1rem', display: 'inline-block' }}>
           ← Continue Shopping
         </Link>
       </div>
