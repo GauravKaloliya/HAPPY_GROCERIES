@@ -80,6 +80,12 @@ const Settings = () => {
     );
   };
 
+  const getFieldBorderStyle = (fieldName) => {
+    const initial = initialProfileRef.current;
+    const isChanged = profileForm[fieldName] !== initial[fieldName];
+    return isChanged ? { border: '2px solid var(--primary-pink)', background: 'var(--bg-white)' } : {};
+  };
+
   const isPasswordChanged = () => {
     return (
       passwordForm.currentPassword.trim() !== '' ||
@@ -215,6 +221,7 @@ const Settings = () => {
                         value={profileForm.first_name}
                         onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
                         placeholder="Enter your first name"
+                        style={getFieldBorderStyle('first_name')}
                       />
                     </div>
                     <div className="form-group">
@@ -225,6 +232,7 @@ const Settings = () => {
                         value={profileForm.last_name}
                         onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
                         placeholder="Enter your last name"
+                        style={getFieldBorderStyle('last_name')}
                       />
                     </div>
                   </div>
@@ -237,6 +245,7 @@ const Settings = () => {
                       value={profileForm.email}
                       onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
                       placeholder="Enter your email"
+                      style={getFieldBorderStyle('email')}
                     />
                   </div>
 
@@ -379,7 +388,7 @@ const Settings = () => {
                 <button
                   onClick={() => dispatch(toggleTheme())}
                   className={isDarkMode ? 'btn-primary' : 'btn-secondary'}
-                  style={{ width: 'auto', minWidth: 'unset', padding: '0.6rem 1.2rem' }}
+                  style={{ width: '100px', minWidth: 'unset', padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
                 >
                   {isDarkMode ? '☀️ Light' : '🌙 Dark'}
                 </button>
@@ -408,7 +417,7 @@ const Settings = () => {
                 <button 
                   className="btn-secondary" 
                   onClick={() => setShowClearDataModal(true)}
-                  style={{ width: 'auto', minWidth: 'unset', padding: '0.6rem 1.2rem' }}
+                  style={{ width: '80px', minWidth: 'unset', padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
                 >
                   Clear
                 </button>
