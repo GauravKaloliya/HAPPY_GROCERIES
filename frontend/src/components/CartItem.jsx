@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { updateCartItem, removeFromCart } from '../store/slices/cartSlice';
 import { formatPrice } from '../utils/helpers';
@@ -5,6 +6,8 @@ import toast from 'react-hot-toast';
 
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   const product = item.product || {};
   const price = parseFloat(product.price || item.price || 0);
   const effectivePrice = parseFloat(product.effective_price || price);
@@ -12,32 +15,37 @@ const CartItem = ({ item }) => {
   const displayPrice = isOnSale ? effectivePrice : price;
 
   const handleUpdateQuantity = async (newQuantity) => {
+    if (isUpdating) return;
+    
     if (newQuantity <= 0) {
-      try {
-        await dispatch(removeFromCart(item.id)).unwrap();
-        toast.success('Item removed from cart');
-      } catch {
-        toast.error('Failed to remove item');
-      }
+      await handleRemove();
       return;
     }
     if (newQuantity > product.stock) {
       toast.error('Maximum stock reached!');
       return;
     }
+    
+    setIsUpdating(true);
     try {
       await dispatch(updateCartItem({ itemId: item.id, quantity: newQuantity })).unwrap();
-    } catch {
-      toast.error('Failed to update quantity');
+    } catch (err) {
+      toast.error(err || 'Failed to update quantity');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleRemove = async () => {
+    if (isRemoving) return;
+    
+    setIsRemoving(true);
     try {
       await dispatch(removeFromCart(item.id)).unwrap();
       toast.success('Item removed from cart');
-    } catch {
-      toast.error('Failed to remove item');
+    } catch (err) {
+      toast.error(err || 'Failed to remove item');
+      setIsRemoving(false);
     }
   };
 
@@ -75,6 +83,7 @@ const CartItem = ({ item }) => {
           <button
             className="qty-btn"
             onClick={() => handleUpdateQuantity(item.quantity - 1)}
+            disabled={isUpdating}
           >
             −
           </button>
@@ -87,7 +96,7 @@ const CartItem = ({ item }) => {
           <button
             className="qty-btn"
             onClick={() => handleUpdateQuantity(item.quantity + 1)}
-            disabled={item.quantity >= product.stock}
+            disabled={item.quantity >= product.stock || isUpdating}
           >
             +
           </button>
@@ -98,8 +107,8 @@ const CartItem = ({ item }) => {
         <div style={{ fontWeight: 700, color: 'var(--primary-pink)', fontSize: '1.2rem' }}>
           {formatPrice(displayPrice * item.quantity)}
         </div>
-        <button onClick={handleRemove} className="btn-remove">
-          Remove
+        <button onClick={handleRemove} className="btn-remove" disabled={isRemoving}>
+          {isRemoving ? 'Removing...' : 'Remove'}
         </button>
       </div>
     </div>

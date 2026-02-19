@@ -57,8 +57,8 @@ export const addToCart = createAsyncThunk(
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         const items = getGuestCart();
-        const existingItem = items.find(item => item.id === productId || item.product?.id === productId);
-        let productData = product || existingItem?.product;
+        const existingItemIndex = items.findIndex(item => item.id === productId || item.product?.id === productId);
+        let productData = product || (existingItemIndex >= 0 ? items[existingItemIndex].product : null);
 
         if (!productData) {
           const response = await productsAPI.getById(productId);
@@ -67,8 +67,12 @@ export const addToCart = createAsyncThunk(
 
         const maxQuantity = productData?.stock ? Math.min(productData.stock, 99) : 99;
 
-        if (existingItem) {
-          existingItem.quantity = Math.min(existingItem.quantity + quantity, maxQuantity);
+        if (existingItemIndex >= 0) {
+          // Update existing item immutably
+          items[existingItemIndex] = {
+            ...items[existingItemIndex],
+            quantity: Math.min(items[existingItemIndex].quantity + quantity, maxQuantity)
+          };
         } else {
           items.push({
             id: productData.id,
@@ -84,7 +88,7 @@ export const addToCart = createAsyncThunk(
       const response = await cartAPI.addItem(productId, quantity);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to add to cart');
+      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to add to cart');
     }
   }
 );
@@ -106,7 +110,11 @@ export const updateCartItem = createAsyncThunk(
         } else {
           const item = items[itemIndex];
           const maxQuantity = item.product?.stock ? Math.min(item.product.stock, 99) : 99;
-          item.quantity = Math.min(quantity, maxQuantity);
+          // Update immutably
+          items[itemIndex] = {
+            ...item,
+            quantity: Math.min(quantity, maxQuantity)
+          };
         }
 
         saveGuestCart(items);
@@ -116,7 +124,7 @@ export const updateCartItem = createAsyncThunk(
       const response = await cartAPI.updateItem(itemId, quantity);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update cart');
+      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to update cart');
     }
   }
 );

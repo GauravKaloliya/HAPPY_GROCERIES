@@ -1,6 +1,7 @@
 // Tax and delivery settings
 export const TAX_RATE = 0.08;
-export const DELIVERY_CHARGE = 40;
+export const DELIVERY_CHARGE = 40;  // Standard delivery charge
+export const EXPRESS_DELIVERY_CHARGE = 50;  // Express delivery charge (fixed at 50)
 export const FREE_DELIVERY_THRESHOLD = 500;
 
 // Sort options for products

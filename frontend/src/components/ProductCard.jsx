@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, updateCartItem, removeFromCart, selectCartItems } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
@@ -9,7 +9,10 @@ import toast from 'react-hot-toast';
 
 const ProductCard = ({ product, showAddToCart = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const cartItems = useSelector(selectCartItems);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
@@ -44,16 +47,31 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     }
   }, [isAuthenticated, product.id]);
 
-  const handleAddToCart = async () => {
+  const handleCardClick = (e) => {
+    // Don't navigate if clicking on interactive elements
+    if (e.target.closest('button') || e.target.closest('.quantity-controls')) {
+      return;
+    }
+    navigate(`/product/${product.id}`);
+  };
+
+  const handleAddToCart = async (e) => {
+    e.stopPropagation();
+    if (isAddingToCart) return;
+    
+    setIsAddingToCart(true);
     try {
       await dispatch(addToCart({ productId: product.id, quantity: 1, product })).unwrap();
       toast.success(`Added ${product.name} to cart! 🛒`);
-    } catch {
-      toast.error('Failed to add to cart');
+    } catch (err) {
+      toast.error(err || 'Failed to add to cart');
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
-  const handleWishlist = async () => {
+  const handleWishlist = async (e) => {
+    e.stopPropagation();
     if (!isAuthenticated) return;
 
     try {
@@ -71,38 +89,42 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     }
   };
 
-  const handleIncrement = async () => {
-    if (!inCart || !cartItem) return;
+  const handleIncrement = async (e) => {
+    e.stopPropagation();
+    if (!inCart || !cartItem || isUpdatingQuantity) return;
     const newQuantity = displayQuantity + 1;
     if (newQuantity > 99) {
       toast.error('Maximum quantity reached!');
       return;
     }
     const itemId = cartItem.product?.id || cartItem.id;
+    setIsUpdatingQuantity(true);
     try {
       await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
-    } catch {
-      toast.error('Failed to update quantity');
+    } catch (err) {
+      toast.error(err || 'Failed to update quantity');
+    } finally {
+      setIsUpdatingQuantity(false);
     }
   };
 
-  const handleDecrement = async () => {
-    if (!inCart || !cartItem) return;
+  const handleDecrement = async (e) => {
+    e.stopPropagation();
+    if (!inCart || !cartItem || isUpdatingQuantity) return;
     const newQuantity = displayQuantity - 1;
     const itemId = cartItem.product?.id || cartItem.id;
-    if (newQuantity <= 0) {
-      try {
+    setIsUpdatingQuantity(true);
+    try {
+      if (newQuantity <= 0) {
         await dispatch(removeFromCart(itemId)).unwrap();
         toast.success(`${product.name} removed from cart`);
-      } catch {
-        toast.error('Failed to remove from cart');
-      }
-    } else {
-      try {
+      } else {
         await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
-      } catch {
-        toast.error('Failed to update quantity');
       }
+    } catch (err) {
+      toast.error(err || 'Failed to update quantity');
+    } finally {
+      setIsUpdatingQuantity(false);
     }
   };
 
@@ -119,7 +141,11 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   };
 
   return (
-    <div className={`product-card ${isOnSale ? 'on-sale' : ''}`}>
+    <div 
+      className={`product-card ${isOnSale ? 'on-sale' : ''}`}
+      onClick={handleCardClick}
+      style={{ cursor: 'pointer' }}
+    >
       {isOnSale && <span className="sale-badge">Sale</span>}
 
       {isAuthenticated && (
@@ -132,11 +158,9 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         </button>
       )}
 
-      <Link to={`/product/${product.id}`} className="product-card-link">
-        <div className="product-image">
-          {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
-        </div>
-      </Link>
+      <div className="product-image">
+        {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
+      </div>
 
       <h3 className="product-name">{product.name}</h3>
 
@@ -163,8 +187,12 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       {showAddToCart && product.stock > 0 && (
         <div className="product-actions">
           {inCart ? (
-            <div className="quantity-controls">
-              <button className="qty-btn" onClick={handleDecrement}>
+            <div className="quantity-controls" onClick={(e) => e.stopPropagation()}>
+              <button 
+                className="qty-btn" 
+                onClick={handleDecrement}
+                disabled={isUpdatingQuantity}
+              >
                 −
               </button>
               <input
@@ -173,7 +201,11 @@ const ProductCard = ({ product, showAddToCart = true }) => {
                 value={displayQuantity}
                 readOnly
               />
-              <button className="qty-btn" onClick={handleIncrement}>
+              <button 
+                className="qty-btn" 
+                onClick={handleIncrement}
+                disabled={isUpdatingQuantity}
+              >
                 +
               </button>
             </div>
@@ -181,14 +213,20 @@ const ProductCard = ({ product, showAddToCart = true }) => {
             <button
               className="btn-add-cart"
               onClick={handleAddToCart}
+              disabled={isAddingToCart}
             >
-              Add to Cart
+              {isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </button>
           )}
         </div>
       )}
 
-      <Link to={`/product/${product.id}`} className="product-card-cta" style={{ display: 'block', marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary-pink)', textDecoration: 'none' }}>
+      <Link 
+        to={`/product/${product.id}`} 
+        className="product-card-cta" 
+        onClick={(e) => e.stopPropagation()}
+        style={{ display: 'block', marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary-pink)', textDecoration: 'none' }}
+      >
         View Details →
       </Link>
     </div>
