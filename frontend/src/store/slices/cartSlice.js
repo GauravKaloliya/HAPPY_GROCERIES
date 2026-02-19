@@ -277,28 +277,33 @@ const cartSlice = createSlice({
 });
 
 // Selectors
-export const selectCartItems = (state) => state.cart.items;
+export const selectCartItems = (state) => state.cart.items || [];
 export const selectCartLoading = (state) => state.cart.loading;
 export const selectCartError = (state) => state.cart.error;
 export const selectCartCount = (state) =>
-  state.cart.items.reduce((total, item) => total + item.quantity, 0);
+  (state.cart.items || []).reduce((total, item) => total + (item.quantity || 0), 0);
 export const selectAppliedCoupon = (state) => state.cart.appliedCoupon;
 
-export const selectCartSubtotal = (state) =>
-  state.cart.items.reduce((total, item) => {
-    const regularPrice = parseFloat(item.product?.price || item.price || 0);
-    const effectivePrice = parseFloat(item.product?.effective_price || regularPrice);
+export const selectCartSubtotal = (state) => {
+  const items = state.cart?.items || [];
+  return items.reduce((total, item) => {
+    const regularPrice = parseFloat(item?.product?.price || item?.price || 0) || 0;
+    const effectivePrice = parseFloat(item?.product?.effective_price || regularPrice) || regularPrice;
     const itemPrice = effectivePrice < regularPrice ? effectivePrice : regularPrice;
-    return total + itemPrice * item.quantity;
+    const quantity = item?.quantity || 0;
+    return total + itemPrice * quantity;
   }, 0);
+};
 
 export const selectCartTax = (state) => {
   const taxRate = state.config?.settings?.tax_rate || 0.08;
-  return selectCartSubtotal(state) * taxRate;
+  const subtotal = selectCartSubtotal(state);
+  return isNaN(subtotal) ? 0 : subtotal * taxRate;
 };
 
 export const selectDeliveryCharge = (state) => {
   const subtotal = selectCartSubtotal(state);
+  if (isNaN(subtotal)) return 40;
   const freeThreshold = state.config?.settings?.free_delivery_threshold || 500;
   const standardCharge = state.config?.settings?.standard_delivery_charge || 40;
   return subtotal >= freeThreshold ? 0 : standardCharge;
@@ -306,26 +311,30 @@ export const selectDeliveryCharge = (state) => {
 
 export const selectDiscount = (state) => {
   const subtotal = selectCartSubtotal(state);
+  if (isNaN(subtotal)) return 0;
   const coupon = state.cart.appliedCoupon;
 
   if (!coupon) return 0;
 
   if (coupon.coupon_type === 'percentage') {
-    return subtotal * (parseFloat(coupon.value) / 100);
+    const value = parseFloat(coupon.value) || 0;
+    return subtotal * (value / 100);
   } else if (coupon.coupon_type === 'fixed') {
-    return Math.min(parseFloat(coupon.value), subtotal);
+    const value = parseFloat(coupon.value) || 0;
+    return Math.min(value, subtotal);
   }
 
-  return parseFloat(coupon.discount_amount || coupon.potential_discount || 0);
+  return parseFloat(coupon.discount_amount || coupon.potential_discount || 0) || 0;
 };
 
 export const selectCartTotal = (state) => {
-  const subtotal = selectCartSubtotal(state);
-  const tax = selectCartTax(state);
-  const delivery = selectDeliveryCharge(state);
-  const discount = selectDiscount(state);
+  const subtotal = selectCartSubtotal(state) || 0;
+  const tax = selectCartTax(state) || 0;
+  const delivery = selectDeliveryCharge(state) || 0;
+  const discount = selectDiscount(state) || 0;
 
-  return Math.max(0, subtotal + tax + delivery - discount);
+  const total = Number(subtotal) + Number(tax) + Number(delivery) - Number(discount);
+  return Math.max(0, isNaN(total) ? 0 : total);
 };
 
 export const { setCoupon, clearCoupon, applyCoupon, clearCartState } = cartSlice.actions;

@@ -11,7 +11,8 @@ const Categories = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
 
   useActivityLog('page_view', { section: 'categories' });
@@ -22,24 +23,36 @@ const Categories = () => {
     setSelectedCategory(categoryFromUrl);
   }, [searchParams]);
 
+  // Fetch categories only once on mount
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setProducts([]); // Clear products before fetching new ones
+    const fetchCategories = async () => {
       try {
-        const [productsRes, categoriesRes] = await Promise.all([
-          productsAPI.getAll(selectedCategory === 'All' ? {} : { category: selectedCategory }),
-          categoriesAPI.getAll(),
-        ]);
-        setProducts(productsRes.data.results || productsRes.data);
+        const categoriesRes = await categoriesAPI.getAll();
         setCategories(categoriesRes.data.results || categoriesRes.data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching categories:', error);
       } finally {
-        setLoading(false);
+        setCategoriesLoading(false);
       }
     };
-    fetchData();
+    fetchCategories();
+  }, []);
+
+  // Fetch products when category changes
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setProductsLoading(true);
+      setProducts([]); // Clear products before fetching new ones
+      try {
+        const productsRes = await productsAPI.getAll(selectedCategory === 'All' ? {} : { category: selectedCategory });
+        setProducts(productsRes.data.results || productsRes.data);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+    fetchProducts();
   }, [selectedCategory]);
 
   const getCategoryEmoji = (name) => {
@@ -78,7 +91,7 @@ const Categories = () => {
     }
   };
 
-  if (loading) return <PageLoader />;
+  if (categoriesLoading) return <PageLoader />;
 
   return (
     <div className="container">
@@ -109,7 +122,12 @@ const Categories = () => {
           : `${getCategoryEmoji(selectedCategory)} ${selectedCategory}`}
       </h2>
 
-      {products.length > 0 ? (
+      {productsLoading ? (
+        <div className="products-loading" style={{ textAlign: 'center', padding: '3rem' }}>
+          <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+          <p>Loading products...</p>
+        </div>
+      ) : products.length > 0 ? (
         <div className="products-grid">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
