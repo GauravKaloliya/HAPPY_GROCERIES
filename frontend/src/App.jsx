@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import { initializeTheme } from './store/slices/themeSlice';
+import { fetchConfig } from './store/slices/configSlice';
 
 // Components
 import Header from './components/Header';
@@ -28,8 +29,9 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
 
-// Initialize theme
+// Initialize theme and config
 store.dispatch(initializeTheme());
+store.dispatch(fetchConfig());
 
 const MainLayout = () => (
   <div className="app-layout">
