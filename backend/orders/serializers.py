@@ -34,6 +34,13 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
 
+class OrderItemInputSerializer(serializers.Serializer):
+    """Serializer for order item input."""
+    product_id = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
 class CreateOrderSerializer(serializers.Serializer):
     """Serializer for creating new orders."""
     
@@ -43,3 +50,4 @@ class CreateOrderSerializer(serializers.Serializer):
     delivery_instructions = serializers.CharField(required=False, allow_blank=True, default='')
     delivery_type = serializers.ChoiceField(choices=Order.DELIVERY_TYPES, default='standard')
     coupon_code = serializers.CharField(required=False, allow_blank=True)
+    items = OrderItemInputSerializer(many=True)

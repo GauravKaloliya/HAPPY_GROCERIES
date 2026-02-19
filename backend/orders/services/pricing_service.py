@@ -8,8 +8,8 @@ class PricingService:
     """Service for handling pricing calculations."""
     
     TAX_RATE = Decimal('0.08')  # 8% tax
-    DELIVERY_STANDARD = Decimal('50')
-    DELIVERY_EXPRESS = Decimal('100')
+    DELIVERY_STANDARD = Decimal('40')  # Standard delivery charge
+    DELIVERY_EXPRESS = Decimal('50')   # Express delivery charge (fixed at 50 as per requirements)
     FREE_DELIVERY_THRESHOLD = Decimal('500')
     
     @classmethod

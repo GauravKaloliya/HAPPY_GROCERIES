@@ -22,6 +22,7 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
 
@@ -64,13 +65,18 @@ const ProductDetails = () => {
   }, [id, navigate, isAuthenticated, logCustomActivity]);
 
   const handleAddToCart = async () => {
+    if (isAddingToCart) return;
+    
+    setIsAddingToCart(true);
     try {
       await dispatch(addToCart({ productId: product.id, quantity, product })).unwrap();
       toast.success(`Added ${quantity} ${product.name} to cart! 🛒`);
       logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity });
       setQuantity(1);
-    } catch {
-      toast.error('Failed to add to cart');
+    } catch (err) {
+      toast.error(err || 'Failed to add to cart');
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -245,10 +251,10 @@ const ProductDetails = () => {
                 <button 
                   className="btn-add-cart" 
                   onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
+                  disabled={product.stock <= 0 || isAddingToCart}
                   style={{ minWidth: '200px' }}
                 >
-                  {product.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                  {product.stock <= 0 ? 'Out of Stock' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
                 </button>
 
                 <button 

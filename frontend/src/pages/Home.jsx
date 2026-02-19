@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
@@ -10,6 +10,7 @@ const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useActivityLog('page_view', { section: 'home' });
 
@@ -92,15 +93,20 @@ const Home = () => {
           <h2 className="section-title">🎨 Shop by Category</h2>
           <div className="categories-grid">
             {categories.map((category) => (
-              <Link 
+              <button 
                 key={category.id || category.name}
-                to={`/categories?category=${category.name}`} 
+                onClick={() => navigate(`/categories?category=${category.name}`)}
                 className="category-card" 
-                style={{ background: getCategoryColor(category.name) }}
+                style={{ 
+                  background: getCategoryColor(category.name),
+                  border: 'none',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}
               >
                 <span className="category-emoji">{category.emoji || getCategoryEmoji(category.name)}</span>
                 <h3>{category.name}</h3>
-              </Link>
+              </button>
             ))}
           </div>
         </div>

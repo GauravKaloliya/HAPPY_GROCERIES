@@ -108,7 +108,49 @@ const Checkout = () => {
           );
           const data = await response.json();
           const address = data.display_name || `${latitude}, ${longitude}`;
-          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || '';
+          
+          // Improved city detection - prioritize city/district over county/subdistrict
+          const addr = data.address || {};
+          let city = '';
+          
+          // Try to find the actual city, avoiding subdistricts/talukas
+          if (addr.city) {
+            city = addr.city;
+          } else if (addr.town) {
+            city = addr.town;
+          } else if (addr.district && !addr.district.toLowerCase().includes('taluka') && !addr.district.toLowerCase().includes('tehsil')) {
+            city = addr.district;
+          } else if (addr.county && !addr.county.toLowerCase().includes('taluka') && !addr.county.toLowerCase().includes('tehsil')) {
+            city = addr.county;
+          } else if (addr.village) {
+            city = addr.village;
+          }
+          
+          // If still no city, try to extract from display_name
+          if (!city && address) {
+            const parts = address.split(',').map(p => p.trim());
+            // Look for common patterns - usually city is 2-3rd from last before state/postal
+            for (let i = parts.length - 1; i >= 0; i--) {
+              const part = parts[i];
+              // Skip country, postal code, and taluka/subdistrict
+              if (part.match(/^\d{5,6}$/) || // postal code
+                  part.length < 3 || // too short
+                  part.toLowerCase().includes('taluka') ||
+                  part.toLowerCase().includes('tehsil')) {
+                continue;
+              }
+              // Check if this looks like a state (2-3 words, common Indian states)
+              const states = ['gujarat', 'maharashtra', 'rajasthan', 'punjab', 'haryana', 'delhi', 'karnataka', 'tamil nadu', 'kerala', 'andhra pradesh', 'telangana', 'west bengal', 'bihar', 'jharkhand', 'odisha', 'chhattisgarh', 'madhya pradesh', 'uttar pradesh', 'uttarakhand', 'himachal pradesh', 'jammu and kashmir', 'goa', 'assam', 'meghalaya', 'manipur', 'mizoram', 'nagaland', 'tripura', 'sikkim', 'arunachal pradesh'];
+              if (states.some(s => part.toLowerCase().includes(s))) {
+                continue;
+              }
+              // This might be the city - but prefer earlier matches (more specific)
+              if (!city) {
+                city = part;
+              }
+            }
+          }
+          
           setDeliveryInfo(prev => ({
             ...prev,
             address,
