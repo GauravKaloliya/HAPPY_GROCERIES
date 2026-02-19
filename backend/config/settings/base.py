@@ -48,6 +48,7 @@ LOCAL_APPS = [
     'wishlist',
     'activity_logs',
     'contact',
+    'site_config',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

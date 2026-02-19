@@ -2,7 +2,6 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { cartAPI } from '../../api/cart';
 import { couponsAPI } from '../../api/coupons';
 import { productsAPI } from '../../api/products';
-import { TAX_RATE, DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from '../../utils/constants';
 
 const GUEST_CART_KEY = 'guestCart';
 
@@ -293,11 +292,16 @@ export const selectCartSubtotal = (state) =>
     return total + itemPrice * item.quantity;
   }, 0);
 
-export const selectCartTax = (state) => selectCartSubtotal(state) * TAX_RATE;
+export const selectCartTax = (state) => {
+  const taxRate = state.config?.settings?.tax_rate || 0.08;
+  return selectCartSubtotal(state) * taxRate;
+};
 
 export const selectDeliveryCharge = (state) => {
   const subtotal = selectCartSubtotal(state);
-  return subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+  const freeThreshold = state.config?.settings?.free_delivery_threshold || 500;
+  const standardCharge = state.config?.settings?.standard_delivery_charge || 40;
+  return subtotal >= freeThreshold ? 0 : standardCharge;
 };
 
 export const selectDiscount = (state) => {

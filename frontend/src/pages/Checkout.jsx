@@ -12,13 +12,11 @@ import {
   selectAppliedCoupon,
 } from '../store/slices/cartSlice';
 import { selectUser } from '../store/slices/authSlice';
+import { selectExpressDeliveryCharge, selectFreeDeliveryThreshold } from '../store/slices/configSlice';
 import { formatPrice } from '../utils/helpers';
-import { DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
-
-const EXPRESS_CHARGE = 50;
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -36,6 +34,8 @@ const Checkout = () => {
   const baseDelivery = useSelector(selectDeliveryCharge);
   const discount = useSelector(selectDiscount);
   const appliedCoupon = useSelector(selectAppliedCoupon);
+  const expressCharge = useSelector(selectExpressDeliveryCharge);
+  const freeDeliveryThreshold = useSelector(selectFreeDeliveryThreshold);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'checkout' });
 
@@ -58,13 +58,13 @@ const Checkout = () => {
   }, [user]);
 
   const deliveryCharge = deliveryInfo.deliveryType === 'express'
-    ? EXPRESS_CHARGE
+    ? expressCharge
     : baseDelivery;
 
   const computedTotal = (() => {
     const base = subtotal + tax - discount;
     if (deliveryInfo.deliveryType === 'express') {
-      return Math.max(0, base + EXPRESS_CHARGE);
+      return Math.max(0, base + expressCharge);
     }
     return Math.max(0, base + baseDelivery);
   })();
@@ -343,7 +343,7 @@ const Checkout = () => {
               <span className="delivery-option-text">
                 <strong>Standard Delivery</strong>
                 <small>
-                  {subtotal >= FREE_DELIVERY_THRESHOLD ? 'FREE delivery' : `₹${DELIVERY_CHARGE} delivery charge`}
+                  {subtotal >= freeDeliveryThreshold ? 'FREE delivery' : `₹${baseDelivery} delivery charge`}
                 </small>
               </span>
             </label>
@@ -356,7 +356,7 @@ const Checkout = () => {
                 onChange={handleInputChange}
               />
               <span className="delivery-option-text">
-                <strong>Express Delivery (+₹{EXPRESS_CHARGE})</strong>
+                <strong>Express Delivery (+₹{expressCharge})</strong>
                 <small>Get it within 2 hours</small>
               </span>
             </label>
