@@ -25,34 +25,37 @@ class OrderService:
         
         # Get items - either from cart or from provided data
         if cart:
-            cart_items = cart.items.select_related('product__category').all()
-            if not cart_items:
+            cart_items = cart.items.select_related('product__category').filter(is_deleted=False)
+            if not cart_items.exists():
                 raise ValueError("Cart is empty")
         else:
             # Get items from delivery_data
             items_data = delivery_data.get('items', [])
             if not items_data:
                 raise ValueError("No items provided")
-            
+
             # Import here to avoid circular imports
             from products.models import Product
-            
+
             # Validate and fetch products
             cart_items = []
             for item_data in items_data:
-                product = Product.objects.get(
-                    id=item_data['product_id'],
-                    is_active=True,
-                    is_deleted=False
-                )
-                
+                try:
+                    product = Product.objects.get(
+                        id=item_data['product_id'],
+                        is_active=True,
+                        is_deleted=False
+                    )
+                except Product.DoesNotExist:
+                    raise ValueError("Product not found")
+
                 # Create a mock cart item object for consistency
                 class MockCartItem:
                     def __init__(self, product, quantity, price):
                         self.product = product
                         self.quantity = quantity
                         self.total = price * quantity
-                
+
                 cart_items.append(
                     MockCartItem(
                         product,
@@ -149,7 +152,10 @@ class OrderService:
         
         # Clear cart if it was provided
         if cart:
-            cart.items.all().delete()
+            cart.items.filter(is_deleted=False).update(
+                is_deleted=True,
+                deleted_at=timezone.now()
+            )
         
         # Record coupon usage
         if coupon:

@@ -33,26 +33,30 @@ class OrderViewSet(viewsets.ModelViewSet):
         """Create a new order."""
         serializer = CreateOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         try:
-            # Create order directly from provided data
+            cart = Cart.objects.filter(user=request.user, is_deleted=False).first()
+            cart_items = None
+            if cart:
+                cart_items = cart.items.filter(is_deleted=False)
+
             order = OrderService.create_order(
                 user=request.user,
-                cart=None,
+                cart=cart if cart_items and cart_items.exists() else None,
                 delivery_data=serializer.validated_data
             )
-            
+
             return Response(
                 OrderSerializer(order).data,
                 status=status.HTTP_201_CREATED
             )
-            
+
         except ValueError as e:
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        except Exception as e:
+        except Exception:
             return Response(
                 {'error': 'Failed to create order'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
