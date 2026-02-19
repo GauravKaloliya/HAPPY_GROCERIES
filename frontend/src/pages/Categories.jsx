@@ -25,6 +25,7 @@ const Categories = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setProducts([]); // Clear products before fetching new ones
       try {
         const [productsRes, categoriesRes] = await Promise.all([
           productsAPI.getAll(selectedCategory === 'All' ? {} : { category: selectedCategory }),

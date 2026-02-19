@@ -31,24 +31,36 @@ const ProductDetails = () => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
+        setProduct(null); // Reset product before fetching
+        
         const [productRes, relatedRes] = await Promise.all([
           productsAPI.getById(id),
           productsAPI.getRelated(id),
         ]);
+        
+        // Validate product data exists
+        if (!productRes.data || !productRes.data.id) {
+          throw new Error('Product not found');
+        }
+        
         setProduct(productRes.data);
         const relatedData = relatedRes.data?.results || relatedRes.data;
         setRelatedProducts(Array.isArray(relatedData) ? relatedData.slice(0, 4) : []);
 
         // Log product view
-        logCustomActivity('product_view', { product_id: id, product_name: productRes.data.name });
+        if (productRes.data.name) {
+          logCustomActivity('product_view', { product_id: id, product_name: productRes.data.name });
+        }
 
         // Check if product is in wishlist
         if (isAuthenticated) {
           try {
             const wishlistRes = await wishlistAPI.getWishlist();
             const wishlistItems = wishlistRes.data.results || wishlistRes.data;
-            const wishlistIds = wishlistItems.map(item => item.product.id);
-            setIsWishlisted(wishlistIds.includes(parseInt(id, 10)));
+            if (Array.isArray(wishlistItems)) {
+              const wishlistIds = wishlistItems.map(item => item.product?.id);
+              setIsWishlisted(wishlistIds.includes(parseInt(id, 10)));
+            }
           } catch (error) {
             console.error('Error fetching wishlist:', error);
           }
@@ -154,13 +166,22 @@ const ProductDetails = () => {
   };
 
   if (loading) return <PageLoader />;
-  if (!product) return null;
+  if (!product) {
+    return (
+      <div className="container" style={{ textAlign: 'center', padding: '4rem' }}>
+        <h2>Product not found</h2>
+        <p>Redirecting to shop...</p>
+      </div>
+    );
+  }
 
   const hasDiscount = product.discount_percent > 0;
+  const priceValue = parseFloat(product.price) || 0;
+  const discountPercent = parseFloat(product.discount_percent) || 0;
   const discountedPrice = hasDiscount
-    ? parseFloat(product.price) * (1 - product.discount_percent / 100)
-    : parseFloat(product.price);
-  const savings = hasDiscount ? parseFloat(product.price) - discountedPrice : 0;
+    ? priceValue * (1 - discountPercent / 100)
+    : priceValue;
+  const savings = hasDiscount ? priceValue - discountedPrice : 0;
   const stockInfo = getStockInfo(product.stock);
 
   return (
