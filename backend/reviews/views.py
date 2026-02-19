@@ -17,8 +17,8 @@ from products.models import Product
 
 class ProductReviewViewSet(viewsets.ModelViewSet):
     """ViewSet for product reviews."""
-    
-    permission_classes = [IsAuthenticated]
+
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         """Get reviews for a specific product."""
@@ -43,6 +43,11 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
     
     def create(self, request, product_id=None):
         """Create a review for a product."""
