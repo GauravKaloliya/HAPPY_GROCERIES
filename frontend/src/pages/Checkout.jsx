@@ -381,7 +381,7 @@ const Checkout = () => {
               />
               <span className="delivery-option-text">
                 <strong>Express Delivery (+₹{expressCharge})</strong>
-                <small>Get it within 2 hours</small>
+                <small>Get it within 10 minutes</small>
               </span>
             </label>
           </div>
