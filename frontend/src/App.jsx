@@ -23,6 +23,7 @@ import Wishlist from './pages/Wishlist';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import MyReviews from './pages/MyReviews';
 import Offers from './pages/Offers';
 import About from './pages/About';
 import Login from './pages/Login';
@@ -104,6 +105,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-reviews"
+                element={
+                  <ProtectedRoute>
+                    <MyReviews />
                   </ProtectedRoute>
                 }
               />

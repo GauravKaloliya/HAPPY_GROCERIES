@@ -8,6 +8,7 @@ import { selectIsAuthenticated } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import ProductCard from '../components/ProductCard';
+import ProductReviews from '../components/ProductReviews';
 import useActivityLog from '../hooks/useActivityLog';
 
 const ProductDetails = () => {
@@ -331,18 +332,7 @@ const ProductDetails = () => {
 
         {activeTab === 'reviews' && (
           <div className="tab-content">
-            <div style={{ background: 'var(--bg-white)', padding: '1.5rem', borderRadius: 'var(--border-radius)', textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⭐</div>
-              <h3 style={{ marginBottom: '0.5rem' }}>
-                Rating: {product.rating}/5
-              </h3>
-              <p style={{ color: '#666' }}>
-                Based on {product.reviews_count || 0} {(product.reviews_count || 0) === 1 ? 'review' : 'reviews'}
-              </p>
-              <div style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>
-                {renderStars(product.rating)}
-              </div>
-            </div>
+            <ProductReviews productId={product.id} />
           </div>
         )}
       </div>
