@@ -97,7 +97,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       toast.error('Maximum quantity reached!');
       return;
     }
-    const itemId = cartItem.product?.id || cartItem.id;
+    const itemId = isAuthenticated ? cartItem.id : (cartItem.product?.id || cartItem.id);
     setIsUpdatingQuantity(true);
     try {
       await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
@@ -112,7 +112,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     e.stopPropagation();
     if (!inCart || !cartItem || isUpdatingQuantity) return;
     const newQuantity = displayQuantity - 1;
-    const itemId = cartItem.product?.id || cartItem.id;
+    const itemId = isAuthenticated ? cartItem.id : (cartItem.product?.id || cartItem.id);
     setIsUpdatingQuantity(true);
     try {
       if (newQuantity <= 0) {

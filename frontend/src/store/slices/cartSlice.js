@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { cartAPI } from '../../api/cart';
 import { couponsAPI } from '../../api/coupons';
 import { productsAPI } from '../../api/products';
+import { logout } from './authSlice';
 
 const GUEST_CART_KEY = 'guestCart';
 
@@ -139,8 +140,8 @@ export const removeFromCart = createAsyncThunk(
         return { items };
       }
 
-      await cartAPI.removeItem(itemId);
-      return itemId;
+      const response = await cartAPI.removeItem(itemId);
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to remove from cart');
     }
@@ -154,11 +155,11 @@ export const clearCart = createAsyncThunk(
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         saveGuestCart([]);
-        return [];
+        return { items: [] };
       }
 
-      await cartAPI.clearCart();
-      return [];
+      const response = await cartAPI.clearCart();
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to clear cart');
     }
@@ -254,8 +255,8 @@ const cartSlice = createSlice({
         state.items = state.items.filter(item => item.id !== action.payload);
       })
       // Clear Cart
-      .addCase(clearCart.fulfilled, (state) => {
-        state.items = [];
+      .addCase(clearCart.fulfilled, (state, action) => {
+        state.items = action.payload?.items || [];
         state.coupon = null;
         state.appliedCoupon = null;
       })
@@ -272,6 +273,11 @@ const cartSlice = createSlice({
       .addCase(validateCoupon.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.items = getGuestCart();
+        state.coupon = null;
+        state.appliedCoupon = null;
       });
   },
 });

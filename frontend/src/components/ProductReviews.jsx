@@ -155,6 +155,14 @@ const ProductReviews = ({ productId }) => {
                 <div style={{ color: 'var(--primary-green)', fontWeight: 600 }}>
                   ✓ You reviewed this product
                 </div>
+              ) : !isAuthenticated ? (
+                <button
+                  onClick={() => navigate('/login')}
+                  className="btn-secondary"
+                  style={{ padding: '0.6rem 1.2rem' }}
+                >
+                  Login to Review
+                </button>
               ) : (
                 <div style={{ color: '#888', fontSize: '0.9rem' }}>
                   Purchase to review
