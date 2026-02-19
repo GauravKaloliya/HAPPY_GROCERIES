@@ -1,7 +1,7 @@
 // Tax and delivery settings
 export const TAX_RATE = 0.08;
-export const DELIVERY_CHARGE = 5.00;
-export const FREE_DELIVERY_THRESHOLD = 50.00;
+export const DELIVERY_CHARGE = 40;
+export const FREE_DELIVERY_THRESHOLD = 500;
 
 // Sort options for products
 export const SORT_OPTIONS = [

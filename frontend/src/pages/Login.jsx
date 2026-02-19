@@ -28,9 +28,15 @@ const Login = () => {
   }, [dispatch]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (formErrors[e.target.name]) {
-      setFormErrors({ ...formErrors, [e.target.name]: '' });
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '');
+      setFormData({ ...formData, phone: numericValue });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: '' });
     }
     if (error) dispatch(clearError());
   };
@@ -81,7 +87,8 @@ const Login = () => {
           <div className="form-group">
             <label htmlFor="phone">Phone Number</label>
             <input
-              type="tel"
+              type="text"
+              inputMode="numeric"
               id="phone"
               name="phone"
               value={formData.phone}
