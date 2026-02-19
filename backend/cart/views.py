@@ -105,29 +105,34 @@ class CartViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def update_item(self, request):
         """Update cart item quantity."""
-        item_id = request.data.get('item_id')
-        quantity = request.data.get('quantity')
+        item_id = request.data.get('item_id') or request.data.get('product_id')
+        serializer = UpdateCartItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        quantity = serializer.validated_data['quantity']
 
-        if not item_id or quantity is None:
+        if not item_id:
             return Response(
                 {'error': 'item_id and quantity are required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        try:
-            cart = self.get_object()
-            cart_item = CartItem.objects.get(id=item_id, cart=cart, is_deleted=False)
-        except CartItem.DoesNotExist:
+        cart = self.get_object()
+        cart_item = CartItem.objects.filter(
+            cart=cart,
+            is_deleted=False
+        ).filter(
+            models.Q(id=item_id) | models.Q(product_id=item_id)
+        ).first()
+
+        if not cart_item:
             return Response(
                 {'error': 'Cart item not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
         if quantity == 0:
-            # Soft delete item from cart
             cart_item.soft_delete()
         else:
-            # Update quantity
             if quantity > cart_item.product.stock:
                 return Response(
                     {'error': f'Only {cart_item.product.stock} items available in stock'},
@@ -141,7 +146,7 @@ class CartViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def remove_item(self, request):
         """Soft delete item from cart."""
-        item_id = request.data.get('item_id')
+        item_id = request.data.get('item_id') or request.data.get('product_id')
 
         if not item_id:
             return Response(
@@ -149,16 +154,21 @@ class CartViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        try:
-            cart = self.get_object()
-            cart_item = CartItem.objects.get(id=item_id, cart=cart, is_deleted=False)
-            cart_item.soft_delete()
-        except CartItem.DoesNotExist:
+        cart = self.get_object()
+        cart_item = CartItem.objects.filter(
+            cart=cart,
+            is_deleted=False
+        ).filter(
+            models.Q(id=item_id) | models.Q(product_id=item_id)
+        ).first()
+
+        if not cart_item:
             return Response(
                 {'error': 'Cart item not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        cart_item.soft_delete()
         return Response(CartSerializer(cart).data)
 
     @action(detail=False, methods=['post'])
