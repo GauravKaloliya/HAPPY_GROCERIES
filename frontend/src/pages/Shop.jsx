@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
+import { selectSortOptions } from '../store/slices/configSlice';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -14,6 +16,7 @@ const Shop = () => {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const sortOptions = useSelector(selectSortOptions);
 
   // Filter states
   const initialSearch = searchParams.get('search') || '';
@@ -219,12 +222,11 @@ const Shop = () => {
               className="sort-select"
             >
               <option value="">Default</option>
-              <option value="price">Price: Low to High</option>
-              <option value="-price">Price: High to Low</option>
-              <option value="name">Name: A to Z</option>
-              <option value="-name">Name: Z to A</option>
-              <option value="-rating">Rating: High to Low</option>
-              <option value="rating">Rating: Low to High</option>
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 

@@ -98,6 +98,7 @@ const Header = () => {
   const userMenuItems = config?.userMenuItems || [
     { icon: '👤', label: 'Profile', href: '/profile' },
     { icon: '📦', label: 'Orders', href: '/orders' },
+    { icon: '⭐', label: 'My Reviews', href: '/my-reviews' },
     { icon: '❤️', label: 'Wishlist', href: '/wishlist' },
     { icon: '⚙️', label: 'Settings', href: '/settings' },
   ];

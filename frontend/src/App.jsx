@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import { initializeTheme } from './store/slices/themeSlice';
+import { fetchConfig } from './store/slices/configSlice';
 
 // Components
 import Header from './components/Header';
@@ -22,14 +23,16 @@ import Wishlist from './pages/Wishlist';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import MyReviews from './pages/MyReviews';
 import Offers from './pages/Offers';
 import About from './pages/About';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
 
-// Initialize theme
+// Initialize theme and config
 store.dispatch(initializeTheme());
+store.dispatch(fetchConfig());
 
 const MainLayout = () => (
   <div className="app-layout">
@@ -102,6 +105,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-reviews"
+                element={
+                  <ProtectedRoute>
+                    <MyReviews />
                   </ProtectedRoute>
                 }
               />
