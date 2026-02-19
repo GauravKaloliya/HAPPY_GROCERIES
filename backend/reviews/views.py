@@ -18,7 +18,10 @@ from products.models import Product
 class ProductReviewViewSet(viewsets.ModelViewSet):
     """ViewSet for product reviews."""
     
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
     
     def get_queryset(self):
         """Get reviews for a specific product."""
@@ -28,11 +31,13 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
                 product_id=product_id,
                 is_approved=True,
                 is_deleted=False
+            ).select_related('user')
+        if self.request.user.is_authenticated:
+            return ProductReview.objects.filter(
+                user=self.request.user,
+                is_deleted=False
             )
-        return ProductReview.objects.filter(
-            user=self.request.user,
-            is_deleted=False
-        )
+        return ProductReview.objects.none()
     
     def get_serializer_class(self):
         if self.action == 'create':

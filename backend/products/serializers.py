@@ -44,6 +44,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     """Simplified serializer for product lists."""
 
     effective_price = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
 
     def get_effective_price(self, obj):
         """Calculate effective price with discount."""

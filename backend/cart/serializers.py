@@ -21,9 +21,13 @@ class CartItemSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     """Serializer for cart data."""
     
-    items = CartItemSerializer(many=True, read_only=True)
+    items = serializers.SerializerMethodField()
     total_items = serializers.IntegerField(read_only=True)
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    
+    def get_items(self, obj):
+        active_items = obj.items.filter(is_deleted=False).select_related('product__category')
+        return CartItemSerializer(active_items, many=True).data
     
     class Meta:
         model = Cart

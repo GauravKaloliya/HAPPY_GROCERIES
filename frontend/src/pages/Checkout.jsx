@@ -9,6 +9,7 @@ import {
   selectDeliveryCharge,
   selectDiscount,
   clearCartState,
+  clearCart,
   selectAppliedCoupon,
 } from '../store/slices/cartSlice';
 import { selectUser } from '../store/slices/authSlice';
@@ -237,7 +238,7 @@ const Checkout = () => {
       const response = await ordersAPI.create(orderData);
       setOrderId(response.data.id || response.data.order_id);
       setOrderSuccess(true);
-      dispatch(clearCartState());
+      dispatch(clearCart());
       logCustomActivity('checkout', { order_id: response.data.id, total: computedTotal, items_count: validItems.length });
       toast.success('Order placed successfully! 🎉');
     } catch (error) {
@@ -405,12 +406,16 @@ const Checkout = () => {
         <h2 style={{ marginBottom: '1.5rem' }}>Order Summary</h2>
 
         <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem' }}>
-          {items.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-              <span>{item.product.name} x {item.quantity}</span>
-              <span>{formatPrice((item.product.effective_price || item.product.price) * item.quantity)}</span>
-            </div>
-          ))}
+          {items.map((item) => {
+            const prod = item.product || item;
+            const price = parseFloat(prod.effective_price || prod.price || 0);
+            return (
+              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
+                <span>{prod.name || 'Product'} x {item.quantity}</span>
+                <span>{formatPrice(price * item.quantity)}</span>
+              </div>
+            );
+          })}
         </div>
 
         <div className="summary-row">

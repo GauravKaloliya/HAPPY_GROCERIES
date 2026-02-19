@@ -9,12 +9,24 @@ from .serializers import (
 )
 
 
+def build_cart_response(cart):
+    """Build cart response with calculated tax, delivery and total."""
+    data = CartSerializer(cart).data
+    subtotal = float(cart.subtotal)
+    tax = round(subtotal * 0.08, 2)
+    delivery = 0 if subtotal >= 500 else 40
+    data['tax'] = tax
+    data['delivery'] = delivery
+    data['total'] = round(subtotal + tax + delivery, 2)
+    return data
+
+
 class CartViewSet(viewsets.ModelViewSet):
     """ViewSet for cart operations."""
-    
+
     permission_classes = [IsAuthenticated]
     serializer_class = CartSerializer
-    
+
     def get_queryset(self):
         return Cart.objects.filter(
             user=self.request.user,
@@ -22,45 +34,37 @@ class CartViewSet(viewsets.ModelViewSet):
         ).prefetch_related(
             'items__product__category'
         )
-    
+
     def get_object(self):
         """Get or create cart for the authenticated user."""
-        cart, created = Cart.objects.get_or_create(
+        cart, _ = Cart.objects.get_or_create(
             user=self.request.user,
             defaults={'is_deleted': False}
         )
+        if cart.is_deleted:
+            cart.is_deleted = False
+            cart.deleted_at = None
+            cart.save(update_fields=['is_deleted', 'deleted_at'])
+        cart = Cart.objects.prefetch_related(
+            'items__product__category'
+        ).get(pk=cart.pk)
         return cart
-    
+
     def list(self, request, *args, **kwargs):
         """Get the user's cart."""
         cart = self.get_object()
-        serializer = self.get_serializer(cart)
-        
-        # Calculate tax (8%)
-        subtotal = cart.subtotal
-        tax = subtotal * 0.08
-        
-        # Calculate delivery charge
-        delivery = 0 if subtotal >= 500 else 50
-        
-        # Return cart with calculated totals
-        data = serializer.data
-        data['tax'] = float(tax)
-        data['delivery'] = delivery
-        data['total'] = float(subtotal + tax + delivery)
-        
-        return Response(data)
-    
+        return Response(build_cart_response(cart))
+
     @action(detail=False, methods=['post'])
     def add(self, request):
         """Add item to cart."""
         serializer = AddToCartSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         cart = self.get_object()
         product_id = serializer.validated_data['product_id']
         quantity = serializer.validated_data['quantity']
-        
+
         from products.models import Product
         try:
             product = Product.objects.get(id=product_id, is_active=True, is_deleted=False)
@@ -69,24 +73,15 @@ class CartViewSet(viewsets.ModelViewSet):
                 {'error': 'Product not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
-        # Check stock availability
+
         if product.stock < quantity:
             return Response(
                 {'error': f'Only {product.stock} items available in stock'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Get or create cart item
-        cart_item, created = CartItem.objects.get_or_create(
-            cart=cart,
-            product=product,
-            is_deleted=False,
-            defaults={'quantity': quantity}
-        )
-        
-        if not created:
-            # Update quantity if item already exists
+
+        try:
+            cart_item = CartItem.objects.get(cart=cart, product=product, is_deleted=False)
             new_quantity = cart_item.quantity + quantity
             if new_quantity > product.stock:
                 return Response(
@@ -95,24 +90,23 @@ class CartViewSet(viewsets.ModelViewSet):
                 )
             cart_item.quantity = new_quantity
             cart_item.save()
-        
-        return Response(
-            CartSerializer(cart).data,
-            status=status.HTTP_201_CREATED
-        )
-    
+        except CartItem.DoesNotExist:
+            CartItem.objects.create(cart=cart, product=product, quantity=quantity)
+
+        return Response(build_cart_response(cart), status=status.HTTP_201_CREATED)
+
     @action(detail=False, methods=['post'])
     def update_item(self, request):
         """Update cart item quantity."""
         item_id = request.data.get('item_id')
         quantity = request.data.get('quantity')
-        
-        if not item_id or quantity is None:
+
+        if item_id is None or quantity is None:
             return Response(
                 {'error': 'item_id and quantity are required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             cart = self.get_object()
             cart_item = CartItem.objects.get(id=item_id, cart=cart, is_deleted=False)
@@ -121,33 +115,31 @@ class CartViewSet(viewsets.ModelViewSet):
                 {'error': 'Cart item not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
-        if quantity == 0:
-            # Soft delete item from cart
+
+        if int(quantity) == 0:
             cart_item.soft_delete()
         else:
-            # Update quantity
-            if quantity > cart_item.product.stock:
+            if int(quantity) > cart_item.product.stock:
                 return Response(
                     {'error': f'Only {cart_item.product.stock} items available in stock'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            cart_item.quantity = quantity
+            cart_item.quantity = int(quantity)
             cart_item.save()
-        
-        return Response(CartSerializer(cart).data)
-    
+
+        return Response(build_cart_response(cart))
+
     @action(detail=False, methods=['post'])
     def remove_item(self, request):
         """Soft delete item from cart."""
         item_id = request.data.get('item_id')
-        
+
         if not item_id:
             return Response(
                 {'error': 'item_id is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             cart = self.get_object()
             cart_item = CartItem.objects.get(id=item_id, cart=cart, is_deleted=False)
@@ -157,15 +149,12 @@ class CartViewSet(viewsets.ModelViewSet):
                 {'error': 'Cart item not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
-        return Response(CartSerializer(cart).data)
-    
+
+        return Response(build_cart_response(cart))
+
     @action(detail=False, methods=['post'])
     def clear(self, request):
-        """Soft delete all items from cart."""
+        """Remove all items from cart."""
         cart = self.get_object()
-        cart.soft_delete()
-        # Create a new empty cart
-        Cart.objects.filter(user=request.user).update(is_deleted=True)
-        Cart.objects.get_or_create(user=request.user, defaults={'is_deleted': False})
-        return Response(CartSerializer(self.get_object()).data)
+        cart.items.filter(is_deleted=False).update(is_deleted=True)
+        return Response(build_cart_response(cart))

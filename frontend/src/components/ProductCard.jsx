@@ -17,7 +17,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const cartItem = cartItems.find(item =>
-    item.product?.id === product.id || item.id === product.id
+    (item.product?.id === product.id) || (!item.product && item.id === product.id)
   );
   const inCart = !!cartItem;
   const displayQuantity = cartItem ? cartItem.quantity : 0;
@@ -89,6 +89,11 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     }
   };
 
+  const getCartItemId = () => {
+    if (!cartItem) return null;
+    return cartItem.id;
+  };
+
   const handleIncrement = async (e) => {
     e.stopPropagation();
     if (!inCart || !cartItem || isUpdatingQuantity) return;
@@ -97,7 +102,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       toast.error('Maximum quantity reached!');
       return;
     }
-    const itemId = cartItem.product?.id || cartItem.id;
+    const itemId = getCartItemId();
     setIsUpdatingQuantity(true);
     try {
       await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
@@ -112,7 +117,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     e.stopPropagation();
     if (!inCart || !cartItem || isUpdatingQuantity) return;
     const newQuantity = displayQuantity - 1;
-    const itemId = cartItem.product?.id || cartItem.id;
+    const itemId = getCartItemId();
     setIsUpdatingQuantity(true);
     try {
       if (newQuantity <= 0) {

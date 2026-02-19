@@ -24,8 +24,19 @@ const getInitialItems = () => {
   return accessToken ? [] : getGuestCart();
 };
 
+const normalizeCartData = (data) => {
+  if (Array.isArray(data)) {
+    return { items: data, subtotal: 0, tax: 0, delivery: 40, total: 40 };
+  }
+  return data;
+};
+
 const initialState = {
   items: getInitialItems(),
+  subtotal: 0,
+  tax: 0,
+  delivery: 40,
+  total: 0,
   loading: false,
   error: null,
   coupon: null,
@@ -38,9 +49,8 @@ export const fetchCart = createAsyncThunk(
     try {
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
-        return getGuestCart();
+        return { items: getGuestCart() };
       }
-
       const response = await cartAPI.getCart();
       return response.data;
     } catch (error) {
@@ -56,7 +66,9 @@ export const addToCart = createAsyncThunk(
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         const items = getGuestCart();
-        const existingItemIndex = items.findIndex(item => item.id === productId || item.product?.id === productId);
+        const existingItemIndex = items.findIndex(
+          item => item.id === productId || item.product?.id === productId
+        );
         let productData = product || (existingItemIndex >= 0 ? items[existingItemIndex].product : null);
 
         if (!productData) {
@@ -67,10 +79,9 @@ export const addToCart = createAsyncThunk(
         const maxQuantity = productData?.stock ? Math.min(productData.stock, 99) : 99;
 
         if (existingItemIndex >= 0) {
-          // Update existing item immutably
           items[existingItemIndex] = {
             ...items[existingItemIndex],
-            quantity: Math.min(items[existingItemIndex].quantity + quantity, maxQuantity)
+            quantity: Math.min(items[existingItemIndex].quantity + quantity, maxQuantity),
           };
         } else {
           items.push({
@@ -87,7 +98,9 @@ export const addToCart = createAsyncThunk(
       const response = await cartAPI.addItem(productId, quantity);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to add to cart');
+      return rejectWithValue(
+        error.response?.data?.error || error.response?.data?.message || 'Failed to add to cart'
+      );
     }
   }
 );
@@ -99,7 +112,9 @@ export const updateCartItem = createAsyncThunk(
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         const items = getGuestCart();
-        const itemIndex = items.findIndex(item => item.id === itemId || item.product?.id === itemId);
+        const itemIndex = items.findIndex(
+          item => item.id === itemId || item.product?.id === itemId
+        );
         if (itemIndex === -1) {
           return rejectWithValue('Cart item not found');
         }
@@ -109,10 +124,9 @@ export const updateCartItem = createAsyncThunk(
         } else {
           const item = items[itemIndex];
           const maxQuantity = item.product?.stock ? Math.min(item.product.stock, 99) : 99;
-          // Update immutably
           items[itemIndex] = {
             ...item,
-            quantity: Math.min(quantity, maxQuantity)
+            quantity: Math.min(quantity, maxQuantity),
           };
         }
 
@@ -123,7 +137,9 @@ export const updateCartItem = createAsyncThunk(
       const response = await cartAPI.updateItem(itemId, quantity);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to update cart');
+      return rejectWithValue(
+        error.response?.data?.error || error.response?.data?.message || 'Failed to update cart'
+      );
     }
   }
 );
@@ -134,15 +150,19 @@ export const removeFromCart = createAsyncThunk(
     try {
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
-        const items = getGuestCart().filter(item => item.id !== itemId && item.product?.id !== itemId);
+        const items = getGuestCart().filter(
+          item => item.id !== itemId && item.product?.id !== itemId
+        );
         saveGuestCart(items);
         return { items };
       }
 
-      await cartAPI.removeItem(itemId);
-      return itemId;
+      const response = await cartAPI.removeItem(itemId);
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove from cart');
+      return rejectWithValue(
+        error.response?.data?.error || error.response?.data?.message || 'Failed to remove from cart'
+      );
     }
   }
 );
@@ -154,13 +174,15 @@ export const clearCart = createAsyncThunk(
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         saveGuestCart([]);
-        return [];
+        return { items: [] };
       }
 
-      await cartAPI.clearCart();
-      return [];
+      const response = await cartAPI.clearCart();
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to clear cart');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to clear cart'
+      );
     }
   }
 );
@@ -172,10 +194,21 @@ export const validateCoupon = createAsyncThunk(
       const response = await couponsAPI.validate(code, cartTotal);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Invalid coupon code');
+      return rejectWithValue(
+        error.response?.data?.message || error.response?.data?.error || 'Invalid coupon code'
+      );
     }
   }
 );
+
+const applyCartData = (state, data) => {
+  const normalized = normalizeCartData(data);
+  state.items = normalized.items || [];
+  if (normalized.subtotal !== undefined) state.subtotal = parseFloat(normalized.subtotal) || 0;
+  if (normalized.tax !== undefined) state.tax = parseFloat(normalized.tax) || 0;
+  if (normalized.delivery !== undefined) state.delivery = parseFloat(normalized.delivery) || 0;
+  if (normalized.total !== undefined) state.total = parseFloat(normalized.total) || 0;
+};
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -193,75 +226,79 @@ const cartSlice = createSlice({
     },
     clearCartState: (state) => {
       state.items = [];
+      state.subtotal = 0;
+      state.tax = 0;
+      state.delivery = 40;
+      state.total = 0;
       state.coupon = null;
       state.appliedCoupon = null;
+      saveGuestCart([]);
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Cart
       .addCase(fetchCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.items || action.payload;
+        applyCartData(state, action.payload);
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Add to Cart
       .addCase(addToCart.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload.items) {
-          state.items = action.payload.items;
-        } else {
-          const existingItem = state.items.find(item => item.id === action.payload.id);
-          if (existingItem) {
-            existingItem.quantity = action.payload.quantity;
-          } else {
-            state.items.push(action.payload);
-          }
-        }
+        applyCartData(state, action.payload);
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      // Update Cart Item
+      .addCase(updateCartItem.pending, (state) => {
+        state.loading = false;
+      })
       .addCase(updateCartItem.fulfilled, (state, action) => {
-        if (action.payload.items) {
-          state.items = action.payload.items;
-          return;
-        }
-        const updatedItem = action.payload;
-        const index = state.items.findIndex(item => item.id === updatedItem.id);
-        if (index !== -1) {
-          state.items[index] = updatedItem;
-        }
+        state.loading = false;
+        applyCartData(state, action.payload);
       })
-      // Remove from Cart
+      .addCase(updateCartItem.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(removeFromCart.pending, (state) => {
+        state.loading = false;
+      })
       .addCase(removeFromCart.fulfilled, (state, action) => {
-        if (action.payload?.items) {
-          state.items = action.payload.items;
-          return;
-        }
-        state.items = state.items.filter(item => item.id !== action.payload);
+        state.loading = false;
+        applyCartData(state, action.payload);
       })
-      // Clear Cart
-      .addCase(clearCart.fulfilled, (state) => {
-        state.items = [];
+      .addCase(removeFromCart.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(clearCart.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(clearCart.fulfilled, (state, action) => {
+        state.loading = false;
+        applyCartData(state, action.payload);
         state.coupon = null;
         state.appliedCoupon = null;
       })
-      // Validate Coupon
+      .addCase(clearCart.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       .addCase(validateCoupon.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(validateCoupon.fulfilled, (state, action) => {
         state.loading = false;
@@ -276,7 +313,6 @@ const cartSlice = createSlice({
   },
 });
 
-// Selectors
 export const selectCartItems = (state) => state.cart.items || [];
 export const selectCartLoading = (state) => state.cart.loading;
 export const selectCartError = (state) => state.cart.error;
@@ -287,9 +323,9 @@ export const selectAppliedCoupon = (state) => state.cart.appliedCoupon;
 export const selectCartSubtotal = (state) => {
   const items = state.cart?.items || [];
   return items.reduce((total, item) => {
-    const regularPrice = parseFloat(item?.product?.price || item?.price || 0) || 0;
-    const effectivePrice = parseFloat(item?.product?.effective_price || regularPrice) || regularPrice;
-    const itemPrice = effectivePrice < regularPrice ? effectivePrice : regularPrice;
+    const price = parseFloat(item?.product?.price || item?.price || 0) || 0;
+    const effectivePrice = parseFloat(item?.product?.effective_price || price) || price;
+    const itemPrice = effectivePrice < price ? effectivePrice : price;
     const quantity = item?.quantity || 0;
     return total + itemPrice * quantity;
   }, 0);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   fetchProductReviews,
@@ -20,84 +20,86 @@ const ProductReviews = ({ productId }) => {
   const reviews = useSelector((state) => selectProductReviews(state, productId));
   const summary = useSelector((state) => selectReviewSummary(state, productId));
   const loading = useSelector(selectReviewsLoading);
-  
+
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  
+
   useEffect(() => {
     dispatch(fetchProductReviews(productId));
     dispatch(fetchReviewSummary(productId));
   }, [dispatch, productId]);
-  
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
+
+  const handleWriteReviewClick = () => {
     if (!isAuthenticated) {
       toast.error('Please login to write a review');
       navigate('/login');
       return;
     }
-    
+    setShowWriteForm(!showWriteForm);
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+
     if (!comment.trim()) {
       toast.error('Please write a comment');
       return;
     }
-    
+
     setSubmitting(true);
     try {
       await dispatch(createReview({
         productId,
-        reviewData: { rating, title, comment }
+        reviewData: { rating, title, comment },
       })).unwrap();
       toast.success('Review submitted successfully!');
       setShowWriteForm(false);
       setRating(5);
       setTitle('');
       setComment('');
+      dispatch(fetchReviewSummary(productId));
     } catch (err) {
-      toast.error(err || 'Failed to submit review');
+      toast.error(typeof err === 'string' ? err : err?.error || 'Failed to submit review');
     } finally {
       setSubmitting(false);
     }
   };
-  
+
   const handleHelpful = async (reviewId) => {
     if (!isAuthenticated) {
       toast.error('Please login to mark helpful');
+      navigate('/login');
       return;
     }
     try {
       await dispatch(markReviewHelpful(reviewId)).unwrap();
     } catch (err) {
-      toast.error(err || 'Failed to mark helpful');
+      toast.error(typeof err === 'string' ? err : 'Failed to mark helpful');
     }
   };
-  
-  const renderStars = (rating) => {
-    return '⭐'.repeat(rating);
-  };
-  
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+
+  const renderStars = (count) => '⭐'.repeat(Math.max(0, Math.min(5, Math.round(count))));
+
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-  };
-  
+
   if (loading && !reviews.length) {
     return <div style={{ textAlign: 'center', padding: '2rem' }}>Loading reviews...</div>;
   }
-  
+
   return (
     <div className="product-reviews" style={{ marginTop: '2rem' }}>
       <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
         Customer Reviews {summary?.total_reviews > 0 && `(${summary.total_reviews})`}
       </h3>
-      
-      {/* Review Summary */}
+
       {summary && (
         <div className="review-summary" style={{
           background: 'var(--bg-white)',
@@ -109,14 +111,14 @@ const ProductReviews = ({ productId }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--primary-pink)' }}>
-                {summary.average_rating.toFixed(1)}
+                {(summary.average_rating || 0).toFixed(1)}
               </div>
-              <div style={{ fontSize: '1.5rem' }}>{renderStars(Math.round(summary.average_rating))}</div>
+              <div style={{ fontSize: '1.5rem' }}>{renderStars(summary.average_rating)}</div>
               <div style={{ color: '#888', fontSize: '0.9rem' }}>
                 {summary.total_reviews} {summary.total_reviews === 1 ? 'review' : 'reviews'}
               </div>
             </div>
-            
+
             <div style={{ flex: 1, minWidth: '200px' }}>
               {[5, 4, 3, 2, 1].map((star) => (
                 <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
@@ -129,7 +131,7 @@ const ProductReviews = ({ productId }) => {
                     overflow: 'hidden',
                   }}>
                     <div style={{
-                      width: `${summary.total_reviews > 0 ? (summary.rating_breakdown[star] / summary.total_reviews) * 100 : 0}%`,
+                      width: `${summary.total_reviews > 0 ? ((summary.rating_breakdown[star] || 0) / summary.total_reviews) * 100 : 0}%`,
                       height: '100%',
                       background: 'var(--primary-pink)',
                       transition: 'width 0.3s',
@@ -141,11 +143,18 @@ const ProductReviews = ({ productId }) => {
                 </div>
               ))}
             </div>
-            
+
             <div style={{ textAlign: 'center' }}>
-              {summary.can_review ? (
+              {!isAuthenticated ? (
+                <div style={{ fontSize: '0.9rem', color: '#888' }}>
+                  <Link to="/login" style={{ color: 'var(--primary-pink)', fontWeight: 600 }}>
+                    Login
+                  </Link>{' '}
+                  to write a review
+                </div>
+              ) : summary.can_review ? (
                 <button
-                  onClick={() => setShowWriteForm(!showWriteForm)}
+                  onClick={handleWriteReviewClick}
                   className="btn-primary"
                   style={{ padding: '0.75rem 1.5rem' }}
                 >
@@ -157,16 +166,15 @@ const ProductReviews = ({ productId }) => {
                 </div>
               ) : (
                 <div style={{ color: '#888', fontSize: '0.9rem' }}>
-                  Purchase to review
+                  Purchase this product to leave a review
                 </div>
               )}
             </div>
           </div>
         </div>
       )}
-      
-      {/* Write Review Form */}
-      {showWriteForm && (
+
+      {showWriteForm && isAuthenticated && (
         <div className="write-review-form" style={{
           background: 'var(--bg-white)',
           padding: '1.5rem',
@@ -192,6 +200,7 @@ const ProductReviews = ({ productId }) => {
                       border: 'none',
                       cursor: 'pointer',
                       opacity: star <= rating ? 1 : 0.3,
+                      transition: 'opacity 0.15s',
                     }}
                   >
                     ⭐
@@ -199,7 +208,7 @@ const ProductReviews = ({ productId }) => {
                 ))}
               </div>
             </div>
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
                 Title (optional)
@@ -215,14 +224,15 @@ const ProductReviews = ({ productId }) => {
                   border: '2px solid #ddd',
                   borderRadius: 'var(--border-radius)',
                   fontFamily: 'inherit',
+                  boxSizing: 'border-box',
                 }}
                 maxLength={100}
               />
             </div>
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Your Review
+                Your Review <span style={{ color: 'var(--primary-pink)' }}>*</span>
               </label>
               <textarea
                 value={comment}
@@ -236,6 +246,7 @@ const ProductReviews = ({ productId }) => {
                   borderRadius: 'var(--border-radius)',
                   fontFamily: 'inherit',
                   resize: 'vertical',
+                  boxSizing: 'border-box',
                 }}
                 maxLength={1000}
                 required
@@ -244,20 +255,28 @@ const ProductReviews = ({ productId }) => {
                 {comment.length}/1000
               </div>
             </div>
-            
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={submitting}
-              style={{ opacity: submitting ? 0.5 : 1 }}
-            >
-              {submitting ? 'Submitting...' : 'Submit Review'}
-            </button>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={submitting || !comment.trim()}
+                style={{ opacity: submitting || !comment.trim() ? 0.5 : 1 }}
+              >
+                {submitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowWriteForm(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
-      
-      {/* Reviews List */}
+
       <div className="reviews-list">
         {reviews.length === 0 ? (
           <div style={{
@@ -269,6 +288,14 @@ const ProductReviews = ({ productId }) => {
           }}>
             <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📝</div>
             <p>No reviews yet. Be the first to review!</p>
+            {!isAuthenticated && (
+              <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                <Link to="/login" style={{ color: 'var(--primary-pink)', fontWeight: 600 }}>
+                  Login
+                </Link>{' '}
+                to write a review after purchasing this product.
+              </p>
+            )}
           </div>
         ) : (
           reviews.map((review) => (
@@ -296,19 +323,19 @@ const ProductReviews = ({ productId }) => {
                   {formatDate(review.created_at)}
                 </div>
               </div>
-              
+
               <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>{review.comment}</p>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '0.9rem', color: '#888' }}>
-                  By {review.user_name || review.user_phone}
+                  By {review.user_name || review.user_phone || 'Anonymous'}
                   {review.is_verified_purchase && (
                     <span style={{ color: 'var(--primary-green)', marginLeft: '0.5rem' }}>
                       ✓ Verified Purchase
                     </span>
                   )}
                 </div>
-                
+
                 <button
                   onClick={() => handleHelpful(review.id)}
                   style={{
@@ -324,7 +351,7 @@ const ProductReviews = ({ productId }) => {
                     gap: '0.3rem',
                   }}
                 >
-                  👍 Helpful ({review.helpful_count})
+                  👍 Helpful ({review.helpful_count || 0})
                 </button>
               </div>
             </div>

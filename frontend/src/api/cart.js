@@ -7,3 +7,5 @@ export const cartAPI = {
   removeItem: (itemId) => api.post('/api/cart/remove_item/', { item_id: itemId }),
   clearCart: () => api.post('/api/cart/clear/'),
 };
+
+export default cartAPI;

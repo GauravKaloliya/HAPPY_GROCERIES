@@ -2,6 +2,7 @@
 Order service for handling order creation and management.
 """
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
 import uuid
@@ -185,7 +186,7 @@ class OrderService:
         
         return {
             'total_orders': orders.count(),
-            'total_spent': orders.aggregate(total=models.Sum('total'))['total'] or 0,
+            'total_spent': orders.aggregate(total=Sum('total'))['total'] or 0,
             'pending_orders': orders.filter(status__in=['pending', 'confirmed', 'processing']).count(),
             'delivered_orders': orders.filter(status='delivered').count(),
         }
