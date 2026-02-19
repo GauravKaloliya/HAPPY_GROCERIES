@@ -31,8 +31,8 @@ const About = () => {
 
   const team = [
     { name: 'Gaurav Kaloliya', role: 'Founder & CEO', emoji: '👨‍💼' },
-    { name: 'Bob Smith', role: 'Head of Operations', emoji: '👨‍🌾' },
-    { name: 'Carol White', role: 'Customer Success', emoji: '👩‍💻' },
+    { name: 'Arpita Makwana', role: 'CTO', emoji: '👩‍💻' },
+    { name: 'Carol White', role: 'Customer Success', emoji: '👩‍💼' },
     { name: 'David Brown', role: 'Delivery Manager', emoji: '👨‍🚚' },
   ];
 
