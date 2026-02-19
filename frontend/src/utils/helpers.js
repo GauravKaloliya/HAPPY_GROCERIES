@@ -74,35 +74,31 @@ export const renderStars = (rating) => {
 };
 
 /**
- * Get category color
- * @param {string} category - Category name
+ * Get category color - now returns the color from category object or default
+ * @param {object|string} category - Category object or name
  * @returns {string} CSS color variable
  */
 export const getCategoryColor = (category) => {
-  const colors = {
-    'Fruits': 'var(--primary-pink)',
-    'Vegetables': 'var(--primary-green)',
-    'Dairy': 'var(--primary-blue)',
-    'Snacks': 'var(--primary-yellow)',
-    'Beverages': 'var(--primary-orange)',
-  };
-  return colors[category] || 'var(--primary-blue)';
+  // If category is an object with color property, use it
+  if (category && typeof category === 'object' && category.color) {
+    return category.color;
+  }
+  // If category is a string, return default (frontend should use category.color from API)
+  return 'var(--primary-pink)';
 };
 
 /**
- * Get category emoji
- * @param {string} category - Category name
+ * Get category emoji - now returns the emoji from category object or default
+ * @param {object|string} category - Category object or name
  * @returns {string} Emoji
  */
 export const getCategoryEmoji = (category) => {
-  const emojis = {
-    'Fruits': '🍎',
-    'Vegetables': '🥕',
-    'Dairy': '🥛',
-    'Snacks': '🍪',
-    'Beverages': '🧃',
-  };
-  return emojis[category] || '📦';
+  // If category is an object with emoji property, use it
+  if (category && typeof category === 'object' && category.emoji) {
+    return category.emoji;
+  }
+  // Default emoji
+  return '📦';
 };
 
 /**

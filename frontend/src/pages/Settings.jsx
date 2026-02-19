@@ -379,9 +379,9 @@ const Settings = () => {
                 <button
                   onClick={() => dispatch(toggleTheme())}
                   className={isDarkMode ? 'btn-primary' : 'btn-secondary'}
-                  style={{ minWidth: '130px' }}
+                  style={{ width: 'auto', minWidth: 'unset', padding: '0.6rem 1.2rem' }}
                 >
-                  {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+                  {isDarkMode ? '☀️ Light' : '🌙 Dark'}
                 </button>
               </div>
             </div>
@@ -405,8 +405,12 @@ const Settings = () => {
                   <h4 style={{ marginBottom: '0.2rem' }}>Clear Local Data</h4>
                   <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Remove all locally stored preferences and cart data</p>
                 </div>
-                <button className="btn-secondary" onClick={() => setShowClearDataModal(true)}>
-                  Clear Data
+                <button 
+                  className="btn-secondary" 
+                  onClick={() => setShowClearDataModal(true)}
+                  style={{ width: 'auto', minWidth: 'unset', padding: '0.6rem 1.2rem' }}
+                >
+                  Clear
                 </button>
               </div>
 
@@ -425,10 +429,11 @@ const Settings = () => {
                     borderRadius: 'var(--border-radius)',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    minWidth: '130px',
+                    width: 'auto',
+                    minWidth: 'unset',
                   }}
                 >
-                  Delete Account
+                  Delete
                 </button>
               </div>
             </div>

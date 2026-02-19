@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
@@ -7,13 +7,20 @@ import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
 const Categories = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
 
   useActivityLog('page_view', { section: 'categories' });
+
+  // Sync selectedCategory with URL changes
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category') || 'All';
+    setSelectedCategory(categoryFromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,6 +67,16 @@ const Categories = () => {
 
   const allCategories = [{ id: 'all', name: 'All', emoji: '🛒' }, ...categories];
 
+  const handleCategoryClick = (categoryName) => {
+    setSelectedCategory(categoryName);
+    // Update URL without page reload
+    if (categoryName === 'All') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ category: categoryName });
+    }
+  };
+
   if (loading) return <PageLoader />;
 
   return (
@@ -70,15 +87,13 @@ const Categories = () => {
         {allCategories.map((category) => (
           <button
             key={category.id || category.name}
-            onClick={(e) => {
-              e.preventDefault();
-              setSelectedCategory(category.name);
-            }}
+            onClick={() => handleCategoryClick(category.name)}
             className="category-card"
             style={{
               background: getCategoryColor(category.name),
               border: selectedCategory === category.name ? '4px solid var(--text-dark)' : 'none',
-              transform: selectedCategory === category.name ? 'scale(1.05)' : 'scale(1)'
+              transform: selectedCategory === category.name ? 'scale(1.05)' : 'scale(1)',
+              cursor: 'pointer'
             }}
           >
             <span className="category-emoji">{category.emoji || getCategoryEmoji(category.name)}</span>

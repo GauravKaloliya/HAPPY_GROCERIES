@@ -10,6 +10,12 @@ class Category(models.Model):
     name = models.CharField(max_length=50, unique=True, db_index=True)
     description = models.TextField(blank=True)
     emoji = models.CharField(max_length=10, blank=True)
+    color = models.CharField(
+        max_length=50, 
+        blank=True,
+        default='var(--primary-pink)',
+        help_text='CSS color variable or hex color for category'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     
     # Soft delete fields

@@ -12,13 +12,11 @@ import {
   selectAppliedCoupon,
 } from '../store/slices/cartSlice';
 import { selectUser } from '../store/slices/authSlice';
+import { selectExpressDeliveryCharge, selectFreeDeliveryThreshold } from '../store/slices/configSlice';
 import { formatPrice } from '../utils/helpers';
-import { DELIVERY_CHARGE, FREE_DELIVERY_THRESHOLD } from '../utils/constants';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
-
-const EXPRESS_CHARGE = 50;
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -36,6 +34,8 @@ const Checkout = () => {
   const baseDelivery = useSelector(selectDeliveryCharge);
   const discount = useSelector(selectDiscount);
   const appliedCoupon = useSelector(selectAppliedCoupon);
+  const expressCharge = useSelector(selectExpressDeliveryCharge);
+  const freeDeliveryThreshold = useSelector(selectFreeDeliveryThreshold);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'checkout' });
 
@@ -58,13 +58,13 @@ const Checkout = () => {
   }, [user]);
 
   const deliveryCharge = deliveryInfo.deliveryType === 'express'
-    ? EXPRESS_CHARGE
+    ? expressCharge
     : baseDelivery;
 
   const computedTotal = (() => {
     const base = subtotal + tax - discount;
     if (deliveryInfo.deliveryType === 'express') {
-      return Math.max(0, base + EXPRESS_CHARGE);
+      return Math.max(0, base + expressCharge);
     }
     return Math.max(0, base + baseDelivery);
   })();
@@ -108,7 +108,49 @@ const Checkout = () => {
           );
           const data = await response.json();
           const address = data.display_name || `${latitude}, ${longitude}`;
-          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || '';
+          
+          // Improved city detection - prioritize city/district over county/subdistrict
+          const addr = data.address || {};
+          let city = '';
+          
+          // Try to find the actual city, avoiding subdistricts/talukas
+          if (addr.city) {
+            city = addr.city;
+          } else if (addr.town) {
+            city = addr.town;
+          } else if (addr.district && !addr.district.toLowerCase().includes('taluka') && !addr.district.toLowerCase().includes('tehsil')) {
+            city = addr.district;
+          } else if (addr.county && !addr.county.toLowerCase().includes('taluka') && !addr.county.toLowerCase().includes('tehsil')) {
+            city = addr.county;
+          } else if (addr.village) {
+            city = addr.village;
+          }
+          
+          // If still no city, try to extract from display_name
+          if (!city && address) {
+            const parts = address.split(',').map(p => p.trim());
+            // Look for common patterns - usually city is 2-3rd from last before state/postal
+            for (let i = parts.length - 1; i >= 0; i--) {
+              const part = parts[i];
+              // Skip country, postal code, and taluka/subdistrict
+              if (part.match(/^\d{5,6}$/) || // postal code
+                  part.length < 3 || // too short
+                  part.toLowerCase().includes('taluka') ||
+                  part.toLowerCase().includes('tehsil')) {
+                continue;
+              }
+              // Check if this looks like a state (2-3 words, common Indian states)
+              const states = ['gujarat', 'maharashtra', 'rajasthan', 'punjab', 'haryana', 'delhi', 'karnataka', 'tamil nadu', 'kerala', 'andhra pradesh', 'telangana', 'west bengal', 'bihar', 'jharkhand', 'odisha', 'chhattisgarh', 'madhya pradesh', 'uttar pradesh', 'uttarakhand', 'himachal pradesh', 'jammu and kashmir', 'goa', 'assam', 'meghalaya', 'manipur', 'mizoram', 'nagaland', 'tripura', 'sikkim', 'arunachal pradesh'];
+              if (states.some(s => part.toLowerCase().includes(s))) {
+                continue;
+              }
+              // This might be the city - but prefer earlier matches (more specific)
+              if (!city) {
+                city = part;
+              }
+            }
+          }
+          
           setDeliveryInfo(prev => ({
             ...prev,
             address,
@@ -301,7 +343,7 @@ const Checkout = () => {
               <span className="delivery-option-text">
                 <strong>Standard Delivery</strong>
                 <small>
-                  {subtotal >= FREE_DELIVERY_THRESHOLD ? 'FREE delivery' : `₹${DELIVERY_CHARGE} delivery charge`}
+                  {subtotal >= freeDeliveryThreshold ? 'FREE delivery' : `₹${baseDelivery} delivery charge`}
                 </small>
               </span>
             </label>
@@ -314,7 +356,7 @@ const Checkout = () => {
                 onChange={handleInputChange}
               />
               <span className="delivery-option-text">
-                <strong>Express Delivery (+₹{EXPRESS_CHARGE})</strong>
+                <strong>Express Delivery (+₹{expressCharge})</strong>
                 <small>Get it within 2 hours</small>
               </span>
             </label>

@@ -60,7 +60,7 @@ class LoginView(APIView):
             user = User.objects.get(phone=phone)
         except User.DoesNotExist:
             return Response(
-                {'error': 'Invalid credentials'},
+                {'error': 'Phone number not registered. Please check your number or sign up.'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
@@ -85,7 +85,7 @@ class LoginView(APIView):
             user.save()
             
             return Response(
-                {'error': 'Invalid credentials'},
+                {'error': 'Incorrect password. Please try again.'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         
