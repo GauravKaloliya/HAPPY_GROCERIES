@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { store } from './store';
 import { initializeTheme } from './store/slices/themeSlice';
 import { fetchConfig } from './store/slices/configSlice';
+import { fetchCart } from './store/slices/cartSlice';
+import { selectIsAuthenticated } from './store/slices/authSlice';
 
 // Components
 import Header from './components/Header';
@@ -44,7 +46,10 @@ const MainLayout = () => (
   </div>
 );
 
-function App() {
+const AppContent = () => {
+  const dispatch = useDispatch();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true';
     if (isDark) {
@@ -52,103 +57,113 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    dispatch(fetchCart());
+  }, [dispatch, isAuthenticated]);
+
   return (
-    <Provider store={store}>
-      <Router>
-        <ConnectivityCheck>
-          <Routes>
-            {/* Routes with Header + Footer */}
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/product/:id" element={<ProductDetails />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/offers" element={<Offers />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route
-                path="/checkout"
-                element={
-                  <ProtectedRoute>
-                    <Checkout />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/wishlist"
-                element={
-                  <ProtectedRoute>
-                    <Wishlist />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/orders"
-                element={
-                  <ProtectedRoute>
-                    <Orders />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-reviews"
-                element={
-                  <ProtectedRoute>
-                    <MyReviews />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
+    <Router>
+      <ConnectivityCheck>
+        <Routes>
+          {/* Routes with Header + Footer */}
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/offers" element={<Offers />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/wishlist"
+              element={
+                <ProtectedRoute>
+                  <Wishlist />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/orders"
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-reviews"
+              element={
+                <ProtectedRoute>
+                  <MyReviews />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
 
-            {/* 404 - No header/footer */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          {/* 404 - No header/footer */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
 
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 3000,
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: 'var(--primary-green)',
+              color: 'var(--text-dark)',
+              borderRadius: '15px',
+              padding: '16px 24px',
+              boxShadow: 'var(--shadow-hover)',
+              fontWeight: 600,
+            },
+            success: {
               style: {
                 background: 'var(--primary-green)',
-                color: 'var(--text-dark)',
-                borderRadius: '15px',
-                padding: '16px 24px',
-                boxShadow: 'var(--shadow-hover)',
-                fontWeight: 600,
               },
-              success: {
-                style: {
-                  background: 'var(--primary-green)',
-                },
+            },
+            error: {
+              style: {
+                background: '#ff4444',
+                color: 'white',
               },
-              error: {
-                style: {
-                  background: '#ff4444',
-                  color: 'white',
-                },
-              },
-            }}
-          />
-        </ConnectivityCheck>
-      </Router>
+            },
+          }}
+        />
+      </ConnectivityCheck>
+    </Router>
+  );
+};
+
+function App() {
+  return (
+    <Provider store={store}>
+      <AppContent />
     </Provider>
   );
 }
