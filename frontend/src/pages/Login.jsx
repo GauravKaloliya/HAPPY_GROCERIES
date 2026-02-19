@@ -68,36 +68,38 @@ const Login = () => {
       toast.success('Welcome back! 🎉');
       navigate(from, { replace: true });
     } catch (err) {
-      // Parse the error to provide more specific messages
+      // Parse the error to provide user-friendly messages only
       let errorMessage = 'Login failed. Please try again.';
       
       if (err) {
-        // Check for specific error patterns
-        if (typeof err === 'string') {
-          if (err.toLowerCase().includes('invalid') || err.toLowerCase().includes('incorrect')) {
-            errorMessage = 'Invalid phone number or password. Please check your credentials.';
-          } else if (err.toLowerCase().includes('phone')) {
-            errorMessage = 'Phone number is not registered. Please sign up first.';
-          } else if (err.toLowerCase().includes('password')) {
-            errorMessage = 'Incorrect password. Please try again.';
-          } else if (err.toLowerCase().includes('not verified') || err.toLowerCase().includes('verify')) {
-            errorMessage = 'Account not verified. Please verify your account first.';
+        const errStr = typeof err === 'string' ? err : JSON.stringify(err);
+        const errLower = errStr.toLowerCase();
+        
+        // Check for specific error patterns - only show these 3 types of errors
+        if (errLower.includes('not found') || errLower.includes('no user') || errLower.includes('phone')) {
+          errorMessage = 'User not found';
+        } else if (errLower.includes('invalid') || errLower.includes('incorrect') || errLower.includes('credentials')) {
+          errorMessage = 'User credentials are incorrect';
+        } else if (errLower.includes('required') || errLower.includes('must be') || errLower.includes('validation')) {
+          // Validation errors
+          if (typeof err === 'object') {
+            if (err.phone) {
+              errorMessage = Array.isArray(err.phone) ? err.phone[0] : err.phone;
+            } else if (err.password) {
+              errorMessage = Array.isArray(err.password) ? err.password[0] : err.password;
+            } else if (err.detail) {
+              errorMessage = err.detail;
+            } else {
+              errorMessage = errStr;
+            }
           } else {
             errorMessage = err;
           }
-        } else if (typeof err === 'object') {
-          // Handle object errors from API
-          if (err.detail) {
-            if (err.detail.toLowerCase().includes('invalid')) {
-              errorMessage = 'Invalid phone number or password. Please check your credentials.';
-            } else {
-              errorMessage = err.detail;
-            }
-          } else if (err.phone) {
-            errorMessage = Array.isArray(err.phone) ? err.phone[0] : err.phone;
-          } else if (err.password) {
-            errorMessage = Array.isArray(err.password) ? err.password[0] : err.password;
-          }
+        } else if (errLower.includes('not verified') || errLower.includes('verify')) {
+          errorMessage = 'Account not verified. Please verify your account first.';
+        } else {
+          // For any other errors (including HTML), show generic message
+          errorMessage = 'Login failed. Please try again.';
         }
       }
       
