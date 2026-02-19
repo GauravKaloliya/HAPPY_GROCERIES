@@ -34,7 +34,28 @@ export const login = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(user));
       return { access: access_token, refresh: refresh_token, user };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Login failed');
+      // Return the full error response for better error handling
+      const errorData = error.response?.data;
+      if (errorData) {
+        // If there's a detail message, use it
+        if (errorData.detail) {
+          return rejectWithValue(errorData.detail);
+        }
+        // If there are field-specific errors, return them as a combined message
+        const errorMessages = [];
+        Object.keys(errorData).forEach(key => {
+          const value = errorData[key];
+          if (Array.isArray(value)) {
+            errorMessages.push(value.join(', '));
+          } else if (typeof value === 'string') {
+            errorMessages.push(value);
+          }
+        });
+        if (errorMessages.length > 0) {
+          return rejectWithValue(errorMessages.join('; '));
+        }
+      }
+      return rejectWithValue(error.response?.data?.error || 'Login failed. Please check your credentials.');
     }
   }
 );
