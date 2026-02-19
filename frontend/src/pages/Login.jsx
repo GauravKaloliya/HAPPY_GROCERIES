@@ -68,7 +68,39 @@ const Login = () => {
       toast.success('Welcome back! 🎉');
       navigate(from, { replace: true });
     } catch (err) {
-      const errorMessage = err || 'Login failed. Please try again.';
+      // Parse the error to provide more specific messages
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (err) {
+        // Check for specific error patterns
+        if (typeof err === 'string') {
+          if (err.toLowerCase().includes('invalid') || err.toLowerCase().includes('incorrect')) {
+            errorMessage = 'Invalid phone number or password. Please check your credentials.';
+          } else if (err.toLowerCase().includes('phone')) {
+            errorMessage = 'Phone number is not registered. Please sign up first.';
+          } else if (err.toLowerCase().includes('password')) {
+            errorMessage = 'Incorrect password. Please try again.';
+          } else if (err.toLowerCase().includes('not verified') || err.toLowerCase().includes('verify')) {
+            errorMessage = 'Account not verified. Please verify your account first.';
+          } else {
+            errorMessage = err;
+          }
+        } else if (typeof err === 'object') {
+          // Handle object errors from API
+          if (err.detail) {
+            if (err.detail.toLowerCase().includes('invalid')) {
+              errorMessage = 'Invalid phone number or password. Please check your credentials.';
+            } else {
+              errorMessage = err.detail;
+            }
+          } else if (err.phone) {
+            errorMessage = Array.isArray(err.phone) ? err.phone[0] : err.phone;
+          } else if (err.password) {
+            errorMessage = Array.isArray(err.password) ? err.password[0] : err.password;
+          }
+        }
+      }
+      
       setFormErrors({ submit: errorMessage });
     }
   };

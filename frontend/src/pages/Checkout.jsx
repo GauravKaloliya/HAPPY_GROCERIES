@@ -62,11 +62,12 @@ const Checkout = () => {
     : baseDelivery;
 
   const computedTotal = (() => {
-    const base = subtotal + tax - discount;
-    if (deliveryInfo.deliveryType === 'express') {
-      return Math.max(0, base + expressCharge);
-    }
-    return Math.max(0, base + baseDelivery);
+    const sub = parseFloat(subtotal) || 0;
+    const taxAmt = parseFloat(tax) || 0;
+    const disc = parseFloat(discount) || 0;
+    const delCharge = parseFloat(deliveryInfo.deliveryType === 'express' ? expressCharge : baseDelivery) || 0;
+    const base = sub + taxAmt - disc;
+    return Math.max(0, base + delCharge);
   })();
 
   if (items.length === 0 && !orderSuccess) {
@@ -113,7 +114,7 @@ const Checkout = () => {
           const addr = data.address || {};
           let city = '';
           
-          // Try to find the actual city, avoiding subdistricts/talukas
+          // Try to find the actual city, avoiding subdistricts/talukas and countries
           if (addr.city) {
             city = addr.city;
           } else if (addr.town) {
@@ -132,11 +133,12 @@ const Checkout = () => {
             // Look for common patterns - usually city is 2-3rd from last before state/postal
             for (let i = parts.length - 1; i >= 0; i--) {
               const part = parts[i];
-              // Skip country, postal code, and taluka/subdistrict
+              // Skip country, postal code, taluka/subdistrict, and India
               if (part.match(/^\d{5,6}$/) || // postal code
                   part.length < 3 || // too short
                   part.toLowerCase().includes('taluka') ||
-                  part.toLowerCase().includes('tehsil')) {
+                  part.toLowerCase().includes('tehsil') ||
+                  part.toLowerCase() === 'india') {
                 continue;
               }
               // Check if this looks like a state (2-3 words, common Indian states)
@@ -149,6 +151,11 @@ const Checkout = () => {
                 city = part;
               }
             }
+          }
+          
+          // If still showing "India" as city, don't set it
+          if (city.toLowerCase() === 'india') {
+            city = '';
           }
           
           setDeliveryInfo(prev => ({
@@ -192,23 +199,38 @@ const Checkout = () => {
       return;
     }
 
+    // Validate items before placing order
+    const validItems = items.filter(item => {
+      const productId = item.product?.id || item.id;
+      return productId && item.quantity > 0;
+    });
+
+    if (validItems.length === 0) {
+      toast.error('No valid items in cart. Please add items to your cart.');
+      return;
+    }
+
     setLoading(true);
     try {
       const orderData = {
-        items: items.map(item => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price: item.product.effective_price || item.product.price,
-        })),
+        items: validItems.map(item => {
+          const productId = item.product?.id || item.id;
+          const price = parseFloat(item.product?.effective_price || item.product?.price || 0);
+          return {
+            product_id: productId,
+            quantity: item.quantity,
+            price: price,
+          };
+        }),
         delivery_address: `${deliveryInfo.address}, ${deliveryInfo.city}`,
         delivery_phone: deliveryInfo.phone,
         delivery_name: deliveryInfo.name,
         delivery_type: deliveryInfo.deliveryType,
-        subtotal,
-        tax,
-        delivery_charge: deliveryCharge,
-        discount,
-        total: computedTotal,
+        subtotal: parseFloat(subtotal) || 0,
+        tax: parseFloat(tax) || 0,
+        delivery_charge: parseFloat(deliveryCharge) || 0,
+        discount: parseFloat(discount) || 0,
+        total: parseFloat(computedTotal) || 0,
         coupon_code: appliedCoupon?.code || null,
       };
 
@@ -216,10 +238,12 @@ const Checkout = () => {
       setOrderId(response.data.id || response.data.order_id);
       setOrderSuccess(true);
       dispatch(clearCartState());
-      logCustomActivity('checkout', { order_id: response.data.id, total: computedTotal, items_count: items.length });
+      logCustomActivity('checkout', { order_id: response.data.id, total: computedTotal, items_count: validItems.length });
       toast.success('Order placed successfully! 🎉');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to place order');
+      const errorMsg = error.response?.data?.error || error.response?.data?.detail || 'Failed to place order';
+      toast.error(errorMsg);
+      console.error('Order error:', error.response?.data);
     } finally {
       setLoading(false);
     }
