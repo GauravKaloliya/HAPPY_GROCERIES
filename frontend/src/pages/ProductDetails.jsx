@@ -34,7 +34,8 @@ const ProductDetails = () => {
           productsAPI.getRelated(id),
         ]);
         setProduct(productRes.data);
-        setRelatedProducts(relatedRes.data.slice(0, 4));
+        const relatedData = relatedRes.data?.results || relatedRes.data;
+        setRelatedProducts(Array.isArray(relatedData) ? relatedData.slice(0, 4) : []);
 
         // Log product view
         logCustomActivity('product_view', { product_id: id, product_name: productRes.data.name });
@@ -68,7 +69,7 @@ const ProductDetails = () => {
       toast.success(`Added ${quantity} ${product.name} to cart! 🛒`);
       logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity });
       setQuantity(1);
-    } catch (error) {
+    } catch {
       toast.error('Failed to add to cart');
     }
   };
@@ -92,7 +93,7 @@ const ProductDetails = () => {
         toast.success('Added to wishlist 💖');
         logCustomActivity('add_to_wishlist', { product_id: product.id, product_name: product.name });
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to update wishlist');
     }
   };
@@ -149,18 +150,11 @@ const ProductDetails = () => {
   if (!product) return null;
 
   const hasDiscount = product.discount_percent > 0;
-  const discountedPrice = hasDiscount 
-    ? product.price * (1 - product.discount_percent / 100)
-    : product.price;
-  const savings = hasDiscount ? product.price - discountedPrice : 0;
+  const discountedPrice = hasDiscount
+    ? parseFloat(product.price) * (1 - product.discount_percent / 100)
+    : parseFloat(product.price);
+  const savings = hasDiscount ? parseFloat(product.price) - discountedPrice : 0;
   const stockInfo = getStockInfo(product.stock);
-
-  // Mock reviews for display
-  const reviews = [
-    { name: 'Aarav', rating: 5, text: `Super fresh ${product.name}! Will buy again.`, date: '2 days ago' },
-    { name: 'Meera', rating: 4, text: 'Great quality and fast delivery. Very happy with the purchase.', date: '1 week ago' },
-    { name: 'Priya', rating: 5, text: 'Best quality I have found. Highly recommended!', date: '2 weeks ago' },
-  ];
 
   return (
     <div className="container">
@@ -331,19 +325,17 @@ const ProductDetails = () => {
 
         {activeTab === 'reviews' && (
           <div className="tab-content">
-            <div className="reviews-grid" style={{ display: 'grid', gap: '1rem' }}>
-              {reviews.map((review, index) => (
-                <div key={index} className="review-card" style={{ background: 'var(--bg-white)', padding: '1.25rem', borderRadius: 'var(--border-radius)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <h4>{review.name}</h4>
-                    <span style={{ color: '#666', fontSize: '0.9rem' }}>{review.date}</span>
-                  </div>
-                  <div style={{ color: '#ffc107', marginBottom: '0.5rem' }}>
-                    {'⭐'.repeat(review.rating)}
-                  </div>
-                  <p>{review.text}</p>
-                </div>
-              ))}
+            <div style={{ background: 'var(--bg-white)', padding: '1.5rem', borderRadius: 'var(--border-radius)', textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⭐</div>
+              <h3 style={{ marginBottom: '0.5rem' }}>
+                Rating: {product.rating}/5
+              </h3>
+              <p style={{ color: '#666' }}>
+                Based on {product.reviews_count || 0} {(product.reviews_count || 0) === 1 ? 'review' : 'reviews'}
+              </p>
+              <div style={{ fontSize: '1.5rem', marginTop: '0.5rem' }}>
+                {renderStars(product.rating)}
+              </div>
             </div>
           </div>
         )}

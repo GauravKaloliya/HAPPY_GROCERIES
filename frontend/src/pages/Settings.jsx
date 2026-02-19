@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { selectUser, selectIsAuthenticated, updateProfile, changePassword } from '../store/slices/authSlice';
@@ -17,7 +17,13 @@ const Settings = () => {
 
   useActivityLog('page_view', { section: 'settings' });
 
-  // Profile form state
+  const initialProfileRef = useRef({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+  });
+
   const [profileForm, setProfileForm] = useState({
     first_name: '',
     last_name: '',
@@ -25,48 +31,70 @@ const Settings = () => {
     phone: '',
   });
 
-  // Password form state
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
-  // Notification preferences
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
+
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
     orderUpdates: true,
     promotionalOffers: false,
   });
 
-  // Modals state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
 
   useEffect(() => {
     if (user) {
-      setProfileForm({
+      const initial = {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
         phone: user.phone || '',
-      });
+      };
+      initialProfileRef.current = initial;
+      setProfileForm(initial);
     }
 
-    // Load saved preferences
     const savedPrefs = localStorage.getItem('userPreferences');
     if (savedPrefs) {
       setNotifications(JSON.parse(savedPrefs));
     }
   }, [user]);
 
+  const isProfileChanged = () => {
+    const initial = initialProfileRef.current;
+    return (
+      profileForm.first_name !== initial.first_name ||
+      profileForm.last_name !== initial.last_name ||
+      profileForm.email !== initial.email
+    );
+  };
+
+  const isPasswordChanged = () => {
+    return (
+      passwordForm.currentPassword.trim() !== '' ||
+      passwordForm.newPassword.trim() !== '' ||
+      passwordForm.confirmPassword.trim() !== ''
+    );
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       await dispatch(updateProfile(profileForm)).unwrap();
+      initialProfileRef.current = { ...profileForm };
       toast.success('Profile updated successfully! ✅');
     } catch (error) {
       toast.error(error || 'Failed to update profile');
@@ -77,7 +105,7 @@ const Settings = () => {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast.error('New passwords do not match');
       return;
@@ -94,7 +122,7 @@ const Settings = () => {
         old_password: passwordForm.currentPassword,
         new_password: passwordForm.newPassword,
       })).unwrap();
-      
+
       toast.success('Password changed successfully! 🔒');
       setPasswordForm({
         currentPassword: '',
@@ -124,20 +152,25 @@ const Settings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    // In a real app, you would verify password and call an API
     toast.error('Account deletion is not available. Please contact support.');
     setShowDeleteModal(false);
   };
 
-  const togglePasswordVisibility = (inputId) => {
-    const input = document.getElementById(inputId);
-    input.type = input.type === 'password' ? 'text' : 'password';
+  const togglePasswordVisibility = (field) => {
+    setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] }));
   };
+
+  const navItems = [
+    { id: 'account', label: 'Account', icon: '👤' },
+    { id: 'notifications', label: 'Notifications', icon: '🔔' },
+    { id: 'appearance', label: 'Appearance', icon: '🎨' },
+    { id: 'privacy', label: 'Privacy & Security', icon: '🔒' },
+  ];
 
   if (!isAuthenticated) {
     return (
       <div className="container">
-        <div className="login-required" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+        <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
           <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🔒</div>
           <h2>Please login to access settings</h2>
           <p>You need to be logged in to manage your settings</p>
@@ -148,188 +181,178 @@ const Settings = () => {
   }
 
   return (
-    <div className="container">
+    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
       <Link to="/profile" className="back-link">← Back to Profile</Link>
-      <h1 className="section-title">⚙️ Settings</h1>
+      <h1 className="section-title" style={{ marginBottom: '1.5rem' }}>⚙️ Settings</h1>
 
-      <div className="settings-layout" style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '2rem' }}>
-        {/* Sidebar */}
-        <div className="settings-sidebar" style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius)', padding: '1.5rem', height: 'fit-content' }}>
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {[
-              { id: 'account', label: '👤 Account', icon: '👤' },
-              { id: 'notifications', label: '🔔 Notifications', icon: '🔔' },
-              { id: 'appearance', label: '🎨 Appearance', icon: '🎨' },
-              { id: 'privacy', label: '🔒 Privacy & Security', icon: '🔒' },
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  textAlign: 'left',
-                  background: activeSection === item.id ? 'var(--primary-pink)' : 'transparent',
-                  color: activeSection === item.id ? 'white' : 'var(--text-dark)',
-                  border: 'none',
-                  borderRadius: 'var(--border-radius)',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  transition: 'var(--transition)',
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </div>
+      <div className="settings-layout">
+        <aside className="settings-sidebar-nav">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              className={`settings-nav-btn${activeSection === item.id ? ' active' : ''}`}
+            >
+              <span className="settings-nav-icon">{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </aside>
 
-        {/* Content */}
-        <div className="settings-content">
-          {/* Account Settings */}
+        <div className="settings-content-area">
           {activeSection === 'account' && (
-            <div className="settings-section" style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid var(--primary-pink)' }}>
-                👤 Account Settings
-              </h3>
-              
-              <form onSubmit={handleProfileUpdate}>
-                <div className="form-group">
-                  <label htmlFor="first_name">First Name</label>
-                  <input
-                    type="text"
-                    id="first_name"
-                    value={profileForm.first_name}
-                    onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
-                    placeholder="Enter your first name"
-                  />
-                </div>
+            <>
+              <div className="settings-card">
+                <h3 className="settings-card-title">👤 Edit Profile</h3>
 
-                <div className="form-group">
-                  <label htmlFor="last_name">Last Name</label>
-                  <input
-                    type="text"
-                    id="last_name"
-                    value={profileForm.last_name}
-                    onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
-                    placeholder="Enter your last name"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="email">Email Address</label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={profileForm.email}
-                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                    placeholder="Enter your email"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="phone">Phone Number</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={profileForm.phone}
-                    disabled
-                    style={{ background: 'var(--bg-light)' }}
-                  />
-                  <small style={{ color: '#666' }}>Phone number cannot be changed</small>
-                </div>
-
-                <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </form>
-
-              <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid rgba(0,0,0,0.1)' }} />
-
-              <h4 style={{ marginBottom: '1rem' }}>Change Password</h4>
-              <form onSubmit={handlePasswordChange}>
-                <div className="form-group">
-                  <label htmlFor="currentPassword">Current Password</label>
-                  <div className="password-toggle">
-                    <input
-                      type="password"
-                      id="currentPassword"
-                      value={passwordForm.currentPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                      placeholder="Enter current password"
-                    />
-                    <button
-                      type="button"
-                      className="toggle-password-btn"
-                      onClick={() => togglePasswordVisibility('currentPassword')}
-                    >
-                      👁️
-                    </button>
+                <form onSubmit={handleProfileUpdate}>
+                  <div className="settings-form-row">
+                    <div className="form-group">
+                      <label htmlFor="first_name">First Name</label>
+                      <input
+                        type="text"
+                        id="first_name"
+                        value={profileForm.first_name}
+                        onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                        placeholder="Enter your first name"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="last_name">Last Name</label>
+                      <input
+                        type="text"
+                        id="last_name"
+                        value={profileForm.last_name}
+                        onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                        placeholder="Enter your last name"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="form-group">
-                  <label htmlFor="newPassword">New Password</label>
-                  <div className="password-toggle">
+                  <div className="form-group">
+                    <label htmlFor="email">Email Address</label>
                     <input
-                      type="password"
-                      id="newPassword"
-                      value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                      placeholder="Enter new password (min 6 characters)"
+                      type="email"
+                      id="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      placeholder="Enter your email"
                     />
-                    <button
-                      type="button"
-                      className="toggle-password-btn"
-                      onClick={() => togglePasswordVisibility('newPassword')}
-                    >
-                      👁️
-                    </button>
                   </div>
-                </div>
 
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirm New Password</label>
-                  <div className="password-toggle">
+                  <div className="form-group">
+                    <label htmlFor="phone">Phone Number</label>
                     <input
-                      type="password"
-                      id="confirmPassword"
-                      value={passwordForm.confirmPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                      placeholder="Confirm new password"
+                      type="tel"
+                      id="phone"
+                      value={profileForm.phone}
+                      disabled
+                      style={{ background: 'var(--bg-light)', opacity: 0.7 }}
                     />
-                    <button
-                      type="button"
-                      className="toggle-password-btn"
-                      onClick={() => togglePasswordVisibility('confirmPassword')}
-                    >
-                      👁️
-                    </button>
+                    <small style={{ color: '#888', marginTop: '0.25rem', display: 'block' }}>Phone number cannot be changed</small>
                   </div>
-                </div>
 
-                <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Updating...' : 'Change Password'}
-                </button>
-              </form>
-            </div>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={loading || !isProfileChanged()}
+                    style={{ opacity: isProfileChanged() ? 1 : 0.5, cursor: isProfileChanged() ? 'pointer' : 'not-allowed' }}
+                  >
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </form>
+              </div>
+
+              <div className="settings-card">
+                <h3 className="settings-card-title">🔑 Change Password</h3>
+
+                <form onSubmit={handlePasswordChange}>
+                  <div className="form-group">
+                    <label htmlFor="currentPassword">Current Password</label>
+                    <div className="password-toggle">
+                      <input
+                        type={passwordVisibility.currentPassword ? 'text' : 'password'}
+                        id="currentPassword"
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                        placeholder="Enter current password"
+                      />
+                      <button
+                        type="button"
+                        className="toggle-password-btn"
+                        onClick={() => togglePasswordVisibility('currentPassword')}
+                      >
+                        {passwordVisibility.currentPassword ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="newPassword">New Password</label>
+                    <div className="password-toggle">
+                      <input
+                        type={passwordVisibility.newPassword ? 'text' : 'password'}
+                        id="newPassword"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        placeholder="New password (min 6 characters)"
+                      />
+                      <button
+                        type="button"
+                        className="toggle-password-btn"
+                        onClick={() => togglePasswordVisibility('newPassword')}
+                      >
+                        {passwordVisibility.newPassword ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">Confirm New Password</label>
+                    <div className="password-toggle">
+                      <input
+                        type={passwordVisibility.confirmPassword ? 'text' : 'password'}
+                        id="confirmPassword"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        placeholder="Confirm new password"
+                      />
+                      <button
+                        type="button"
+                        className="toggle-password-btn"
+                        onClick={() => togglePasswordVisibility('confirmPassword')}
+                      >
+                        {passwordVisibility.confirmPassword ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={loading || !isPasswordChanged()}
+                    style={{ opacity: isPasswordChanged() ? 1 : 0.5, cursor: isPasswordChanged() ? 'pointer' : 'not-allowed' }}
+                  >
+                    {loading ? 'Updating...' : 'Change Password'}
+                  </button>
+                </form>
+              </div>
+            </>
           )}
 
-          {/* Notification Settings */}
           {activeSection === 'notifications' && (
-            <div className="settings-section" style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid var(--primary-pink)' }}>
-                🔔 Notification Preferences
-              </h3>
+            <div className="settings-card">
+              <h3 className="settings-card-title">🔔 Notification Preferences</h3>
 
               {[
                 { key: 'emailNotifications', label: 'Email Notifications', description: 'Receive order updates and promotional emails' },
                 { key: 'orderUpdates', label: 'Order Updates', description: 'Get notified about order status changes' },
                 { key: 'promotionalOffers', label: 'Promotional Offers', description: 'Receive special deals and discounts' },
               ].map((item) => (
-                <div key={item.key} className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                  <div className="setting-label">
-                    <h4>{item.label}</h4>
-                    <p style={{ color: '#666', fontSize: '0.9rem' }}>{item.description}</p>
+                <div key={item.key} className="settings-toggle-row">
+                  <div>
+                    <h4 style={{ marginBottom: '0.2rem' }}>{item.label}</h4>
+                    <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>{item.description}</p>
                   </div>
                   <label className="toggle-switch">
                     <input
@@ -344,29 +367,19 @@ const Settings = () => {
             </div>
           )}
 
-          {/* Appearance Settings */}
           {activeSection === 'appearance' && (
-            <div className="settings-section" style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid var(--primary-pink)' }}>
-                🎨 Theme Preferences
-              </h3>
+            <div className="settings-card">
+              <h3 className="settings-card-title">🎨 Theme Preferences</h3>
 
-              <div className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div className="setting-label">
-                  <h4>Dark Mode</h4>
-                  <p style={{ color: '#666', fontSize: '0.9rem' }}>Toggle dark/light theme for the website</p>
+              <div className="settings-toggle-row">
+                <div>
+                  <h4 style={{ marginBottom: '0.2rem' }}>Dark Mode</h4>
+                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Toggle dark/light theme</p>
                 </div>
                 <button
                   onClick={() => dispatch(toggleTheme())}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: isDarkMode ? 'var(--primary-pink)' : 'var(--bg-light)',
-                    color: isDarkMode ? 'white' : 'var(--text-dark)',
-                    border: '2px solid var(--primary-pink)',
-                    borderRadius: 'var(--border-radius)',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                  }}
+                  className={isDarkMode ? 'btn-primary' : 'btn-secondary'}
+                  style={{ minWidth: '130px' }}
                 >
                   {isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
                 </button>
@@ -374,55 +387,45 @@ const Settings = () => {
             </div>
           )}
 
-          {/* Privacy & Security */}
           {activeSection === 'privacy' && (
-            <div className="settings-section" style={{ background: 'var(--bg-white)', borderRadius: 'var(--border-radius)', padding: '2rem', marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '2px solid var(--primary-pink)' }}>
-                🔒 Privacy & Security
-              </h3>
+            <div className="settings-card">
+              <h3 className="settings-card-title">🔒 Privacy & Security</h3>
 
-              <div className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                <div className="setting-label">
-                  <h4>Data Handling</h4>
-                  <p style={{ color: '#666', fontSize: '0.9rem' }}>
+              <div className="settings-toggle-row" style={{ alignItems: 'flex-start' }}>
+                <div>
+                  <h4 style={{ marginBottom: '0.2rem' }}>Data Handling</h4>
+                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>
                     Your data is stored securely. We do not share your personal information with third parties.
                   </p>
                 </div>
               </div>
 
-              <div className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                <div className="setting-label">
-                  <h4>Clear Local Data</h4>
-                  <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                    Remove all locally stored preferences and cart data
-                  </p>
+              <div className="settings-toggle-row">
+                <div>
+                  <h4 style={{ marginBottom: '0.2rem' }}>Clear Local Data</h4>
+                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Remove all locally stored preferences and cart data</p>
                 </div>
-                <button
-                  className="btn-secondary"
-                  onClick={() => setShowClearDataModal(true)}
-                >
+                <button className="btn-secondary" onClick={() => setShowClearDataModal(true)}>
                   Clear Data
                 </button>
               </div>
 
-              <div className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 0' }}>
-                <div className="setting-label">
-                  <h4>Delete Account</h4>
-                  <p style={{ color: '#666', fontSize: '0.9rem' }}>
-                    Permanently delete your account and all associated data
-                  </p>
+              <div className="settings-toggle-row" style={{ borderBottom: 'none' }}>
+                <div>
+                  <h4 style={{ marginBottom: '0.2rem', color: '#ff4444' }}>Delete Account</h4>
+                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Permanently delete your account and all associated data</p>
                 </div>
                 <button
-                  className="btn-danger"
                   onClick={() => setShowDeleteModal(true)}
                   style={{
                     background: '#ff6b6b',
                     color: 'white',
                     border: 'none',
-                    padding: '0.75rem 1.5rem',
+                    padding: '0.6rem 1.2rem',
                     borderRadius: 'var(--border-radius)',
                     fontWeight: 600,
                     cursor: 'pointer',
+                    minWidth: '130px',
                   }}
                 >
                   Delete Account
@@ -433,7 +436,6 @@ const Settings = () => {
         </div>
       </div>
 
-      {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="modal show" onClick={(e) => e.target === e.currentTarget && setShowDeleteModal(false)}>
           <div className="modal-content">
@@ -450,13 +452,17 @@ const Settings = () => {
             />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
               <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
-              <button className="btn-danger" onClick={handleDeleteAccount}>Yes, Delete My Account</button>
+              <button
+                onClick={handleDeleteAccount}
+                style={{ background: '#ff6b6b', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: 'var(--border-radius)', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Yes, Delete My Account
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Clear Data Modal */}
       {showClearDataModal && (
         <div className="modal show" onClick={(e) => e.target === e.currentTarget && setShowClearDataModal(false)}>
           <div className="modal-content">

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { store } from './store';
@@ -31,6 +31,16 @@ import NotFound from './pages/NotFound';
 // Initialize theme
 store.dispatch(initializeTheme());
 
+const MainLayout = () => (
+  <div className="app-layout">
+    <Header />
+    <main className="app-main">
+      <Outlet />
+    </main>
+    <Footer />
+  </div>
+);
+
 function App() {
   useEffect(() => {
     const isDark = localStorage.getItem('darkMode') === 'true';
@@ -43,12 +53,9 @@ function App() {
     <Provider store={store}>
       <Router>
         <ConnectivityCheck>
-          <div className="app-layout">
-            <Header />
-
-            <main className="app-main">
-            <Routes>
-              {/* Public Routes */}
+          <Routes>
+            {/* Routes with Header + Footer */}
+            <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:id" element={<ProductDetails />} />
@@ -57,11 +64,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-
-              {/* Cart is accessible to all, but checkout requires auth */}
               <Route path="/cart" element={<Cart />} />
-
-              {/* Protected Routes */}
               <Route
                 path="/checkout"
                 element={
@@ -102,41 +105,37 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+            </Route>
 
-              {/* Catch all - 404 Page */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
+            {/* 404 - No header/footer */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
 
-          <Footer />
-        </div>
-
-        {/* Toast Notifications */}
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: 'var(--primary-green)',
-              color: 'var(--text-dark)',
-              borderRadius: '15px',
-              padding: '16px 24px',
-              boxShadow: 'var(--shadow-hover)',
-              fontWeight: 600,
-            },
-            success: {
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              duration: 3000,
               style: {
                 background: 'var(--primary-green)',
+                color: 'var(--text-dark)',
+                borderRadius: '15px',
+                padding: '16px 24px',
+                boxShadow: 'var(--shadow-hover)',
+                fontWeight: 600,
               },
-            },
-            error: {
-              style: {
-                background: '#ff4444',
-                color: 'white',
+              success: {
+                style: {
+                  background: 'var(--primary-green)',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                style: {
+                  background: '#ff4444',
+                  color: 'white',
+                },
+              },
+            }}
+          />
         </ConnectivityCheck>
       </Router>
     </Provider>

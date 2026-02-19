@@ -189,7 +189,11 @@ const Shop = () => {
                 type="number"
                 placeholder="Min"
                 value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
+                min="0"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || parseFloat(val) >= 0) setMinPrice(val);
+                }}
                 className="price-input"
               />
               <span className="price-separator">-</span>
@@ -197,7 +201,11 @@ const Shop = () => {
                 type="number"
                 placeholder="Max"
                 value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
+                min="0"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || parseFloat(val) >= 0) setMaxPrice(val);
+                }}
                 className="price-input"
               />
             </div>

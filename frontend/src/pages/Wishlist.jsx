@@ -40,7 +40,7 @@ const Wishlist = () => {
       await wishlistAPI.removeFromWishlist(productId);
       setWishlistItems(wishlistItems.filter(item => item.product.id !== productId));
       toast.success('Removed from wishlist');
-    } catch (error) {
+    } catch {
       toast.error('Failed to remove from wishlist');
     }
   };
@@ -83,7 +83,7 @@ const Wishlist = () => {
     return (
       <div className="container">
         <div className="empty-state">
-          <div className="empty-state-icon">💝</div>
+          <div className="empty-state-icon">💔</div>
           <h3>Your wishlist is empty</h3>
           <p>Save items you love and they'll appear here</p>
           <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
