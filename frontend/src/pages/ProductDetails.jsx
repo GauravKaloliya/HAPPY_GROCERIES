@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { productsAPI } from '../api/products';
@@ -26,6 +26,11 @@ const ProductDetails = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
+  
+  // Memoize the log function to prevent infinite re-renders
+  const logProductView = useCallback((productId, productName) => {
+    logCustomActivity('product_view', { product_id: productId, product_name: productName });
+  }, [logCustomActivity]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -49,7 +54,7 @@ const ProductDetails = () => {
 
         // Log product view
         if (productRes.data.name) {
-          logCustomActivity('product_view', { product_id: id, product_name: productRes.data.name });
+          logProductView(id, productRes.data.name);
         }
 
         // Check if product is in wishlist
@@ -75,7 +80,7 @@ const ProductDetails = () => {
     };
 
     fetchProduct();
-  }, [id, navigate, isAuthenticated, logCustomActivity]);
+  }, [id, navigate, isAuthenticated, logProductView]);
 
   const handleAddToCart = async () => {
     if (isAddingToCart) return;

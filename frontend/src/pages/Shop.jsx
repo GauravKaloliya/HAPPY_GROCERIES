@@ -254,7 +254,7 @@ const Shop = () => {
 
         <div className="shop-content">
           <div className="results-header">
-            <p className="results-count">{totalCount} products found</p>
+            <p className="results-count" style={{ textAlign: 'center', width: '100%' }}>{totalCount} products found</p>
           </div>
 
           {products.length > 0 ? (

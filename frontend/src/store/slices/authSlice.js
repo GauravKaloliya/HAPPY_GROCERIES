@@ -34,6 +34,12 @@ export const login = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(user));
       return { access: access_token, refresh: refresh_token, user };
     } catch (error) {
+      // Check if response is HTML (server error)
+      const contentType = error.response?.headers?.['content-type'];
+      if (contentType && contentType.includes('text/html')) {
+        return rejectWithValue('Server error. Please try again later.');
+      }
+      
       // Return the full error response for better error handling
       const errorData = error.response?.data;
       if (errorData) {
@@ -41,18 +47,18 @@ export const login = createAsyncThunk(
         if (errorData.detail) {
           return rejectWithValue(errorData.detail);
         }
-        // If there are field-specific errors, return them as a combined message
-        const errorMessages = [];
+        // If there are field-specific errors, return them as object
+        const fieldErrors = {};
         Object.keys(errorData).forEach(key => {
           const value = errorData[key];
           if (Array.isArray(value)) {
-            errorMessages.push(value.join(', '));
+            fieldErrors[key] = value[0];
           } else if (typeof value === 'string') {
-            errorMessages.push(value);
+            fieldErrors[key] = value;
           }
         });
-        if (errorMessages.length > 0) {
-          return rejectWithValue(errorMessages.join('; '));
+        if (Object.keys(fieldErrors).length > 0) {
+          return rejectWithValue(fieldErrors);
         }
       }
       return rejectWithValue(error.response?.data?.error || 'Login failed. Please check your credentials.');
