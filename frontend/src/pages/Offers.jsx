@@ -75,39 +75,23 @@ const Offers = () => {
       <h1 className="section-title">🎉 Offers & Coupons</h1>
 
       {/* Hero Banner */}
-      <div className="offers-header" style={{
-        textAlign: 'center',
-        marginBottom: '3rem',
-        padding: '2rem',
-        background: 'linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-blue) 100%)',
-        borderRadius: 'var(--border-radius)',
-        color: 'white',
-      }}>
-        <h2 style={{ marginBottom: '0.5rem' }}>Save Big on Your Groceries!</h2>
-        <p style={{ fontSize: '1.2rem', margin: 0 }}>
+      <div className="offers-header">
+        <h2>Save Big on Your Groceries!</h2>
+        <p>
           Apply these coupons at checkout and enjoy amazing discounts on your favorite products.
         </p>
         {cartTotal > 0 && (
-          <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.2)', borderRadius: 'var(--border-radius)' }}>
-            <p style={{ margin: 0 }}>Your current cart total: <strong>₹{cartTotal.toFixed(2)}</strong></p>
+          <div className="offers-header-total">
+            <p>Your current cart total: <strong>₹{cartTotal.toFixed(2)}</strong></p>
           </div>
         )}
       </div>
 
       {/* Category Filter */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '2rem' }}>
+      <div className="offers-category-filter">
         <button
           onClick={() => setActiveCategory('all')}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '20px',
-            border: '2px solid var(--primary-pink)',
-            background: activeCategory === 'all' ? 'var(--primary-pink)' : 'transparent',
-            color: activeCategory === 'all' ? 'white' : 'var(--text-dark)',
-            cursor: 'pointer',
-            fontWeight: 600,
-            transition: 'var(--transition)',
-          }}
+          className={`offers-category-button ${activeCategory === 'all' ? 'active' : ''}`}
         >
           All Coupons
         </button>
@@ -115,16 +99,7 @@ const Offers = () => {
           <button
             key={cat.id || cat.name}
             onClick={() => setActiveCategory(cat.name)}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '20px',
-              border: '2px solid var(--primary-pink)',
-              background: activeCategory === cat.name ? 'var(--primary-pink)' : 'transparent',
-              color: activeCategory === cat.name ? 'white' : 'var(--text-dark)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              transition: 'var(--transition)',
-            }}
+            className={`offers-category-button ${activeCategory === cat.name ? 'active' : ''}`}
           >
             {cat.name}
           </button>
@@ -139,12 +114,7 @@ const Offers = () => {
           <p>Check back later for exciting offers!</p>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '3rem',
-        }}>
+        <div className="coupons-list">
           {filteredCoupons.filter(c => c.is_active).map((coupon) => {
             const eligibility = getEligibilityStatus(coupon);
             const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
@@ -153,120 +123,64 @@ const Offers = () => {
             return (
               <div
                 key={coupon.code}
-                style={{
-                  background: 'var(--bg-white)',
-                  borderRadius: 'var(--border-radius)',
-                  boxShadow: 'var(--shadow)',
-                  overflow: 'hidden',
-                  transition: 'var(--transition)',
-                  border: `2px solid ${
-                    eligibility.status === 'applicable' ? 'var(--primary-green)' : 
-                    eligibility.status === 'almost' ? 'var(--primary-yellow)' : '#ddd'
-                  }`,
-                }}
+                className={`coupon-card ${eligibility.status}`}
               >
-                {/* Header */}
-                <div style={{
-                  background: 'var(--primary-pink)',
-                  color: 'white',
-                  padding: '1.5rem',
-                  textAlign: 'center',
-                  position: 'relative',
-                }}>
-                  <h3 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '3px', margin: 0 }}>
-                    {coupon.code}
-                  </h3>
+                <div className="coupon-header">
+                  <h3 className="coupon-code">{coupon.code}</h3>
                   {coupon.first_order_only && (
-                    <span style={{
-                      display: 'inline-block',
-                      background: 'var(--primary-yellow)',
-                      color: 'var(--text-dark)',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      marginTop: '0.5rem',
-                    }}>
-                      First Order Only
-                    </span>
+                    <span className="coupon-tag">First Order Only</span>
                   )}
                 </div>
 
-                {/* Body */}
-                <div style={{ padding: '1.5rem' }}>
-                  <p style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-dark)' }}>
+                <div className="coupon-body">
+                  <p className="coupon-description">
                     {coupon.description}
                   </p>
 
-                  {/* Eligibility Badge */}
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '20px',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    marginBottom: '1rem',
-                    background: 
-                      eligibility.status === 'applicable' ? 'var(--primary-green)' :
-                      eligibility.status === 'almost' ? 'var(--primary-yellow)' : '#ddd',
-                    color: eligibility.status === 'locked' ? '#666' : 'var(--text-dark)',
-                  }}>
+                  <div className={`coupon-eligibility ${eligibility.status}`}>
                     {eligibility.icon} {eligibility.text}
                   </div>
 
                   {eligibility.status === 'almost' && (
-                    <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-light)', borderRadius: 'var(--border-radius)' }}>
-                      <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                    <div className="coupon-almost">
+                      <p>
                         Add ₹{(coupon.min_order_value - cartTotal).toFixed(0)} more to unlock this offer!
                       </p>
                     </div>
                   )}
 
-                  {/* Coupon Info */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
+                  <div className="coupon-info">
+                    <div className="coupon-info-item">
                       <strong>Minimum Order:</strong>
                       <span>₹{coupon.min_order_value}</span>
                     </div>
                     {coupon.coupon_type === 'percentage' && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
+                      <div className="coupon-info-item">
                         <strong>Max Discount:</strong>
                         <span>₹{coupon.max_discount}</span>
                       </div>
                     )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px dashed #ddd' }}>
+                    <div className="coupon-info-item">
                       <strong>Expires:</strong>
-                      <span style={{ color: isExpiringSoon ? '#ff4444' : 'inherit', fontWeight: isExpiringSoon ? 700 : 400 }}>
+                      <span className={isExpiringSoon ? 'coupon-expiring' : ''}>
                         {coupon.valid_until
                           ? (isExpiringSoon ? `${daysLeft} days left!` : new Date(coupon.valid_until).toLocaleDateString())
                           : 'No expiry'}
                       </span>
                     </div>
                     {coupon.applicable_categories?.length > 0 && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
+                      <div className="coupon-info-item">
                         <strong>Valid for:</strong>
                         <span>{coupon.applicable_categories.join(', ')}</span>
                       </div>
                     )}
                   </div>
+                </div>
 
-                  {/* Copy Button */}
+                <div className="coupon-footer">
                   <button
                     onClick={() => handleCopyCode(coupon.code)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      background: 'var(--primary-green)',
-                      color: 'var(--text-dark)',
-                      border: 'none',
-                      borderRadius: 'var(--border-radius)',
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'var(--transition)',
-                    }}
+                    className="btn-copy-coupon"
                   >
                     Copy Code
                   </button>
