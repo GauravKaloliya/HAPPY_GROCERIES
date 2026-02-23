@@ -247,3 +247,84 @@ class ChangePasswordView(APIView):
         user.save()
         
         return Response({'message': 'Password changed successfully'})
+
+
+class CheckUsernameView(APIView):
+    """Check if username (phone) already exists."""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        phone = request.data.get('phone')
+        
+        if not phone:
+            return Response(
+                {'available': False, 'message': 'Phone number is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Remove any non-digit characters
+        phone = ''.join(filter(str.isdigit, phone))
+        
+        if len(phone) != 10:
+            return Response(
+                {'available': False, 'message': 'Phone must be 10 digits'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        exists = User.objects.filter(phone=phone, is_deleted=False).exists()
+        
+        return Response({
+            'available': not exists,
+            'message': 'Phone number already exists' if exists else 'Phone number is available'
+        })
+
+
+class CheckEmailView(APIView):
+    """Check if email already exists."""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        
+        if not email:
+            return Response(
+                {'available': True, 'message': 'Email is optional'},
+                status=status.HTTP_200_OK
+            )
+        
+        exists = User.objects.filter(email__iexact=email, is_deleted=False).exclude(email='').exists()
+        
+        return Response({
+            'available': not exists,
+            'message': 'Email already exists' if exists else 'Email is available'
+        })
+
+
+class CheckPasswordView(APIView):
+    """Validate password strength and availability."""
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        password = request.data.get('password')
+        
+        if not password:
+            return Response(
+                {'valid': False, 'message': 'Password is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Use Django's password validation
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+        
+        try:
+            validate_password(password)
+            return Response({
+                'valid': True,
+                'message': 'Password is valid'
+            })
+        except ValidationError as e:
+            return Response({
+                'valid': False,
+                'message': e.messages[0] if e.messages else 'Invalid password'
+            })

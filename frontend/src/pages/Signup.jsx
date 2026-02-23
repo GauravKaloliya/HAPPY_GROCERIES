@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, selectAuthLoading, clearError } from '../store/slices/authSlice';
+import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -28,6 +29,16 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+  const [checkingFields, setCheckingFields] = useState({
+    phone: false,
+    email: false,
+    password: false,
+  });
+  const [fieldStatus, setFieldStatus] = useState({
+    phone: null,
+    email: null,
+    password: null,
+  });
   const { logCustomActivity } = useActivityLog('page_view', { section: 'signup' });
 
   useEffect(() => {
@@ -139,6 +150,62 @@ const Signup = () => {
     return 'Registration failed. Please try again.';
   };
 
+  const handleBlur = async (field) => {
+    let value = '';
+    
+    if (field === 'phone') {
+      value = formData.phone;
+      if (!value || value.length !== 10) return;
+    } else if (field === 'email') {
+      value = formData.email;
+      if (!value) return;
+    } else if (field === 'password') {
+      value = formData.password;
+      if (!value || value.length < 8) return;
+    }
+
+    setCheckingFields(prev => ({ ...prev, [field]: true }));
+
+    try {
+      let response;
+      if (field === 'phone') {
+        response = await authAPI.checkUsername(value);
+      } else if (field === 'email') {
+        response = await authAPI.checkEmail(value);
+      } else if (field === 'password') {
+        response = await authAPI.checkPassword(value);
+      }
+
+      const { available, valid, message } = response.data;
+      
+      if (field === 'password') {
+        setFieldStatus(prev => ({
+          ...prev,
+          password: valid ? { valid: true, message } : { valid: false, message }
+        }));
+        if (!valid) {
+          setFormErrors(prev => ({ ...prev, password: message }));
+        } else if (formErrors.password) {
+          setFormErrors(prev => ({ ...prev, password: '' }));
+        }
+      } else {
+        setFieldStatus(prev => ({
+          ...prev,
+          [field]: available ? { available: true, message } : { available: false, message }
+        }));
+        if (!available) {
+          setFormErrors(prev => ({ ...prev, [field]: message }));
+        } else if (formErrors[field]) {
+          setFormErrors(prev => ({ ...prev, [field]: '' }));
+        }
+      }
+    } catch (error) {
+      // Silent fail for check APIs
+    } finally {
+      setCheckingFields(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -210,10 +277,15 @@ const Signup = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
+              onBlur={() => handleBlur('phone')}
               placeholder="Enter 10-digit phone number"
               maxLength="10"
               autoComplete="tel"
             />
+            {checkingFields.phone && <div className="error-message" style={{ color: '#888' }}>Checking...</div>}
+            {fieldStatus.phone && fieldStatus.phone.available === false && (
+              <div className="error-message show">{fieldStatus.phone.message}</div>
+            )}
             {formErrors.phone && (
               <div className="error-message show">{formErrors.phone}</div>
             )}
@@ -227,9 +299,14 @@ const Signup = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              onBlur={() => handleBlur('email')}
               placeholder="Enter your email"
               autoComplete="email"
             />
+            {checkingFields.email && <div className="error-message" style={{ color: '#888' }}>Checking...</div>}
+            {fieldStatus.email && fieldStatus.email.available === false && (
+              <div className="error-message show">{fieldStatus.email.message}</div>
+            )}
             {formErrors.email && (
               <div className="error-message show">{formErrors.email}</div>
             )}
@@ -244,6 +321,7 @@ const Signup = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
+                onBlur={() => handleBlur('password')}
                 placeholder="Create a strong password"
                 autoComplete="new-password"
               />
@@ -256,6 +334,10 @@ const Signup = () => {
                 {showPassword ? '🙈' : '👁️'}
               </button>
             </div>
+            {checkingFields.password && <div className="error-message" style={{ color: '#888' }}>Checking...</div>}
+            {fieldStatus.password && fieldStatus.password.valid === false && (
+              <div className="error-message show">{fieldStatus.password.message}</div>
+            )}
             {formErrors.password && (
               <div className="error-message show">{formErrors.password}</div>
             )}
