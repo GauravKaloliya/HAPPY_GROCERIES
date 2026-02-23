@@ -24,6 +24,7 @@ const ProductDetails = () => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
   
@@ -203,7 +204,15 @@ const ProductDetails = () => {
         <div className="product-details-card">
           <div className="product-details-grid">
             <div className="product-image-section">
-              <div className="product-details-image">{product.emoji}</div>
+              <div
+                className="product-details-image"
+                onClick={() => setShowImageViewer(true)}
+                style={{ cursor: 'pointer' }}
+                role="button"
+                aria-label="View full size image"
+              >
+                {product.emoji}
+              </div>
               {hasDiscount && (
                 <div className="discount-badge">
                   <span className="discount-percentage">{product.discount_percent}% OFF</span>
@@ -373,6 +382,25 @@ const ProductDetails = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Image Viewer Modal */}
+      {showImageViewer && (
+        <div
+          className="image-viewer-modal show"
+          onClick={() => setShowImageViewer(false)}
+        >
+          <button
+            className="image-viewer-close"
+            onClick={() => setShowImageViewer(false)}
+            aria-label="Close image viewer"
+          >
+            ✕
+          </button>
+          <div className="image-viewer-content" onClick={(e) => e.stopPropagation()}>
+            {product.emoji}
+          </div>
+        </div>
       )}
     </div>
   );
