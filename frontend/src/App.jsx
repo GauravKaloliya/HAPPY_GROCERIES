@@ -32,6 +32,7 @@ import About from './pages/About';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
+import Combos from './pages/Combos';
 
 // Initialize theme and config
 store.dispatch(initializeTheme());
@@ -73,6 +74,7 @@ const AppContent = () => {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<ProductDetails />} />
             <Route path="/categories" element={<Categories />} />
+            <Route path="/combos" element={<Combos />} />
             <Route path="/offers" element={<Offers />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />

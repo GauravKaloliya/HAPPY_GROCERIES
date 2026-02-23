@@ -219,15 +219,22 @@ body.dark-mode .mobile-bottom-nav {
 
 /* ── IMAGE VIEWER MODAL ─────────────────────────────── */
 .image-viewer-modal {
-    display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.96);
+    background: rgba(0,0,0,0);
     z-index: 4000;
+    display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease, background 0.3s ease;
 }
-.image-viewer-modal.show { display: flex; }
+.image-viewer-modal.show { 
+    opacity: 1; 
+    visibility: visible;
+    background: rgba(0,0,0,0.96);
+}
 
 .image-viewer-content {
     max-width: 90vw;
@@ -237,6 +244,12 @@ body.dark-mode .mobile-bottom-nav {
     align-items: center;
     justify-content: center;
     user-select: none;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.image-viewer-modal.show .image-viewer-content {
+    transform: scale(1);
 }
 
 .image-viewer-close {
@@ -1800,4 +1813,60 @@ body.dark-mode .mobile-bottom-nav {
         display: none !important;
     }
     .app-main { padding-bottom: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMBOS PAGE STYLES
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .combos-header {
+        padding: 1.25rem !important;
+    }
+    
+    .combos-header h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .combos-header p {
+        font-size: 0.9rem !important;
+    }
+    
+    .combos-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .combo-card {
+        border-radius: 12px !important;
+    }
+    
+    .combo-header {
+        padding: 0.75rem 1rem !important;
+    }
+    
+    .combo-header h3 {
+        font-size: 1rem !important;
+    }
+    
+    .combo-products {
+        padding: 0.75rem !important;
+    }
+    
+    .combo-footer {
+        padding: 0.75rem 1rem !important;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem !important;
+    }
+    
+    .combo-footer > div:first-child {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .combo-footer .btn-add-cart {
+        width: 100%;
+        text-align: center;
+    }
 }

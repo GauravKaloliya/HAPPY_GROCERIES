@@ -101,6 +101,7 @@ const Header = () => {
     { label: 'Home', href: '/' },
     { label: 'Shop', href: '/shop' },
     { label: 'Categories', href: '/categories' },
+    { label: '🎁 Combos', href: '/combos' },
     { label: '🎉 Offers', href: '/offers' },
     { label: 'About', href: '/about' },
   ];
@@ -122,7 +123,7 @@ const Header = () => {
         <div className="nav-logo">
           <Link to="/">
             <span className="nav-logo-icon">{brandLogo}</span>
-            <span className="nav-logo-text">{brandName}</span>
+            <span className="nav-logo-text"> {brandName}</span>
           </Link>
         </div>
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Product
+from .models import Category, Product, Combo
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -55,4 +55,42 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id', 'name', 'price', 'effective_price', 'emoji',
             'category', 'rating', 'reviews_count', 'stock',
             'discount_percent'
+        ]
+
+
+class ComboProductSerializer(serializers.ModelSerializer):
+    """Simplified product serializer for combo display."""
+
+    category = CategorySerializer(read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'price', 'emoji', 'category', 'rating']
+
+
+class ComboSerializer(serializers.ModelSerializer):
+    """Serializer for combo data."""
+
+    products = ComboProductSerializer(many=True, read_only=True)
+    original_price = serializers.SerializerMethodField()
+    discounted_price = serializers.SerializerMethodField()
+    savings = serializers.SerializerMethodField()
+
+    def get_original_price(self, obj):
+        """Calculate original price."""
+        return obj.original_price
+
+    def get_discounted_price(self, obj):
+        """Calculate discounted price."""
+        return obj.discounted_price
+
+    def get_savings(self, obj):
+        """Calculate savings."""
+        return obj.savings
+
+    class Meta:
+        model = Combo
+        fields = [
+            'id', 'name', 'description', 'products', 'discount_percent',
+            'original_price', 'discounted_price', 'savings', 'is_active'
         ]
