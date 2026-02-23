@@ -16,6 +16,7 @@ const Shop = () => {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const sortOptions = useSelector(selectSortOptions);
 
   // Filter states
@@ -128,8 +129,29 @@ const Shop = () => {
 
   return (
     <div className="container">
+      {/* Mobile Filter Button */}
+      <button
+        className="mobile-filter-btn"
+        onClick={() => setShowMobileFilters(true)}
+        style={{ display: 'none' }}
+      >
+        🔍 Filters & Sort
+        {hasFilters && <span style={{ marginLeft: '0.5rem', background: 'white', color: 'var(--primary-pink)', padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem' }}>{products.length}</span>}
+      </button>
+
       <div className="shop-layout">
-        <aside className="shop-sidebar">
+        <aside className={`shop-sidebar ${showMobileFilters ? 'show' : ''}`}>
+          <div className="mobile-filter-header">
+            <h3 className="mobile-filter-title">Filters</h3>
+            <button
+              className="mobile-filter-close"
+              onClick={() => setShowMobileFilters(false)}
+              aria-label="Close filters"
+            >
+              ✕
+            </button>
+          </div>
+
           <div className="sidebar-section">
             <h3 className="sidebar-title">Search</h3>
             <div className="search-bar">
@@ -251,6 +273,14 @@ const Shop = () => {
             </button>
           )}
         </aside>
+
+        {/* Mobile Filter Overlay */}
+        {showMobileFilters && (
+          <div
+            className="mobile-filter-overlay"
+            onClick={() => setShowMobileFilters(false)}
+          />
+        )}
 
         <div className="shop-content">
           <div className="results-header">

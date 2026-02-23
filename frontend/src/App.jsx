@@ -11,6 +11,7 @@ import { selectIsAuthenticated } from './store/slices/authSlice';
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
+import MobileNav from './components/MobileNav';
 import ProtectedRoute from './components/ProtectedRoute';
 import ConnectivityCheck from './components/ConnectivityCheck';
 
@@ -43,6 +44,7 @@ const MainLayout = () => (
       <Outlet />
     </main>
     <Footer />
+    <MobileNav />
   </div>
 );
 

@@ -11,6 +11,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const cartItems = useSelector(selectCartItems);
@@ -158,7 +159,16 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         </button>
       )}
 
-      <div className="product-image">
+      <div
+        className="product-image"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowImageViewer(true);
+        }}
+        style={{ cursor: 'pointer' }}
+        role="button"
+        aria-label="View full size image"
+      >
         {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
       </div>
 
@@ -221,14 +231,36 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         </div>
       )}
 
-      <Link 
-        to={`/product/${product.id}`} 
-        className="product-card-cta" 
+      <Link
+        to={`/product/${product.id}`}
+        className="product-card-cta"
         onClick={(e) => e.stopPropagation()}
         style={{ display: 'block', marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary-pink)', textDecoration: 'none' }}
       >
         View Details →
       </Link>
+
+      {/* Image Viewer Modal */}
+      {showImageViewer && (
+        <div
+          className="image-viewer-modal show"
+          onClick={() => setShowImageViewer(false)}
+        >
+          <button
+            className="image-viewer-close"
+            onClick={() => setShowImageViewer(false)}
+            aria-label="Close image viewer"
+          >
+            ✕
+          </button>
+          <div
+            className="image-viewer-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
