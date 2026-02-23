@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, selectAuthLoading, selectAuthError, clearError } from '../store/slices/authSlice';
+import { login, selectAuthLoading, clearError } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -10,7 +10,6 @@ const Login = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const loading = useSelector(selectAuthLoading);
-  const error = useSelector(selectAuthError);
 
   const [formData, setFormData] = useState({
     phone: '',
@@ -18,6 +17,7 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
   const { logCustomActivity } = useActivityLog('page_view', { section: 'login' });
 
   const from = location.state?.from?.pathname || '/';
@@ -25,12 +25,13 @@ const Login = () => {
   useEffect(() => {
     dispatch(clearError());
     setFormErrors({});
+    setSubmitError('');
   }, [dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'phone') {
-      const numericValue = value.replace(/\D/g, '');
+      const numericValue = value.replace(/\D/g, '').slice(0, 10);
       setFormData({ ...formData, phone: numericValue });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -38,86 +39,99 @@ const Login = () => {
     if (formErrors[name]) {
       setFormErrors({ ...formErrors, [name]: '' });
     }
-    if (error) dispatch(clearError());
+    if (submitError) setSubmitError('');
   };
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.phone) {
+    if (!formData.phone.trim()) {
       errors.phone = 'Phone number is required';
-    } else if (formData.phone.length !== 10) {
-      errors.phone = 'Phone number must be 10 digits';
+    } else if (!/^\d{10}$/.test(formData.phone)) {
+      errors.phone = 'Enter a valid 10-digit phone number';
     }
     if (!formData.password) {
       errors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
     }
     return errors;
   };
 
+  const parseErrorMessage = (err) => {
+    if (!err) return 'Login failed. Please try again.';
+
+    if (typeof err === 'string') {
+      const lower = err.toLowerCase();
+      if (lower.includes('not found') || lower.includes('no active account') || lower.includes('no user')) {
+        return 'No account found with this phone number.';
+      }
+      if (lower.includes('invalid') || lower.includes('incorrect') || lower.includes('wrong') || lower.includes('credentials')) {
+        return 'Incorrect phone number or password.';
+      }
+      if (lower.includes('locked') || lower.includes('banned')) {
+        return 'Your account has been temporarily locked. Please try again later.';
+      }
+      if (lower.includes('server') || lower.includes('500') || lower.includes('try again')) {
+        return 'Server error. Please try again later.';
+      }
+      if (lower.includes('network') || lower.includes('connection')) {
+        return 'Network error. Please check your connection.';
+      }
+      return 'Incorrect phone number or password.';
+    }
+
+    if (typeof err === 'object') {
+      if (err.detail) {
+        const lower = err.detail.toLowerCase();
+        if (lower.includes('not found') || lower.includes('no active account')) {
+          return 'No account found with this phone number.';
+        }
+        if (lower.includes('invalid') || lower.includes('incorrect')) {
+          return 'Incorrect phone number or password.';
+        }
+        return 'Incorrect phone number or password.';
+      }
+      if (err.non_field_errors) {
+        return Array.isArray(err.non_field_errors) ? err.non_field_errors[0] : err.non_field_errors;
+      }
+    }
+
+    return 'Incorrect phone number or password.';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
     }
 
+    setSubmitError('');
     try {
       await dispatch(login(formData)).unwrap();
       toast.success('Welcome back! 🎉');
+      logCustomActivity('login_success', { phone: formData.phone });
       navigate(from, { replace: true });
     } catch (err) {
-      // Parse the error to provide user-friendly messages only
-      let errorMessage = 'Login failed. Please try again.';
-      
-      if (err) {
-        const errStr = typeof err === 'string' ? err : JSON.stringify(err);
-        const errLower = errStr.toLowerCase();
-        
-        // Check for specific error patterns - only show these 3 types of errors
-        if (errLower.includes('not found') || errLower.includes('no user') || errLower.includes('phone')) {
-          errorMessage = 'User not found';
-        } else if (errLower.includes('invalid') || errLower.includes('incorrect') || errLower.includes('credentials')) {
-          errorMessage = 'User credentials are incorrect';
-        } else if (errLower.includes('required') || errLower.includes('must be') || errLower.includes('validation')) {
-          // Validation errors
-          if (typeof err === 'object') {
-            if (err.phone) {
-              errorMessage = Array.isArray(err.phone) ? err.phone[0] : err.phone;
-            } else if (err.password) {
-              errorMessage = Array.isArray(err.password) ? err.password[0] : err.password;
-            } else if (err.detail) {
-              errorMessage = err.detail;
-            } else {
-              errorMessage = errStr;
-            }
-          } else {
-            errorMessage = err;
-          }
-        } else if (errLower.includes('not verified') || errLower.includes('verify')) {
-          errorMessage = 'Account not verified. Please verify your account first.';
-        } else {
-          // For any other errors (including HTML), show generic message
-          errorMessage = 'Login failed. Please try again.';
-        }
-      }
-      
-      setFormErrors({ submit: errorMessage });
+      const errorMessage = parseErrorMessage(err);
+      setSubmitError(errorMessage);
     }
   };
 
   const handleSignupClick = () => {
     dispatch(clearError());
     setFormErrors({});
+    setSubmitError('');
   };
 
   return (
     <div className="container">
       <div className="auth-container">
         <h1 className="auth-title">Welcome Back! 👋</h1>
-        
-        <form onSubmit={handleSubmit}>
+
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label htmlFor="phone">Phone Number</label>
             <input
@@ -129,7 +143,7 @@ const Login = () => {
               onChange={handleChange}
               placeholder="Enter 10-digit phone number"
               maxLength="10"
-              required
+              autoComplete="tel"
             />
             {formErrors.phone && (
               <div className="error-message show">{formErrors.phone}</div>
@@ -146,12 +160,13 @@ const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
-                required
+                autoComplete="current-password"
               />
               <button
                 type="button"
                 className="toggle-password-btn"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -161,14 +176,14 @@ const Login = () => {
             )}
           </div>
 
-          {(error || formErrors.submit) && (
+          {submitError && (
             <div className="error-message show" style={{ marginBottom: '1rem' }}>
-              {error || formErrors.submit}
+              {submitError}
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn-submit"
             disabled={loading}
           >
@@ -177,7 +192,7 @@ const Login = () => {
         </form>
 
         <p className="auth-link">
-          Don't have an account? <Link to="/signup" onClick={handleSignupClick}>Sign up</Link>
+          Don&apos;t have an account? <Link to="/signup" onClick={handleSignupClick}>Sign up</Link>
         </p>
 
         <p className="auth-link" style={{ marginTop: '0.5rem' }}>
