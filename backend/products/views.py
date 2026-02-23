@@ -28,7 +28,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'description', 'category__name']
+    search_fields = ['name', 'description', 'category__name', 'brand', 'sku']
     ordering_fields = ['name', 'price', 'rating', 'created_at']
     ordering = ['id']
     
@@ -51,7 +51,9 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(
                 Q(name__icontains=search) |
                 Q(description__icontains=search) |
-                Q(category__name__icontains=search)
+                Q(category__name__icontains=search) |
+                Q(brand__icontains=search) |
+                Q(sku__icontains=search)
             )
 
         # Min/Max price filter (use annotated discounted price)
@@ -74,6 +76,21 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         in_stock = self.request.query_params.get('in_stock')
         if in_stock and in_stock.lower() == 'true':
             queryset = queryset.filter(stock__gt=0)
+
+        # Brand filter
+        brand = self.request.query_params.get('brand')
+        if brand:
+            queryset = queryset.filter(brand__icontains=brand)
+
+        # Organic filter
+        is_organic = self.request.query_params.get('is_organic')
+        if is_organic and is_organic.lower() == 'true':
+            queryset = queryset.filter(is_organic=True)
+
+        # Vegetarian filter
+        is_vegetarian = self.request.query_params.get('is_vegetarian')
+        if is_vegetarian and is_vegetarian.lower() == 'true':
+            queryset = queryset.filter(is_vegetarian=True)
 
         return queryset
     
@@ -112,6 +129,16 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 {'error': 'Product not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+    @action(detail=False, methods=['get'])
+    def brands(self, request):
+        """Get all unique brands from products."""
+        brands = Product.objects.filter(
+            is_active=True, 
+            is_deleted=False,
+            brand__isnull=False
+        ).exclude(brand='').values_list('brand', flat=True).distinct().order_by('brand')
+        return Response(list(brands))
 
 
 class ComboViewSet(viewsets.ReadOnlyModelViewSet):

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -41,15 +42,15 @@ class CartViewSet(viewsets.ModelViewSet):
 
         # Calculate tax (8%)
         subtotal = cart.subtotal
-        tax = subtotal * 0.08
+        tax = subtotal * Decimal('0.08')
 
         # Calculate delivery charge
-        delivery = 0 if subtotal >= 500 else 50
+        delivery = Decimal('0') if subtotal >= 500 else Decimal('50')
 
         # Return cart with calculated totals
         data = serializer.data
         data['tax'] = float(tax)
-        data['delivery'] = delivery
+        data['delivery'] = float(delivery)
         data['total'] = float(subtotal + tax + delivery)
 
         return Response(data)
@@ -80,11 +81,15 @@ class CartViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Get the effective price at the time of adding
+        price_at_add = product.effective_price
+
         cart_item = CartItem.objects.filter(cart=cart, product=product).first()
         if cart_item:
             if cart_item.is_deleted:
                 cart_item.restore()
                 cart_item.quantity = quantity
+                cart_item.price_at_add_time = price_at_add
             else:
                 new_quantity = cart_item.quantity + quantity
                 if new_quantity > product.stock:
@@ -93,9 +98,16 @@ class CartViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 cart_item.quantity = new_quantity
+                # Update price to current effective price
+                cart_item.price_at_add_time = price_at_add
             cart_item.save()
         else:
-            CartItem.objects.create(cart=cart, product=product, quantity=quantity)
+            CartItem.objects.create(
+                cart=cart, 
+                product=product, 
+                quantity=quantity,
+                price_at_add_time=price_at_add
+            )
 
         return Response(
             CartSerializer(cart).data,
@@ -139,6 +151,8 @@ class CartViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             cart_item.quantity = quantity
+            # Update price to current effective price
+            cart_item.price_at_add_time = cart_item.product.effective_price
             cart_item.save()
 
         return Response(CartSerializer(cart).data)

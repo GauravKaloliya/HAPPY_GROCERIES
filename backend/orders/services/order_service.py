@@ -1,7 +1,7 @@
 """
 Order service for handling order creation and management.
 """
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from datetime import timedelta
 import uuid
@@ -170,10 +170,11 @@ class OrderService:
             coupon.usage_count += 1
             coupon.save()
         
-        # Update user's first_order flag
+        # Update user's first_order flag and last_order_date
         if user.first_order:
             user.first_order = False
-            user.save()
+        user.last_order_date = timezone.now()
+        user.save(update_fields=['first_order', 'last_order_date', 'updated_at'])
         
         return order
     
@@ -181,8 +182,8 @@ class OrderService:
     def _generate_order_id(cls):
         """Generate a unique order ID."""
         timestamp = timezone.now().strftime('%Y%m%d')
-        unique_id = uuid.uuid4().hex[:6].upper()
-        return f"ORD-{timestamp}-{unique_id}"
+        unique_id = uuid.uuid4().hex[:8].upper()
+        return f"HG{timestamp}{unique_id}"
     
     @classmethod
     def get_order_statistics(cls, user):

@@ -9,13 +9,19 @@ class CartItemSerializer(serializers.ModelSerializer):
     product = ProductListSerializer(read_only=True)
     total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     original_total = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    price_at_add_time = serializers.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        read_only=True
+    )
     
     class Meta:
         model = CartItem
         fields = [
-            'id', 'product', 'quantity', 'added_at', 'total', 'original_total'
+            'id', 'product', 'quantity', 'price_at_add_time', 'added_at', 
+            'total', 'original_total'
         ]
-        read_only_fields = ['id', 'added_at']
+        read_only_fields = ['id', 'added_at', 'price_at_add_time']
 
 
 class CartSerializer(serializers.ModelSerializer):

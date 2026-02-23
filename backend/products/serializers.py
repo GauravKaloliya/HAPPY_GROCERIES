@@ -21,6 +21,8 @@ class ProductSerializer(serializers.ModelSerializer):
     )
     effective_price = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
+    display_weight = serializers.ReadOnlyField()
+    display_quantity = serializers.ReadOnlyField()
 
     def get_effective_price(self, obj):
         """Calculate effective price with discount."""
@@ -35,7 +37,9 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'price', 'effective_price', 'discount_amount',
             'category', 'category_id', 'emoji', 'rating', 'reviews_count',
-            'stock', 'discount_percent', 'description', 'is_active'
+            'stock', 'discount_percent', 'description', 'sku', 'brand',
+            'weight', 'weight_unit', 'quantity_per_unit', 'display_weight',
+            'display_quantity', 'is_organic', 'is_vegetarian', 'is_active'
         ]
         read_only_fields = ['id', 'reviews_count']
 
@@ -44,6 +48,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     """Simplified serializer for product lists."""
 
     effective_price = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
+    display_quantity = serializers.ReadOnlyField()
 
     def get_effective_price(self, obj):
         """Calculate effective price with discount."""
@@ -54,7 +60,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'price', 'effective_price', 'emoji',
             'category', 'rating', 'reviews_count', 'stock',
-            'discount_percent'
+            'discount_percent', 'sku', 'brand', 'is_organic',
+            'is_vegetarian', 'display_quantity'
         ]
 
 
@@ -62,10 +69,12 @@ class ComboProductSerializer(serializers.ModelSerializer):
     """Simplified product serializer for combo display."""
 
     category = CategorySerializer(read_only=True)
+    display_quantity = serializers.ReadOnlyField()
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'emoji', 'category', 'rating']
+        fields = ['id', 'name', 'price', 'emoji', 'category', 'rating', 
+                  'sku', 'brand', 'is_organic', 'display_quantity']
 
 
 class ComboSerializer(serializers.ModelSerializer):
@@ -92,5 +101,6 @@ class ComboSerializer(serializers.ModelSerializer):
         model = Combo
         fields = [
             'id', 'name', 'description', 'products', 'discount_percent',
-            'original_price', 'discounted_price', 'savings', 'is_active'
+            'combo_price', 'original_price', 'discounted_price', 'savings', 
+            'is_active'
         ]

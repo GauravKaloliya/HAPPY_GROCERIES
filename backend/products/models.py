@@ -26,6 +26,10 @@ class Category(models.Model):
         db_table = 'categories'
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['is_deleted']),
+        ]
     
     def __str__(self):
         return self.name
@@ -72,6 +76,22 @@ class Product(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
     description = models.TextField(blank=True)
+    
+    # New fields
+    sku = models.CharField(max_length=50, unique=True, null=True, blank=True, db_index=True)
+    brand = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    weight = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(0.01)]
+    )
+    weight_unit = models.CharField(max_length=10, default='kg', blank=True)
+    quantity_per_unit = models.CharField(max_length=50, default='per kg', blank=True)
+    is_organic = models.BooleanField(default=False, db_index=True)
+    is_vegetarian = models.BooleanField(default=True)
+    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -86,6 +106,9 @@ class Product(models.Model):
         indexes = [
             models.Index(fields=['category', 'is_active']),
             models.Index(fields=['name']),
+            models.Index(fields=['sku']),
+            models.Index(fields=['brand']),
+            models.Index(fields=['is_organic']),
             models.Index(fields=['is_deleted']),
         ]
     
@@ -104,6 +127,18 @@ class Product(models.Model):
     def discount_amount(self):
         """Calculate discount amount."""
         return self.price * (Decimal(self.discount_percent) / Decimal('100'))
+    
+    @property
+    def display_weight(self):
+        """Return a formatted weight string for display."""
+        if self.weight:
+            return f"{self.weight}{self.weight_unit}"
+        return None
+    
+    @property
+    def display_quantity(self):
+        """Return the quantity per unit for display."""
+        return self.quantity_per_unit or 'per kg'
     
     def soft_delete(self):
         """Perform soft delete on the product."""
@@ -130,6 +165,13 @@ class Combo(models.Model):
         default=10,
         validators=[MinValueValidator(0), MaxValueValidator(50)]
     )
+    combo_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)]
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -141,6 +183,11 @@ class Combo(models.Model):
     class Meta:
         db_table = 'combos'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_active']),
+            models.Index(fields=['combo_price']),
+            models.Index(fields=['is_deleted']),
+        ]
     
     def __str__(self):
         return self.name
@@ -152,7 +199,9 @@ class Combo(models.Model):
     
     @property
     def discounted_price(self):
-        """Calculate combo price after discount."""
+        """Calculate combo price after discount or return fixed combo_price."""
+        if self.combo_price is not None:
+            return self.combo_price
         original = self.original_price
         return original * (Decimal('1') - Decimal(self.discount_percent) / Decimal('100'))
     

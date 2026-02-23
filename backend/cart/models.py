@@ -1,4 +1,6 @@
+from decimal import Decimal
 from django.db import models
+from django.core.validators import MinValueValidator
 from django.conf import settings
 from products.models import Product
 
@@ -21,6 +23,7 @@ class Cart(models.Model):
     class Meta:
         db_table = 'carts'
         indexes = [
+            models.Index(fields=['user']),
             models.Index(fields=['user', 'is_deleted']),
         ]
     
@@ -64,6 +67,12 @@ class CartItem(models.Model):
         related_name='cart_items'
     )
     quantity = models.PositiveIntegerField(default=1)
+    price_at_add_time = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(0)]
+    )
     added_at = models.DateTimeField(auto_now_add=True)
     
     # Soft delete fields
@@ -74,6 +83,9 @@ class CartItem(models.Model):
         db_table = 'cart_items'
         unique_together = ['cart', 'product']
         indexes = [
+            models.Index(fields=['cart']),
+            models.Index(fields=['product']),
+            models.Index(fields=['price_at_add_time']),
             models.Index(fields=['cart', 'is_deleted']),
         ]
     
@@ -82,7 +94,9 @@ class CartItem(models.Model):
     
     @property
     def total(self):
-        return self.product.effective_price * self.quantity
+        """Calculate total using price_at_add_time if available, otherwise effective_price."""
+        price = self.price_at_add_time if self.price_at_add_time else self.product.effective_price
+        return Decimal(str(price)) * self.quantity
     
     @property
     def original_total(self):

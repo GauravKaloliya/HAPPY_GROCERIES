@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -13,6 +14,8 @@ class User(AbstractUser):
     failed_login_attempts = models.IntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
     first_order = models.BooleanField(default=True)
+    last_order_date = models.DateTimeField(null=True, blank=True)
+    referral_code = models.CharField(max_length=20, unique=True, null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -27,6 +30,13 @@ class User(AbstractUser):
         db_table = 'users'
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+        indexes = [
+            models.Index(fields=['phone']),
+            models.Index(fields=['username']),
+            models.Index(fields=['referral_code']),
+            models.Index(fields=['last_order_date']),
+            models.Index(fields=['is_deleted']),
+        ]
     
     def __str__(self):
         return f"{self.phone} - {self.name}" if hasattr(self, 'name') else self.phone
@@ -34,6 +44,19 @@ class User(AbstractUser):
     @property
     def name(self):
         return f"{self.first_name} {self.last_name}".strip() or self.username
+    
+    def save(self, *args, **kwargs):
+        if not self.referral_code:
+            self.referral_code = self.generate_referral_code()
+        super().save(*args, **kwargs)
+    
+    @staticmethod
+    def generate_referral_code():
+        """Generate a unique referral code."""
+        while True:
+            code = f"REF{uuid.uuid4().hex[:8].upper()}"
+            if not User.objects.filter(referral_code=code).exists():
+                return code
     
     def soft_delete(self):
         """Perform soft delete on the user."""

@@ -5,6 +5,14 @@ from django.conf import settings
 class ActivityLog(models.Model):
     """Model to track user activities on the frontend."""
 
+    DEVICE_TYPES = [
+        ('mobile', 'Mobile'),
+        ('web', 'Web'),
+        ('tablet', 'Tablet'),
+        ('desktop', 'Desktop'),
+        ('other', 'Other'),
+    ]
+
     ACTION_CHOICES = [
         ('page_view', 'Page View'),
         ('product_view', 'Product View'),
@@ -37,6 +45,13 @@ class ActivityLog(models.Model):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     session_id = models.CharField(max_length=255, blank=True, db_index=True)
+    device_type = models.CharField(
+        max_length=20, 
+        choices=DEVICE_TYPES, 
+        null=True, 
+        blank=True,
+        db_index=True
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -47,6 +62,10 @@ class ActivityLog(models.Model):
         indexes = [
             models.Index(fields=['user', 'created_at'], name='activity_log_user_created_idx'),
             models.Index(fields=['action', 'created_at'], name='act_log_act_created_idx'),
+            models.Index(fields=['page']),
+            models.Index(fields=['session_id']),
+            models.Index(fields=['user']),
+            models.Index(fields=['device_type']),
         ]
 
     def __str__(self):

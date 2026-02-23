@@ -35,6 +35,22 @@ class SiteSettings(models.Model):
         help_text='Order amount above which delivery is free'
     )
     
+    # Order value limits
+    min_order_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('100.00'),
+        help_text='Minimum order value required'
+    )
+    max_cod_order_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('2000.00'),
+        null=True,
+        blank=True,
+        help_text='Maximum order value for Cash on Delivery'
+    )
+    
     # Site info
     site_name = models.CharField(max_length=100, default='HappyGroceries')
     site_currency = models.CharField(max_length=10, default='₹')

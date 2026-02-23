@@ -4,7 +4,11 @@ from .models import SiteSettings, SortOption
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
-    list_display = ['site_name', 'tax_rate', 'standard_delivery_charge', 'express_delivery_charge', 'updated_at']
+    list_display = [
+        'site_name', 'tax_rate', 'standard_delivery_charge', 
+        'express_delivery_charge', 'free_delivery_threshold',
+        'min_order_value', 'max_cod_order_value', 'updated_at'
+    ]
     
     def has_add_permission(self, request):
         # Only allow one settings instance

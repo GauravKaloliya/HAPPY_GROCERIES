@@ -9,15 +9,17 @@ class UserSerializer(serializers.ModelSerializer):
     order_count = serializers.SerializerMethodField()
     wishlist_count = serializers.SerializerMethodField()
     coupon_count = serializers.SerializerMethodField()
+    name = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
         fields = [
-            'id', 'phone', 'email', 'first_name', 'last_name',
-            'avatar', 'is_verified', 'first_order', 'created_at',
-            'address', 'order_count', 'wishlist_count', 'coupon_count'
+            'id', 'phone', 'email', 'first_name', 'last_name', 'name',
+            'avatar', 'is_verified', 'first_order', 'referral_code',
+            'last_order_date', 'created_at', 'address', 'order_count', 
+            'wishlist_count', 'coupon_count'
         ]
-        read_only_fields = ['id', 'created_at', 'is_verified']
+        read_only_fields = ['id', 'created_at', 'is_verified', 'referral_code', 'last_order_date']
 
     def get_order_count(self, obj):
         """Get the count of non-deleted orders for this user."""

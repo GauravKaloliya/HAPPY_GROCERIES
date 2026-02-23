@@ -12,6 +12,8 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
             'standard_delivery_charge',
             'express_delivery_charge',
             'free_delivery_threshold',
+            'min_order_value',
+            'max_cod_order_value',
             'site_name',
             'site_currency',
         ]

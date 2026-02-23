@@ -11,21 +11,73 @@ class PricingService:
     DELIVERY_STANDARD = Decimal('40')  # Standard delivery charge
     DELIVERY_EXPRESS = Decimal('50')   # Express delivery charge (fixed at 50 as per requirements)
     FREE_DELIVERY_THRESHOLD = Decimal('500')
+    MIN_ORDER_VALUE = Decimal('100')  # Minimum order value
+    MAX_COD_ORDER_VALUE = Decimal('2000')  # Maximum order value for COD
+    
+    @classmethod
+    def get_settings(cls):
+        """Get settings from database if available."""
+        try:
+            from site_config.models import SiteSettings
+            settings = SiteSettings.get_settings()
+            return {
+                'tax_rate': settings.tax_rate,
+                'standard_delivery_charge': settings.standard_delivery_charge,
+                'express_delivery_charge': settings.express_delivery_charge,
+                'free_delivery_threshold': settings.free_delivery_threshold,
+                'min_order_value': settings.min_order_value,
+                'max_cod_order_value': settings.max_cod_order_value or cls.MAX_COD_ORDER_VALUE,
+            }
+        except Exception:
+            # Return defaults if database is not available
+            return {
+                'tax_rate': cls.TAX_RATE,
+                'standard_delivery_charge': cls.DELIVERY_STANDARD,
+                'express_delivery_charge': cls.DELIVERY_EXPRESS,
+                'free_delivery_threshold': cls.FREE_DELIVERY_THRESHOLD,
+                'min_order_value': cls.MIN_ORDER_VALUE,
+                'max_cod_order_value': cls.MAX_COD_ORDER_VALUE,
+            }
     
     @classmethod
     def calculate_tax(cls, subtotal):
-        """Calculate tax (8% of subtotal)."""
-        return subtotal * cls.TAX_RATE
+        """Calculate tax based on settings."""
+        settings = cls.get_settings()
+        return subtotal * settings['tax_rate']
     
     @classmethod
     def calculate_delivery(cls, subtotal, delivery_type='standard'):
         """Calculate delivery charge based on order total and type."""
-        if subtotal >= cls.FREE_DELIVERY_THRESHOLD:
+        settings = cls.get_settings()
+        if subtotal >= settings['free_delivery_threshold']:
             return Decimal('0')
         
         if delivery_type == 'express':
-            return cls.DELIVERY_EXPRESS
-        return cls.DELIVERY_STANDARD
+            return settings['express_delivery_charge']
+        return settings['standard_delivery_charge']
+    
+    @classmethod
+    def get_min_order_value(cls):
+        """Get minimum order value from settings."""
+        settings = cls.get_settings()
+        return settings['min_order_value']
+    
+    @classmethod
+    def get_max_cod_order_value(cls):
+        """Get maximum COD order value from settings."""
+        settings = cls.get_settings()
+        return settings['max_cod_order_value']
+    
+    @classmethod
+    def is_cod_available(cls, total):
+        """Check if COD is available for the given order total."""
+        return total <= cls.get_max_cod_order_value()
+    
+    @classmethod
+    def validate_min_order(cls, subtotal):
+        """Validate that order meets minimum order value."""
+        settings = cls.get_settings()
+        return subtotal >= settings['min_order_value']
     
     @classmethod
     def calculate_coupon_discount(cls, coupon, cart_items, cart_total):

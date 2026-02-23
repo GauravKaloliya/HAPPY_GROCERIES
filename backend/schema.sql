@@ -1,13 +1,7 @@
--- Happy Groceries Database Schema
--- PostgreSQL 14+ compatible
-
--- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- =====================================================
 -- USERS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     password VARCHAR(128) NOT NULL,
@@ -27,20 +21,21 @@ CREATE TABLE IF NOT EXISTS users (
     failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TIMESTAMP WITH TIME ZONE,
     first_order BOOLEAN NOT NULL DEFAULT TRUE,
+    last_order_date TIMESTAMP WITH TIME ZONE, -- NEW: quick stats
+    referral_code VARCHAR(20) UNIQUE, -- NEW: for referral program
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX users_phone_idx ON users(phone);
 CREATE INDEX users_username_idx ON users(username);
+CREATE INDEX users_referral_code_idx ON users(referral_code); -- NEW index
+CREATE INDEX users_last_order_date_idx ON users(last_order_date); -- NEW index (useful for queries like "active users")
 CREATE INDEX users_is_deleted_idx ON users(is_deleted);
-
 -- =====================================================
 -- CATEGORIES
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
@@ -51,14 +46,11 @@ CREATE TABLE IF NOT EXISTS categories (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX categories_name_idx ON categories(name);
 CREATE INDEX categories_is_deleted_idx ON categories(is_deleted);
-
 -- =====================================================
 -- PRODUCTS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -70,51 +62,54 @@ CREATE TABLE IF NOT EXISTS products (
     stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
     discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100),
     description TEXT NOT NULL DEFAULT '',
+    sku VARCHAR(50) UNIQUE, -- NEW
+    brand VARCHAR(100), -- NEW
+    weight DECIMAL(8,2) CHECK (weight > 0), -- NEW
+    weight_unit VARCHAR(10) DEFAULT 'kg', -- NEW
+    quantity_per_unit VARCHAR(50) DEFAULT 'per kg', -- NEW (display friendly)
+    is_organic BOOLEAN DEFAULT FALSE, -- NEW
+    is_vegetarian BOOLEAN DEFAULT TRUE, -- NEW
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX products_name_idx ON products(name);
 CREATE INDEX products_category_is_active_idx ON products(category_id, is_active);
+CREATE INDEX products_sku_idx ON products(sku); -- NEW
+CREATE INDEX products_brand_idx ON products(brand); -- NEW (for brand filtering)
+CREATE INDEX products_is_organic_idx ON products(is_organic); -- NEW
 CREATE INDEX products_is_deleted_idx ON products(is_deleted);
-
 -- =====================================================
 -- COMBOS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS combos (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     discount_percent INTEGER NOT NULL DEFAULT 10 CHECK (discount_percent >= 0 AND discount_percent <= 50),
+    combo_price DECIMAL(10,2) CHECK (combo_price >= 0), -- NEW: fixed/computed price
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX combos_is_active_idx ON combos(is_active);
+CREATE INDEX combos_combo_price_idx ON combos(combo_price); -- NEW
 CREATE INDEX combos_is_deleted_idx ON combos(is_deleted);
-
--- Many-to-many relationship for combos and products
 CREATE TABLE IF NOT EXISTS combos_products (
     id BIGSERIAL PRIMARY KEY,
     combo_id INTEGER NOT NULL REFERENCES combos(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     UNIQUE(combo_id, product_id)
 );
-
 CREATE INDEX combos_products_combo_idx ON combos_products(combo_id);
 CREATE INDEX combos_products_product_idx ON combos_products(product_id);
-
 -- =====================================================
 -- CARTS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS carts (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -123,33 +118,29 @@ CREATE TABLE IF NOT EXISTS carts (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX carts_user_idx ON carts(user_id);
 CREATE INDEX carts_user_is_deleted_idx ON carts(user_id, is_deleted);
-
 -- =====================================================
 -- CART ITEMS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS cart_items (
     id BIGSERIAL PRIMARY KEY,
     cart_id BIGINT NOT NULL REFERENCES carts(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+    price_at_add_time DECIMAL(10,2) NOT NULL CHECK (price_at_add_time >= 0), -- NEW: price snapshot
     added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE(cart_id, product_id)
 );
-
 CREATE INDEX cart_items_cart_idx ON cart_items(cart_id);
 CREATE INDEX cart_items_product_idx ON cart_items(product_id);
+CREATE INDEX cart_items_price_at_add_time_idx ON cart_items(price_at_add_time); -- NEW (optional, analytics)
 CREATE INDEX cart_items_cart_is_deleted_idx ON cart_items(cart_id, is_deleted);
-
 -- =====================================================
 -- ORDERS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS orders (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -172,18 +163,15 @@ CREATE TABLE IF NOT EXISTS orders (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX orders_order_id_idx ON orders(order_id);
 CREATE INDEX orders_user_idx ON orders(user_id);
 CREATE INDEX orders_status_idx ON orders(status);
 CREATE INDEX orders_user_status_idx ON orders(user_id, status);
 CREATE INDEX orders_is_deleted_idx ON orders(is_deleted);
 CREATE INDEX orders_user_created_idx ON orders(user_id, created_at DESC);
-
 -- =====================================================
 -- ORDER ITEMS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -197,16 +185,13 @@ CREATE TABLE IF NOT EXISTS order_items (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX order_items_order_idx ON order_items(order_id);
 CREATE INDEX order_items_product_idx ON order_items(product_id);
 CREATE INDEX order_items_order_is_deleted_idx ON order_items(order_id, is_deleted);
 CREATE INDEX order_items_is_deleted_idx ON order_items(is_deleted);
-
 -- =====================================================
 -- COUPONS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS coupons (
     id SERIAL PRIMARY KEY,
     code VARCHAR(20) NOT NULL UNIQUE,
@@ -226,18 +211,15 @@ CREATE TABLE IF NOT EXISTS coupons (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
 );
-
 CREATE INDEX coupons_code_idx ON coupons(code);
 CREATE INDEX coupons_is_active_idx ON coupons(is_active);
 CREATE INDEX coupons_active_valid_idx ON coupons(is_active, valid_until);
 CREATE INDEX coupons_categories_gin ON coupons USING GIN (applicable_categories);
 CREATE INDEX coupons_code_is_active_idx ON coupons(code, is_active);
 CREATE INDEX coupons_is_deleted_idx ON coupons(is_deleted);
-
 -- =====================================================
 -- COUPON USAGES
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS coupon_usages (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -249,18 +231,15 @@ CREATE TABLE IF NOT EXISTS coupon_usages (
     deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE(user_id, coupon_id)
 );
-
 CREATE INDEX coupon_usages_user_idx ON coupon_usages(user_id);
 CREATE INDEX coupon_usages_coupon_idx ON coupon_usages(coupon_id);
 CREATE INDEX coupon_usages_order_idx ON coupon_usages(order_id);
 CREATE INDEX coupon_usages_user_is_deleted_idx ON coupon_usages(user_id, is_deleted);
 CREATE INDEX coupon_usages_coupon_is_deleted_idx ON coupon_usages(coupon_id, is_deleted);
 CREATE INDEX coupon_usages_is_deleted_idx ON coupon_usages(is_deleted);
-
 -- =====================================================
 -- WISHLIST ITEMS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS wishlist_items (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -270,16 +249,13 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
     deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE(user_id, product_id)
 );
-
 CREATE INDEX wishlist_items_user_idx ON wishlist_items(user_id);
 CREATE INDEX wishlist_items_product_idx ON wishlist_items(product_id);
 CREATE INDEX wishlist_items_user_is_deleted_idx ON wishlist_items(user_id, is_deleted);
 CREATE INDEX wishlist_items_product_is_deleted_idx ON wishlist_items(product_id, is_deleted);
-
 -- =====================================================
 -- PRODUCT REVIEWS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS product_reviews (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -296,18 +272,15 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     deleted_at TIMESTAMP WITH TIME ZONE,
     UNIQUE(user_id, product_id, order_id)
 );
-
 CREATE INDEX product_reviews_user_idx ON product_reviews(user_id);
 CREATE INDEX product_reviews_product_idx ON product_reviews(product_id);
 CREATE INDEX product_reviews_order_idx ON product_reviews(order_id);
 CREATE INDEX product_reviews_product_approved_deleted_idx ON product_reviews(product_id, is_approved, is_deleted);
 CREATE INDEX product_reviews_user_is_deleted_idx ON product_reviews(user_id, is_deleted);
 CREATE INDEX product_reviews_rating_idx ON product_reviews(rating);
-
 -- =====================================================
 -- REVIEW HELPFUL VOTES
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS review_helpful_votes (
     id BIGSERIAL PRIMARY KEY,
     review_id BIGINT NOT NULL REFERENCES product_reviews(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -315,14 +288,11 @@ CREATE TABLE IF NOT EXISTS review_helpful_votes (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     UNIQUE(review_id, user_id)
 );
-
 CREATE INDEX review_helpful_votes_review_idx ON review_helpful_votes(review_id);
 CREATE INDEX review_helpful_votes_user_idx ON review_helpful_votes(user_id);
-
 -- =====================================================
--- ACTIVITY LOGS
+-- ACTIVITY LOGS (with new column)
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS activity_logs (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
@@ -337,19 +307,18 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     ip_address INET,
     user_agent TEXT,
     session_id VARCHAR(255),
+    device_type VARCHAR(20) CHECK (device_type IN ('mobile', 'web', 'tablet', 'desktop', 'other')), -- NEW
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-
 CREATE INDEX activity_logs_user_created_idx ON activity_logs(user_id, created_at);
 CREATE INDEX activity_logs_action_created_idx ON activity_logs(action, created_at);
 CREATE INDEX activity_logs_page_idx ON activity_logs(page);
 CREATE INDEX activity_logs_session_id_idx ON activity_logs(session_id);
 CREATE INDEX activity_logs_user_idx ON activity_logs(user_id);
-
+CREATE INDEX activity_logs_device_type_idx ON activity_logs(device_type); -- NEW index
 -- =====================================================
 -- CONTACT MESSAGES
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS contact_messages (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
@@ -362,31 +331,28 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-
 CREATE INDEX contact_messages_user_idx ON contact_messages(user_id);
 CREATE INDEX contact_messages_status_idx ON contact_messages(status);
 CREATE INDEX contact_messages_created_idx ON contact_messages(created_at);
-
 -- =====================================================
--- SITE SETTINGS
+-- SITE SETTINGS (with new columns)
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS site_settings (
     id SERIAL PRIMARY KEY,
     tax_rate DECIMAL(5, 4) NOT NULL DEFAULT 0.0800 CHECK (tax_rate >= 0),
     standard_delivery_charge DECIMAL(10, 2) NOT NULL DEFAULT 40.00 CHECK (standard_delivery_charge >= 0),
     express_delivery_charge DECIMAL(10, 2) NOT NULL DEFAULT 50.00 CHECK (express_delivery_charge >= 0),
     free_delivery_threshold DECIMAL(10, 2) NOT NULL DEFAULT 500.00 CHECK (free_delivery_threshold >= 0),
+    min_order_value DECIMAL(10, 2) NOT NULL DEFAULT 100.00 CHECK (min_order_value >= 0), -- NEW
+    max_cod_order_value DECIMAL(10, 2) DEFAULT 2000.00 CHECK (max_cod_order_value >= 0), -- NEW
     site_name VARCHAR(100) NOT NULL DEFAULT 'HappyGroceries',
     site_currency VARCHAR(10) NOT NULL DEFAULT '₹',
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-
 -- =====================================================
 -- SORT OPTIONS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS sort_options (
     id SERIAL PRIMARY KEY,
     value VARCHAR(50) NOT NULL UNIQUE,
@@ -394,18 +360,14 @@ CREATE TABLE IF NOT EXISTS sort_options (
     "order" INTEGER NOT NULL DEFAULT 0 CHECK ("order" >= 0),
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
-
 CREATE INDEX sort_options_order_idx ON sort_options("order");
-
 -- =====================================================
 -- DJANGO AUTH TABLES (for reference)
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS auth_group (
     id SERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL UNIQUE
 );
-
 CREATE TABLE IF NOT EXISTS auth_permission (
     id SERIAL PRIMARY KEY,
     content_type_id INTEGER NOT NULL REFERENCES django_content_type(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -413,45 +375,38 @@ CREATE TABLE IF NOT EXISTS auth_permission (
     name VARCHAR(255) NOT NULL,
     UNIQUE(content_type_id, codename)
 );
-
 CREATE TABLE IF NOT EXISTS auth_group_permissions (
     id BIGSERIAL PRIMARY KEY,
     group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     UNIQUE(group_id, permission_id)
 );
-
 CREATE TABLE IF NOT EXISTS users_groups (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     UNIQUE(user_id, group_id)
 );
-
 CREATE TABLE IF NOT EXISTS users_user_permissions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     UNIQUE(user_id, permission_id)
 );
-
 CREATE TABLE IF NOT EXISTS django_content_type (
     id SERIAL PRIMARY KEY,
     app_label VARCHAR(100) NOT NULL,
     model VARCHAR(100) NOT NULL,
     UNIQUE(app_label, model)
 );
-
 CREATE TABLE IF NOT EXISTS django_session (
     session_key VARCHAR(40) NOT NULL PRIMARY KEY,
     session_data TEXT NOT NULL,
     expire_date TIMESTAMP WITH TIME ZONE NOT NULL
 );
-
 CREATE INDEX django_session_expire_date_idx ON django_session(expire_date);
-
 CREATE TABLE IF NOT EXISTS django_admin_log (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     action_time TIMESTAMP WITH TIME ZONE NOT NULL,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     content_type_id INTEGER REFERENCES django_content_type(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
@@ -460,21 +415,17 @@ CREATE TABLE IF NOT EXISTS django_admin_log (
     action_flag SMALLINT NOT NULL CHECK (action_flag >= 0),
     change_message TEXT NOT NULL
 );
-
 CREATE INDEX django_admin_log_content_type_idx ON django_admin_log(content_type_id);
 CREATE INDEX django_admin_log_user_idx ON django_admin_log(user_id);
-
 CREATE TABLE IF NOT EXISTS django_migrations (
     id BIGSERIAL PRIMARY KEY,
     app VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     applied TIMESTAMP WITH TIME ZONE NOT NULL
 );
-
 -- =====================================================
--- AUTOMATED UPDATE TRIGGERS FOR updated_at
+-- UPDATED TRIGGERS FOR updated_at (covering all relevant tables)
 -- =====================================================
-
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -482,59 +433,43 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
--- Apply trigger to users table
+-- Users
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Apply trigger to products table
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Products
 DROP TRIGGER IF EXISTS update_products_updated_at ON products;
 CREATE TRIGGER update_products_updated_at
     BEFORE UPDATE ON products
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Apply trigger to combos table
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Combos
 DROP TRIGGER IF EXISTS update_combos_updated_at ON combos;
 CREATE TRIGGER update_combos_updated_at
     BEFORE UPDATE ON combos
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Apply trigger to carts table
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Carts
 DROP TRIGGER IF EXISTS update_carts_updated_at ON carts;
 CREATE TRIGGER update_carts_updated_at
     BEFORE UPDATE ON carts
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Apply trigger to orders table
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Orders
 DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
 CREATE TRIGGER update_orders_updated_at
     BEFORE UPDATE ON orders
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Apply trigger to product_reviews table
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Product Reviews
 DROP TRIGGER IF EXISTS update_product_reviews_updated_at ON product_reviews;
 CREATE TRIGGER update_product_reviews_updated_at
     BEFORE UPDATE ON product_reviews
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Apply trigger to contact_messages table
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Contact Messages
 DROP TRIGGER IF EXISTS update_contact_messages_updated_at ON contact_messages;
 CREATE TRIGGER update_contact_messages_updated_at
     BEFORE UPDATE ON contact_messages
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Apply trigger to site_settings table
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Site Settings
 DROP TRIGGER IF EXISTS update_site_settings_updated_at ON site_settings;
 CREATE TRIGGER update_site_settings_updated_at
     BEFORE UPDATE ON site_settings
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
