@@ -1312,12 +1312,6 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Nunito', sans-serif;
 }
 
-.btn-clear-all:hover {
-    background: #5a4fcf;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
-}
-
 /* Responsive Shop Layout */
 @media (max-width: 968px) {
     .shop-layout {

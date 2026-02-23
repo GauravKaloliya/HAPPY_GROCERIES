@@ -23,6 +23,7 @@ const Settings = () => {
     last_name: '',
     email: '',
     phone: '',
+    address: '',
   });
 
   const [profileForm, setProfileForm] = useState({
@@ -30,7 +31,10 @@ const Settings = () => {
     last_name: '',
     email: '',
     phone: '',
+    address: '',
   });
+  const [phoneError, setPhoneError] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -65,6 +69,7 @@ const Settings = () => {
         last_name: user.last_name || '',
         email: user.email || '',
         phone: user.phone || '',
+        address: user.address || '',
       };
       initialProfileRef.current = initial;
       setProfileForm(initial);
@@ -81,7 +86,9 @@ const Settings = () => {
     return (
       profileForm.first_name !== initial.first_name ||
       profileForm.last_name !== initial.last_name ||
-      profileForm.email !== initial.email
+      profileForm.email !== initial.email ||
+      profileForm.phone !== initial.phone ||
+      profileForm.address !== initial.address
     );
   };
 
@@ -108,11 +115,65 @@ const Settings = () => {
       const response = await authAPI.checkEmail(email);
       const { available, message } = response.data;
       setEmailStatus(available ? { available: true, message } : { available: false, message });
-    } catch (error) {
+    } catch {
       // Silent fail
     } finally {
       setCheckingEmail(false);
     }
+  };
+
+  const handleProfileInputChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      // Only allow numbers
+      const numbersOnly = value.replace(/[^0-9]/g, '');
+      if (numbersOnly.length > 10) {
+        setPhoneError('Phone number must be exactly 10 digits');
+      } else {
+        setPhoneError('');
+      }
+      setProfileForm({ ...profileForm, [name]: numbersOnly });
+    } else {
+      setProfileForm({ ...profileForm, [name]: value });
+    }
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLocationLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+
+          if (data.display_name) {
+            setProfileForm({ ...profileForm, address: data.display_name });
+            toast.success('Location fetched successfully!');
+          } else {
+            toast.error('Unable to get address from location');
+          }
+        } catch {
+          toast.error('Failed to fetch address');
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      () => {
+        setLocationLoading(false);
+        toast.error('Unable to get your location. Please enable location access.');
+      }
+    );
   };
 
   const handlePasswordBlur = async () => {
@@ -124,7 +185,7 @@ const Settings = () => {
       const response = await authAPI.checkPassword(password);
       const { valid, message } = response.data;
       setPasswordStatus(valid ? { valid: true, message } : { valid: false, message });
-    } catch (error) {
+    } catch {
       // Silent fail
     } finally {
       setCheckingPassword(false);
@@ -133,14 +194,30 @@ const Settings = () => {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+
+    // Validate phone number
+    if (profileForm.phone && profileForm.phone.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
+
+    // Validate email format if provided
+    if (profileForm.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(profileForm.email)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
       await dispatch(updateProfile(profileForm)).unwrap();
       initialProfileRef.current = { ...profileForm };
       toast.success('Profile updated successfully! ✅');
-    } catch (error) {
-      toast.error(error || 'Failed to update profile');
+    } catch (err) {
+      toast.error(err || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -255,19 +332,21 @@ const Settings = () => {
                       <input
                         type="text"
                         id="first_name"
+                        name="first_name"
                         value={profileForm.first_name}
-                        onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                        onChange={handleProfileInputChange}
                         placeholder="Enter your first name"
                         style={getFieldBorderStyle('first_name')}
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="last_name">Last Name</label>
+                      <label htmlFor="last_name">Last Name (Optional)</label>
                       <input
                         type="text"
                         id="last_name"
+                        name="last_name"
                         value={profileForm.last_name}
-                        onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                        onChange={handleProfileInputChange}
                         placeholder="Enter your last name"
                         style={getFieldBorderStyle('last_name')}
                       />
@@ -275,12 +354,13 @@ const Settings = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="email">Email Address</label>
+                    <label htmlFor="email">Email Address (Optional)</label>
                     <input
                       type="email"
                       id="email"
+                      name="email"
                       value={profileForm.email}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      onChange={handleProfileInputChange}
                       onBlur={handleEmailBlur}
                       placeholder="Enter your email"
                       style={getFieldBorderStyle('email')}
@@ -296,18 +376,51 @@ const Settings = () => {
                     <input
                       type="tel"
                       id="phone"
+                      name="phone"
                       value={profileForm.phone}
-                      disabled
-                      style={{ background: 'var(--bg-light)', opacity: 0.7 }}
+                      onChange={handleProfileInputChange}
+                      placeholder="10-digit phone number"
+                      maxLength={10}
+                      style={getFieldBorderStyle('phone')}
                     />
-                    <small style={{ color: '#888', marginTop: '0.25rem', display: 'block' }}>Phone number cannot be changed</small>
+                    {phoneError && <small style={{ color: '#ef4444', display: 'block' }}>{phoneError}</small>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="address">Address (Optional)</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        id="address"
+                        name="address"
+                        value={profileForm.address}
+                        onChange={handleProfileInputChange}
+                        placeholder="Enter your address"
+                        style={{ ...getFieldBorderStyle('address'), flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={getCurrentLocation}
+                        disabled={locationLoading}
+                        className="btn-secondary"
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          fontSize: '0.85rem',
+                          minWidth: '130px',
+                          opacity: locationLoading ? 0.7 : 1,
+                          cursor: locationLoading ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {locationLoading ? '📍...' : '📍 Get Location'}
+                      </button>
+                    </div>
                   </div>
 
                   <button
                     type="submit"
                     className="btn-primary"
-                    disabled={loading || !isProfileChanged()}
-                    style={{ opacity: isProfileChanged() ? 1 : 0.5, cursor: isProfileChanged() ? 'pointer' : 'not-allowed' }}
+                    disabled={loading || !isProfileChanged() || phoneError}
+                    style={{ opacity: (isProfileChanged() && !phoneError) ? 1 : 0.5, cursor: (isProfileChanged() && !phoneError) ? 'pointer' : 'not-allowed' }}
                   >
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
