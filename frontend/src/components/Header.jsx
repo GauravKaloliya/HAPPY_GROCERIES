@@ -120,7 +120,10 @@ const Header = () => {
     <nav className="navbar">
       <div className="nav-container">
         <div className="nav-logo">
-          <Link to="/">{brandLogo} {brandName}</Link>
+          <Link to="/">
+            <span className="nav-logo-icon">{brandLogo}</span>
+            <span className="nav-logo-text">{brandName}</span>
+          </Link>
         </div>
 
         <ul className={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
