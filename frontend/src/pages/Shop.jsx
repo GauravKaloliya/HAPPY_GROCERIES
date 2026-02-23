@@ -133,10 +133,9 @@ const Shop = () => {
       <button
         className="mobile-filter-btn"
         onClick={() => setShowMobileFilters(true)}
-        style={{ display: 'none' }}
       >
         🔍 Filters & Sort
-        {hasFilters && <span style={{ marginLeft: '0.5rem', background: 'white', color: 'var(--primary-pink)', padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem' }}>{products.length}</span>}
+        {hasFilters && <span className="mobile-filter-badge">{products.length}</span>}
       </button>
 
       <div className="shop-layout">
@@ -284,7 +283,7 @@ const Shop = () => {
 
         <div className="shop-content">
           <div className="results-header">
-            <p className="results-count" style={{ textAlign: 'center', width: '100%' }}>{totalCount} products found</p>
+            <p className="results-count">{totalCount} products found</p>
           </div>
 
           {products.length > 0 ? (
