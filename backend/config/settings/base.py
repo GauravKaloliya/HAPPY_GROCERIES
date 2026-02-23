@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 import dj_database_url
+import json
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
@@ -207,11 +208,12 @@ REDIS_URL = os.environ.get('REDIS_URL')
 
 # CORS Settings
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://happygroceries.vercel.app',
-]
+cors_origins_env = os.environ.get('CORS_ORIGINS', '["http://localhost:3000","http://localhost:5173","https://happygroceries.vercel.app"]')
+try:
+    CORS_ALLOWED_ORIGINS = json.loads(cors_origins_env)
+except json.JSONDecodeError:
+    # Fallback: try comma-separated parsing
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
 CORS_ALLOW_ALL_ORIGINS = False
 
 # Custom User Model
