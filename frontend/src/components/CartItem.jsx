@@ -104,7 +104,7 @@ const CartItem = ({ item }) => {
       </div>
 
       <div className="cart-item-actions">
-        <div style={{ fontWeight: 700, color: 'var(--primary-pink)', fontSize: '1.2rem' }}>
+        <div className="item-total">
           {formatPrice(displayPrice * item.quantity)}
         </div>
         <button onClick={handleRemove} className="btn-remove" disabled={isRemoving}>
