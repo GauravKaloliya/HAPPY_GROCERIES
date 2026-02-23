@@ -65,37 +65,16 @@ const MyReviews = () => {
       <h1 className="section-title">⭐ My Reviews</h1>
       
       {/* Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        marginBottom: '2rem',
-        borderBottom: '2px solid var(--primary-pink)',
-      }}>
+      <div className="reviews-tabs">
         <button
           onClick={() => setActiveTab('my-reviews')}
-          style={{
-            padding: '1rem 1.5rem',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: activeTab === 'my-reviews' ? '3px solid var(--primary-pink)' : 'none',
-            fontWeight: 600,
-            cursor: 'pointer',
-            color: activeTab === 'my-reviews' ? 'var(--primary-pink)' : 'var(--text-dark)',
-          }}
+          className={`reviews-tab ${activeTab === 'my-reviews' ? 'active' : ''}`}
         >
           My Reviews ({myReviews.length})
         </button>
         <button
           onClick={() => setActiveTab('pending')}
-          style={{
-            padding: '1rem 1.5rem',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: activeTab === 'pending' ? '3px solid var(--primary-pink)' : 'none',
-            fontWeight: 600,
-            cursor: 'pointer',
-            color: activeTab === 'pending' ? 'var(--primary-pink)' : 'var(--text-dark)',
-          }}
+          className={`reviews-tab ${activeTab === 'pending' ? 'active' : ''}`}
         >
           Pending Reviews ({pendingReviews.length})
         </button>
@@ -123,29 +102,9 @@ const MyReviews = () => {
             </div>
           ) : (
             myReviews.map((review) => (
-              <div
-                key={review.id}
-                style={{
-                  background: 'var(--bg-white)',
-                  padding: '1.5rem',
-                  borderRadius: 'var(--border-radius)',
-                  marginBottom: '1rem',
-                  boxShadow: 'var(--shadow)',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                  <div
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      background: 'var(--bg-light)',
-                      borderRadius: 'var(--border-radius)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '2.5rem',
-                    }}
-                  >
+              <div key={review.id} className="my-review-card">
+                <div className="review-item-header">
+                  <div className="review-product-thumb">
                     {review.product?.emoji || '📦'}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -174,7 +133,7 @@ const MyReviews = () => {
                 )}
                 <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>{review.comment}</p>
                 
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="review-item-actions">
                   <Link
                     to={`/product/${review.product?.id}`}
                     className="btn-secondary"
@@ -223,56 +182,35 @@ const MyReviews = () => {
             </div>
           ) : (
             pendingReviews.map((product) => (
-              <div
-                key={product.id}
-                style={{
-                  background: 'var(--bg-white)',
-                  padding: '1.5rem',
-                  borderRadius: 'var(--border-radius)',
-                  marginBottom: '1rem',
-                  boxShadow: 'var(--shadow)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                }}
-              >
-                <div
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    background: 'var(--bg-light)',
-                    borderRadius: 'var(--border-radius)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '2.5rem',
-                  }}
-                >
-                  {product.emoji || '📦'}
-                </div>
-                <div style={{ flex: 1 }}>
+              <div key={product.id} className="my-review-card">
+                <div className="review-item-header">
+                  <div className="review-product-thumb">
+                    {product.emoji || '📦'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <Link
+                      to={`/product/${product.id}`}
+                      style={{
+                        fontSize: '1.2rem',
+                        fontWeight: 600,
+                        color: 'var(--text-dark)',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {product.name}
+                    </Link>
+                    <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '0.25rem' }}>
+                      {product.category?.name || product.category}
+                    </div>
+                  </div>
                   <Link
                     to={`/product/${product.id}`}
-                    style={{
-                      fontSize: '1.2rem',
-                      fontWeight: 600,
-                      color: 'var(--text-dark)',
-                      textDecoration: 'none',
-                    }}
+                    className="btn-primary"
+                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                   >
-                    {product.name}
+                    Write Review
                   </Link>
-                  <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '0.25rem' }}>
-                    {product.category?.name || product.category}
-                  </div>
                 </div>
-                <Link
-                  to={`/product/${product.id}`}
-                  className="btn-primary"
-                  style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-                >
-                  Write Review
-                </Link>
               </div>
             ))
           )}

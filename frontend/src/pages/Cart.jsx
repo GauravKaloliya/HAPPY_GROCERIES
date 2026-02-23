@@ -95,7 +95,7 @@ const Cart = () => {
   return (
     <div className="cart-container">
       <div className="cart-items">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div className="cart-header-row">
           <p style={{ fontWeight: 600 }}>
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </p>
@@ -119,7 +119,7 @@ const Cart = () => {
         <div className="coupon-section">
           {appliedCoupon ? (
             <div className="applied-coupon-info">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="applied-coupon-row">
                 <span>Coupon: <strong>{appliedCoupon.code}</strong></span>
                 <button 
                   onClick={handleRemoveCoupon}
