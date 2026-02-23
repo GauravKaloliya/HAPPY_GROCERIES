@@ -4,6 +4,7 @@ Production settings for backend project.
 
 from .base import *
 import django
+import json
 
 # Force production mode
 DEBUG = False
@@ -24,8 +25,13 @@ SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
-# Production CORS settings
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'https://happygroceries.vercel.app').split(',')
+# Production CORS settings - read as a list from environment variable
+cors_origins_env = os.environ.get('CORS_ORIGINS', '["https://happygroceries.vercel.app","https://happygroceries-two.vercel.app","https://happygroceries.store","http://localhost:5173","http://localhost:3000"]')
+try:
+    CORS_ALLOWED_ORIGINS = json.loads(cors_origins_env)
+except json.JSONDecodeError:
+    # Fallback: try comma-separated parsing
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_env.split(',') if origin.strip()]
 CORS_ALLOW_CREDENTIALS = True
 
 # Cookie settings for cross-domain JWT
