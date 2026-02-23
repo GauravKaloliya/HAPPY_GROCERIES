@@ -26,7 +26,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 # Production CORS settings - read as a list from environment variable
-cors_origins_env = os.environ.get('CORS_ORIGINS', '["https://happygroceries.vercel.app"]')
+cors_origins_env = os.environ.get('CORS_ORIGINS', '["https://happygroceries.vercel.app","https://happygroceries-two.vercel.app","https://happygroceries.store","http://localhost:5173","http://localhost:3000"]')
 try:
     CORS_ALLOWED_ORIGINS = json.loads(cors_origins_env)
 except json.JSONDecodeError:

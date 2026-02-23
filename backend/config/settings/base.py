@@ -208,7 +208,7 @@ REDIS_URL = os.environ.get('REDIS_URL')
 
 # CORS Settings
 CORS_ALLOW_CREDENTIALS = True
-cors_origins_env = os.environ.get('CORS_ORIGINS', '["http://localhost:3000","http://localhost:5173","https://happygroceries.vercel.app"]')
+cors_origins_env = os.environ.get('CORS_ORIGINS', '["https://happygroceries.vercel.app","https://happygroceries-two.vercel.app","https://happygroceries.store","http://localhost:5173","http://localhost:3000"]')
 try:
     CORS_ALLOWED_ORIGINS = json.loads(cors_origins_env)
 except json.JSONDecodeError:
