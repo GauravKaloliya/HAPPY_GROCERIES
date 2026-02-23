@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { selectUser, selectIsAuthenticated, updateProfile, changePassword } from '../store/slices/authSlice';
 import { toggleTheme, selectIsDarkMode } from '../store/slices/themeSlice';
+import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -14,6 +15,7 @@ const Settings = () => {
 
   const [activeSection, setActiveSection] = useState('account');
   const [loading, setLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
 
   useActivityLog('page_view', { section: 'settings' });
 
@@ -22,6 +24,7 @@ const Settings = () => {
     last_name: '',
     email: '',
     phone: '',
+    address: '',
   });
 
   const [profileForm, setProfileForm] = useState({
@@ -29,7 +32,10 @@ const Settings = () => {
     last_name: '',
     email: '',
     phone: '',
+    address: '',
   });
+
+  const [profileErrors, setProfileErrors] = useState({});
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -60,6 +66,7 @@ const Settings = () => {
         last_name: user.last_name || '',
         email: user.email || '',
         phone: user.phone || '',
+        address: user.address || '',
       };
       initialProfileRef.current = initial;
       setProfileForm(initial);
@@ -76,7 +83,9 @@ const Settings = () => {
     return (
       profileForm.first_name !== initial.first_name ||
       profileForm.last_name !== initial.last_name ||
-      profileForm.email !== initial.email
+      profileForm.email !== initial.email ||
+      profileForm.phone !== initial.phone ||
+      profileForm.address !== initial.address
     );
   };
 
@@ -94,13 +103,119 @@ const Settings = () => {
     );
   };
 
+  const validateProfile = () => {
+    const errors = {};
+
+    if (!profileForm.first_name.trim()) {
+      errors.first_name = 'First name is required';
+    } else if (profileForm.first_name.trim().length < 2) {
+      errors.first_name = 'First name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(profileForm.first_name.trim())) {
+      errors.first_name = 'First name can only contain letters, spaces, hyphens and apostrophes';
+    }
+
+    if (profileForm.last_name && !/^[a-zA-Z\s'-]+$/.test(profileForm.last_name.trim())) {
+      errors.last_name = 'Last name can only contain letters, spaces, hyphens and apostrophes';
+    }
+
+    if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email.trim())) {
+      errors.email = 'Enter a valid email address';
+    }
+
+    if (!profileForm.phone) {
+      errors.phone = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(profileForm.phone)) {
+      errors.phone = 'Enter a valid 10-digit phone number';
+    }
+
+    return errors;
+  };
+
+  const handlePhoneChange = (e) => {
+    const numeric = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setProfileForm((prev) => ({ ...prev, phone: numeric }));
+    if (profileErrors.phone) {
+      setProfileErrors((prev) => ({ ...prev, phone: '' }));
+    }
+  };
+
+  const handlePhoneBlur = async () => {
+    if (!profileForm.phone || !/^\d{10}$/.test(profileForm.phone)) return;
+    if (profileForm.phone === (user?.phone || '')) return;
+    try {
+      const res = await authAPI.checkUsername(profileForm.phone);
+      if (res.data.exists) {
+        setProfileErrors((prev) => ({ ...prev, phone: 'This phone number is already registered.' }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    if (!profileForm.email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email.trim())) return;
+    if (profileForm.email.toLowerCase() === (user?.email || '').toLowerCase()) return;
+    try {
+      const res = await authAPI.checkEmail(profileForm.email);
+      if (res.data.exists) {
+        setProfileErrors((prev) => ({ ...prev, email: 'This email is already registered.' }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          const addr = data.display_name || `${latitude}, ${longitude}`;
+          setProfileForm((prev) => ({ ...prev, address: addr }));
+        } catch {
+          setProfileForm((prev) => ({ ...prev, address: `${latitude}, ${longitude}` }));
+        } finally {
+          setGeoLoading(false);
+        }
+      },
+      () => {
+        toast.error('Unable to retrieve your location');
+        setGeoLoading(false);
+      }
+    );
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
+    const errors = validateProfile();
+    if (Object.keys(errors).length > 0) {
+      setProfileErrors(errors);
+      return;
+    }
+    if (profileErrors.phone || profileErrors.email) return;
+
+    setLoading(true);
     try {
-      await dispatch(updateProfile(profileForm)).unwrap();
+      await dispatch(updateProfile({
+        first_name: profileForm.first_name.trim(),
+        last_name: profileForm.last_name.trim(),
+        email: profileForm.email.trim() || null,
+        phone: profileForm.phone,
+        address: profileForm.address.trim() || null,
+      })).unwrap();
       initialProfileRef.current = { ...profileForm };
+      setProfileErrors({});
       toast.success('Profile updated successfully! ✅');
     } catch (error) {
       toast.error(error || 'Failed to update profile');
@@ -117,8 +232,23 @@ const Settings = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (passwordForm.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    if (!/[A-Z]/.test(passwordForm.newPassword)) {
+      toast.error('Password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[a-z]/.test(passwordForm.newPassword)) {
+      toast.error('Password must contain at least one lowercase letter');
+      return;
+    }
+
+    if (!/\d/.test(passwordForm.newPassword)) {
+      toast.error('Password must contain at least one number');
       return;
     }
 
@@ -163,7 +293,7 @@ const Settings = () => {
   };
 
   const togglePasswordVisibility = (field) => {
-    setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] }));
+    setPasswordVisibility((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   const navItems = [
@@ -219,46 +349,104 @@ const Settings = () => {
                         type="text"
                         id="first_name"
                         value={profileForm.first_name}
-                        onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                        onChange={(e) => {
+                          setProfileForm({ ...profileForm, first_name: e.target.value });
+                          if (profileErrors.first_name) setProfileErrors((p) => ({ ...p, first_name: '' }));
+                        }}
                         placeholder="Enter your first name"
                         style={getFieldBorderStyle('first_name')}
                       />
+                      {profileErrors.first_name && (
+                        <div className="error-message show" style={{ marginTop: '0.25rem' }}>{profileErrors.first_name}</div>
+                      )}
                     </div>
                     <div className="form-group">
-                      <label htmlFor="last_name">Last Name</label>
+                      <label htmlFor="last_name">Last Name <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
                       <input
                         type="text"
                         id="last_name"
                         value={profileForm.last_name}
-                        onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                        onChange={(e) => {
+                          setProfileForm({ ...profileForm, last_name: e.target.value });
+                          if (profileErrors.last_name) setProfileErrors((p) => ({ ...p, last_name: '' }));
+                        }}
                         placeholder="Enter your last name"
                         style={getFieldBorderStyle('last_name')}
                       />
+                      {profileErrors.last_name && (
+                        <div className="error-message show" style={{ marginTop: '0.25rem' }}>{profileErrors.last_name}</div>
+                      )}
                     </div>
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="email">Email Address</label>
+                    <label htmlFor="settings_email">Email Address <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
                     <input
                       type="email"
-                      id="email"
+                      id="settings_email"
                       value={profileForm.email}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      onChange={(e) => {
+                        setProfileForm({ ...profileForm, email: e.target.value });
+                        if (profileErrors.email) setProfileErrors((p) => ({ ...p, email: '' }));
+                      }}
+                      onBlur={handleEmailBlur}
                       placeholder="Enter your email"
                       style={getFieldBorderStyle('email')}
                     />
+                    {profileErrors.email && (
+                      <div className="error-message show" style={{ marginTop: '0.25rem' }}>{profileErrors.email}</div>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="phone">Phone Number</label>
+                    <label htmlFor="settings_phone">Phone Number</label>
                     <input
-                      type="tel"
-                      id="phone"
+                      type="text"
+                      inputMode="numeric"
+                      id="settings_phone"
                       value={profileForm.phone}
-                      disabled
-                      style={{ background: 'var(--bg-light)', opacity: 0.7 }}
+                      onChange={handlePhoneChange}
+                      onBlur={handlePhoneBlur}
+                      placeholder="Enter 10-digit phone number"
+                      maxLength="10"
+                      style={getFieldBorderStyle('phone')}
                     />
-                    <small style={{ color: '#888', marginTop: '0.25rem', display: 'block' }}>Phone number cannot be changed</small>
+                    {profileErrors.phone && (
+                      <div className="error-message show" style={{ marginTop: '0.25rem' }}>{profileErrors.phone}</div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="settings_address">Address <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <input
+                        type="text"
+                        id="settings_address"
+                        value={profileForm.address}
+                        onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                        placeholder="Enter your address"
+                        style={{ ...getFieldBorderStyle('address'), flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGetLocation}
+                        disabled={geoLoading}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          background: 'var(--primary-green)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 'var(--border-radius)',
+                          cursor: geoLoading ? 'not-allowed' : 'pointer',
+                          fontSize: '1rem',
+                          whiteSpace: 'nowrap',
+                          opacity: geoLoading ? 0.7 : 1,
+                        }}
+                        title="Get current location"
+                      >
+                        {geoLoading ? '⏳' : '📍'}
+                      </button>
+                    </div>
                   </div>
 
                   <button
@@ -304,7 +492,7 @@ const Settings = () => {
                         id="newPassword"
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        placeholder="New password (min 6 characters)"
+                        placeholder="New password (min 8 chars, upper, lower, number)"
                       />
                       <button
                         type="button"
@@ -414,8 +602,8 @@ const Settings = () => {
                   <h4 style={{ marginBottom: '0.2rem' }}>Clear Local Data</h4>
                   <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Remove all locally stored preferences and cart data</p>
                 </div>
-                <button 
-                  className="btn-secondary" 
+                <button
+                  className="btn-secondary"
                   onClick={() => setShowClearDataModal(true)}
                   style={{ width: '80px', minWidth: 'unset', padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
                 >

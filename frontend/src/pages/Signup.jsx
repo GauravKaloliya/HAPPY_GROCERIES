@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, selectAuthLoading, clearError } from '../store/slices/authSlice';
+import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -32,6 +33,7 @@ const Signup = () => {
 
   useEffect(() => {
     dispatch(clearError());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormErrors({});
     setSubmitError('');
   }, [dispatch]);
@@ -56,6 +58,31 @@ const Signup = () => {
       setFormErrors({ ...formErrors, [name]: '' });
     }
     if (submitError) setSubmitError('');
+  };
+
+  const handlePhoneBlur = async () => {
+    if (!formData.phone || !/^\d{10}$/.test(formData.phone)) return;
+    try {
+      const res = await authAPI.checkUsername(formData.phone);
+      if (res.data.exists) {
+        setFormErrors((prev) => ({ ...prev, phone: 'An account with this phone number already exists.' }));
+      }
+    } catch {
+      // ignore network errors on blur check
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    if (!formData.email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) return;
+    try {
+      const res = await authAPI.checkEmail(formData.email);
+      if (res.data.exists) {
+        setFormErrors((prev) => ({ ...prev, email: 'An account with this email already exists.' }));
+      }
+    } catch {
+      // ignore network errors on blur check
+    }
   };
 
   const validateForm = () => {
@@ -210,6 +237,7 @@ const Signup = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
+              onBlur={handlePhoneBlur}
               placeholder="Enter 10-digit phone number"
               maxLength="10"
               autoComplete="tel"
@@ -227,6 +255,7 @@ const Signup = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
+              onBlur={handleEmailBlur}
               placeholder="Enter your email"
               autoComplete="email"
             />
