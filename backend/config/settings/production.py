@@ -27,7 +27,7 @@ SECURE_HSTS_PRELOAD = True
 # Production CORS settings - use comma-separated string in environment variable
 CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
-    'https://happygroceries.vercel.app,https://happygroceries-two.vercel.app,https://happygroceries.store,http://localhost:5173,http://localhost:3000'
+    'https://happygroceries.shop,https://www.happygroceries.shop,http://localhost:5173,http://localhost:3000'
 ).split(',')
 CORS_ALLOW_CREDENTIALS = True
 
