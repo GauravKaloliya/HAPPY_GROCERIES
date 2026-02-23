@@ -39,7 +39,7 @@ const Footer = () => {
   const links = config?.links || [];
 
   return (
-    <footer className="footer">
+    <footer className="footer desktop-footer">
       <p>
         © {currentYear} {brandLogo} {brandName} | Created by {author}
       </p>
