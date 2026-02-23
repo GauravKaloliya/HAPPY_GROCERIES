@@ -125,7 +125,9 @@ const reviewsSlice = createSlice({
       })
       .addCase(fetchProductReviews.fulfilled, (state, action) => {
         state.loading = false;
-        state.productReviews[action.payload.productId] = action.payload.reviews;
+        const reviewsData = action.payload.reviews;
+        const reviews = reviewsData?.results || reviewsData;
+        state.productReviews[action.payload.productId] = Array.isArray(reviews) ? reviews : [];
       })
       .addCase(fetchProductReviews.rejected, (state, action) => {
         state.loading = false;
