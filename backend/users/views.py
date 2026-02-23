@@ -247,3 +247,28 @@ class ChangePasswordView(APIView):
         user.save()
         
         return Response({'message': 'Password changed successfully'})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_username_exists(request):
+    """Check if a username (phone number) is already registered."""
+    username = request.query_params.get('username', '').strip()
+
+    if not username:
+        return Response(
+            {'error': 'Username is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Remove non-digit characters
+    username = ''.join(filter(str.isdigit, username))
+
+    if not username or len(username) != 10:
+        return Response(
+            {'error': 'Username must be a 10-digit phone number'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    exists = User.objects.filter(phone=username, is_deleted=False).exists()
+    return Response({'exists': exists})
