@@ -210,7 +210,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Use comma-separated string in environment variable: https://example.com,https://other.com
 CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS',
-    'https://happygroceries.vercel.app,https://happygroceries-two.vercel.app,https://happygroceries.store,http://localhost:5173,http://localhost:3000'
+    'https://happygroceries.shop,https://www.happygroceries.shop,http://localhost:5173,http://localhost:3000'
 ).split(',')
 CORS_ALLOW_ALL_ORIGINS = False
 
