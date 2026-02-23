@@ -100,7 +100,7 @@ const ProductDetails = () => {
     };
 
     fetchProduct();
-  }, [id, navigate, isAuthenticated, logProductView]);
+  }, [id, navigate, isAuthenticated, logProductView, dispatch]);
 
   const handleAddToCart = async () => {
     if (isAddingToCart) return;

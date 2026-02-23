@@ -24,7 +24,7 @@ const Login = () => {
 
   useEffect(() => {
     dispatch(clearError());
-    setFormErrors({});
+    setFormErrors({}); // eslint-disable-line react-hooks/set-state-in-effect
     setSubmitError('');
   }, [dispatch]);
 

@@ -33,8 +33,7 @@ const Signup = () => {
 
   useEffect(() => {
     dispatch(clearError());
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFormErrors({});
+    setFormErrors({}); // eslint-disable-line react-hooks/set-state-in-effect
     setSubmitError('');
   }, [dispatch]);
 

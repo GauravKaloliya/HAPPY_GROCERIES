@@ -8,7 +8,7 @@ const SecurityContext = createContext({
   retryCheck: () => {},
 });
 
-export const useSecurity = () => useContext(SecurityContext);
+export const useSecurity = () => useContext(SecurityContext); // eslint-disable-line react-refresh/only-export-components
 
 export const SecurityCheck = ({ children }) => {
   const [isSecure, setIsSecure] = useState(true);

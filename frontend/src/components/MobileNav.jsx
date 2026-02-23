@@ -56,7 +56,7 @@ const MobileNav = () => {
   return (
     <nav className="mobile-bottom-nav">
       <div className="mobile-bottom-nav-inner">
-        {navItems.map(({ Icon, label, path, showBadge }) => (
+        {navItems.map(({ Icon, label, path, showBadge }) => ( // eslint-disable-line no-unused-vars
           <button
             key={path}
             className={`mobile-nav-item${isActive(path) ? ' active' : ''}`}
