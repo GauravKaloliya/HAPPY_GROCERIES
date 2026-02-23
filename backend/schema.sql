@@ -16,14 +16,10 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(150) NOT NULL UNIQUE,
     first_name VARCHAR(150) NOT NULL DEFAULT '',
     last_name VARCHAR(150) NOT NULL DEFAULT '',
-    is_staff BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    date_joined TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     phone VARCHAR(10) NOT NULL UNIQUE,
     email VARCHAR(254),
     address TEXT,
-    avatar VARCHAR(100),
-    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     failed_login_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until TIMESTAMP WITH TIME ZONE,
     first_order BOOLEAN NOT NULL DEFAULT TRUE,
@@ -55,21 +51,13 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE INDEX categories_name_idx ON categories(name);
 CREATE INDEX categories_is_deleted_idx ON categories(is_deleted);
 
--- =====================================================
--- PRODUCTS
--- =====================================================
 
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE IF NOT EXISTS brands (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
-    emoji VARCHAR(10) NOT NULL DEFAULT '',
-    rating DECIMAL(2, 1) NOT NULL DEFAULT 4.0 CHECK (rating >= 0 AND rating <= 5),
-    reviews_count INTEGER NOT NULL DEFAULT 0 CHECK (reviews_count >= 0),
-    stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
-    discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100),
-    description TEXT NOT NULL DEFAULT '',
+    name VARCHAR(100) NOT NULL UNIQUE,
+    slug VARCHAR(120) UNIQUE,
+    description TEXT,
+    logo VARCHAR(200),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -77,9 +65,66 @@ CREATE TABLE IF NOT EXISTS products (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX products_name_idx ON products(name);
-CREATE INDEX products_category_is_active_idx ON products(category_id, is_active);
-CREATE INDEX products_is_deleted_idx ON products(is_deleted);
+CREATE INDEX brands_name_idx ON brands(name);
+CREATE INDEX brands_is_active_idx ON brands(is_active);
+CREATE INDEX brands_is_deleted_idx ON brands(is_deleted);
+
+-- =====================================================
+-- PRODUCTS
+-- =====================================================
+CREATE TABLE IF NOT EXISTS products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    -- Pricing
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),                    -- selling price / discounted price
+    mrp DECIMAL(10, 2) NOT NULL CHECK (mrp >= price),                    -- Maximum Retail Price (mandatory in India)
+
+    -- Unit & Packaging (critical for display: "500 g", "1 ltr", "pack of 6")
+    unit VARCHAR(20) NOT NULL DEFAULT 'piece'
+        CHECK (unit IN ('kg', 'g', 'mg', 'ltr', 'ml', 'piece', 'pack', 'dozen', 'bunch', 'bottle', 'can', 'box', 'jar', 'other')),
+    pack_size DECIMAL(8, 2) CHECK (pack_size > 0),                       -- e.g. 0.5 for 500g, 1 for 1kg, 6 for pack of 6
+
+    -- Category & Brand
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
+    brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
+    brand_name VARCHAR(100),                                             -- optional denormalized copy for faster reads / legacy
+
+    -- Tax & Compliance (India-specific)
+    hsn_code VARCHAR(8),
+    gst_rate DECIMAL(4, 2) NOT NULL DEFAULT 5.00
+        CHECK (gst_rate IN (0.00, 0.25, 5.00, 12.00, 18.00, 28.00)),
+
+    -- Flags / Badges
+    is_veg BOOLEAN NOT NULL DEFAULT TRUE,
+    is_organic BOOLEAN NOT NULL DEFAULT FALSE,
+    is_fresh BOOLEAN NOT NULL DEFAULT FALSE,
+
+    -- Display & Quality
+    emoji VARCHAR(10) NOT NULL DEFAULT '',
+    rating DECIMAL(2, 1) NOT NULL DEFAULT 4.0 CHECK (rating >= 0 AND rating <= 5),
+    reviews_count INTEGER NOT NULL DEFAULT 0 CHECK (reviews_count >= 0),
+    stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+    discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100),
+    description TEXT NOT NULL DEFAULT '',
+
+    -- Status
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX products_name_idx                    ON products(name);
+CREATE INDEX products_category_is_active_idx      ON products(category_id, is_active);
+CREATE INDEX products_brand_id_idx                ON products(brand_id);
+CREATE INDEX products_unit_idx                    ON products(unit);
+CREATE INDEX products_mrp_idx                     ON products(mrp);
+CREATE INDEX products_gst_rate_idx                ON products(gst_rate);
+CREATE INDEX products_is_veg_idx                  ON products(is_veg);
+CREATE INDEX products_is_organic_idx              ON products(is_organic);
+CREATE INDEX products_is_fresh_idx                ON products(is_fresh);
+CREATE INDEX products_is_deleted_idx              ON products(is_deleted);
 
 -- =====================================================
 -- COMBOS
@@ -149,7 +194,6 @@ CREATE INDEX cart_items_cart_is_deleted_idx ON cart_items(cart_id, is_deleted);
 -- =====================================================
 -- ORDERS
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS orders (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -158,6 +202,7 @@ CREATE TABLE IF NOT EXISTS orders (
     delivery_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (delivery_type IN ('standard', 'express')),
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
     tax DECIMAL(10, 2) NOT NULL CHECK (tax >= 0),
+    applied_discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (applied_discount_amount >= 0),  -- FIXED: comma added here
     delivery_charge DECIMAL(10, 2) NOT NULL CHECK (delivery_charge >= 0),
     coupon_discount DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (coupon_discount >= 0),
     total DECIMAL(10, 2) NOT NULL CHECK (total >= 0),
@@ -179,6 +224,7 @@ CREATE INDEX orders_status_idx ON orders(status);
 CREATE INDEX orders_user_status_idx ON orders(user_id, status);
 CREATE INDEX orders_is_deleted_idx ON orders(is_deleted);
 CREATE INDEX orders_user_created_idx ON orders(user_id, created_at DESC);
+CREATE INDEX orders_applied_discount_idx ON orders(applied_discount_amount);
 
 -- =====================================================
 -- ORDER ITEMS
@@ -187,12 +233,13 @@ CREATE INDEX orders_user_created_idx ON orders(user_id, created_at DESC);
 CREATE TABLE IF NOT EXISTS order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    product_id INTEGER REFERENCES products(id) ON DELETE PROTECT DEFERRABLE INITIALLY DEFERRED,
+    product_id INTEGER REFERENCES products(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
     product_name VARCHAR(100) NOT NULL,
     product_price DECIMAL(10, 2) NOT NULL CHECK (product_price >= 0),
     product_emoji VARCHAR(10) NOT NULL DEFAULT '',
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0),
+    applied_discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (applied_discount_amount >= 0),
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -202,6 +249,7 @@ CREATE INDEX order_items_order_idx ON order_items(order_id);
 CREATE INDEX order_items_product_idx ON order_items(product_id);
 CREATE INDEX order_items_order_is_deleted_idx ON order_items(order_id, is_deleted);
 CREATE INDEX order_items_is_deleted_idx ON order_items(is_deleted);
+CREATE INDEX order_items_applied_discount_idx ON order_items(applied_discount_amount);
 
 -- =====================================================
 -- COUPONS
@@ -406,6 +454,20 @@ CREATE TABLE IF NOT EXISTS auth_group (
     name VARCHAR(150) NOT NULL UNIQUE
 );
 
+CREATE TABLE IF NOT EXISTS users_groups (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    UNIQUE(user_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS django_content_type (
+    id SERIAL PRIMARY KEY,
+    app_label VARCHAR(100) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    UNIQUE(app_label, model)
+);
+
 CREATE TABLE IF NOT EXISTS auth_permission (
     id SERIAL PRIMARY KEY,
     content_type_id INTEGER NOT NULL REFERENCES django_content_type(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -414,6 +476,7 @@ CREATE TABLE IF NOT EXISTS auth_permission (
     UNIQUE(content_type_id, codename)
 );
 
+
 CREATE TABLE IF NOT EXISTS auth_group_permissions (
     id BIGSERIAL PRIMARY KEY,
     group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -421,25 +484,11 @@ CREATE TABLE IF NOT EXISTS auth_group_permissions (
     UNIQUE(group_id, permission_id)
 );
 
-CREATE TABLE IF NOT EXISTS users_groups (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    UNIQUE(user_id, group_id)
-);
-
 CREATE TABLE IF NOT EXISTS users_user_permissions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     UNIQUE(user_id, permission_id)
-);
-
-CREATE TABLE IF NOT EXISTS django_content_type (
-    id SERIAL PRIMARY KEY,
-    app_label VARCHAR(100) NOT NULL,
-    model VARCHAR(100) NOT NULL,
-    UNIQUE(app_label, model)
 );
 
 CREATE TABLE IF NOT EXISTS django_session (
@@ -474,7 +523,6 @@ CREATE TABLE IF NOT EXISTS django_migrations (
 -- =====================================================
 -- AUTOMATED UPDATE TRIGGERS FOR updated_at
 -- =====================================================
-
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -483,19 +531,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Apply trigger to users table
+-- Triggers (apply once)
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-CREATE TRIGGER update_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to products table
+DROP TRIGGER IF EXISTS update_brands_updated_at ON brands;
+CREATE TRIGGER update_brands_updated_at BEFORE UPDATE ON brands FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 DROP TRIGGER IF EXISTS update_products_updated_at ON products;
-CREATE TRIGGER update_products_updated_at
-    BEFORE UPDATE ON products
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Apply trigger to combos table
 DROP TRIGGER IF EXISTS update_combos_updated_at ON combos;

@@ -33,7 +33,7 @@ class ActivityLog(models.Model):
     )
     action = models.CharField(max_length=50, choices=ACTION_CHOICES, db_index=True)
     page = models.CharField(max_length=255, db_index=True)
-    details = models.JSONField(default=dict, blank=True)
+    details = models.JSONField(default=dict)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     session_id = models.CharField(max_length=255, blank=True, db_index=True)
@@ -47,6 +47,9 @@ class ActivityLog(models.Model):
         indexes = [
             models.Index(fields=['user', 'created_at'], name='activity_log_user_created_idx'),
             models.Index(fields=['action', 'created_at'], name='act_log_act_created_idx'),
+            models.Index(fields=['page']),
+            models.Index(fields=['session_id']),
+            models.Index(fields=['user']),
         ]
 
     def __str__(self):

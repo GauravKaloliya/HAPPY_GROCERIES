@@ -1,19 +1,20 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.postgres.fields import JSONField
 
 
 class Coupon(models.Model):
     """Coupon model for discounts."""
-    
+
     COUPON_TYPES = [
         ('percentage', 'Percentage'),
         ('fixed', 'Fixed Amount'),
         ('category', 'Category-based'),
     ]
-    
+
     code = models.CharField(max_length=20, unique=True, db_index=True)
-    description = models.TextField(blank=True)
+    description = models.TextField(default='')
     coupon_type = models.CharField(max_length=20, choices=COUPON_TYPES, default='percentage')
     value = models.DecimalField(
         max_digits=5,
@@ -33,7 +34,7 @@ class Coupon(models.Model):
         blank=True,
         validators=[MinValueValidator(0)]
     )
-    applicable_categories = models.JSONField(default=list, blank=True)
+    applicable_categories = JSONField(default=list)
     first_order_only = models.BooleanField(default=False)
     usage_limit = models.PositiveIntegerField(default=None, null=True, blank=True)
     usage_count = models.PositiveIntegerField(default=0)
@@ -41,48 +42,49 @@ class Coupon(models.Model):
     valid_from = models.DateTimeField(null=True, blank=True)
     valid_until = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     # Soft delete fields
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         db_table = 'coupons'
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['code', 'is_active']),
+            models.Index(fields=['is_active', 'valid_until']),
             models.Index(fields=['is_deleted']),
         ]
-    
+
     def __str__(self):
         return f"{self.code} - {self.get_coupon_type_display()} ({self.value})"
-    
+
     def is_valid(self):
         """Check if coupon is currently valid."""
         from django.utils import timezone
         now = timezone.now()
-        
+
         if not self.is_active or self.is_deleted:
             return False
-        
+
         if self.valid_from and now < self.valid_from:
             return False
-        
+
         if self.valid_until and now > self.valid_until:
             return False
-        
+
         if self.usage_limit and self.usage_count >= self.usage_limit:
             return False
-        
+
         return True
-    
+
     def soft_delete(self):
         """Perform soft delete on the coupon."""
         self.is_deleted = True
         self.deleted_at = models.functions.Now()
         self.is_active = False
         self.save(update_fields=['is_deleted', 'deleted_at', 'is_active'])
-    
+
     def restore(self):
         """Restore a soft-deleted coupon."""
         self.is_deleted = False
@@ -93,7 +95,7 @@ class Coupon(models.Model):
 
 class CouponUsage(models.Model):
     """Track coupon usage per user."""
-    
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -109,31 +111,33 @@ class CouponUsage(models.Model):
         on_delete=models.CASCADE,
         related_name='coupon_usages'
     )
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     used_at = models.DateTimeField(auto_now_add=True)
-    
+
     # Soft delete fields
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         db_table = 'coupon_usages'
         unique_together = ['user', 'coupon']
         indexes = [
             models.Index(fields=['user']),
             models.Index(fields=['coupon']),
+            models.Index(fields=['user', 'is_deleted']),
+            models.Index(fields=['coupon', 'is_deleted']),
             models.Index(fields=['is_deleted']),
         ]
-    
+
     def __str__(self):
         return f"{self.user.phone} used {self.coupon.code}"
-    
+
     def soft_delete(self):
         """Perform soft delete on the coupon usage."""
         self.is_deleted = True
         self.deleted_at = models.functions.Now()
         self.save(update_fields=['is_deleted', 'deleted_at'])
-    
+
     def restore(self):
         """Restore a soft-deleted coupon usage."""
         self.is_deleted = False
