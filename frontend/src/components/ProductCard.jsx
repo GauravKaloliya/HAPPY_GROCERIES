@@ -133,12 +133,25 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const displayPrice = isOnSale ? product.effective_price : product.price;
 
   const renderStars = (rating) => {
-    const fullStars = Math.floor(rating || 0);
-    const stars = [];
-    for (let i = 0; i < 5; i++) {
-      stars.push(i < fullStars ? '★' : '☆');
-    }
-    return stars.join('');
+    const fullStars = Math.round(rating || 0);
+    return (
+      <span style={{ display: 'inline-flex', gap: '1px' }}>
+        {[1, 2, 3, 4, 5].map((i) => (
+          <svg
+            key={i}
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill={i <= fullStars ? '#f59e0b' : 'none'}
+            stroke="#f59e0b"
+            strokeWidth="1.5"
+            style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+          >
+            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+          </svg>
+        ))}
+      </span>
+    );
   };
 
   return (

@@ -1,73 +1,142 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { register, selectAuthLoading, selectAuthError, clearError } from '../store/slices/authSlice';
+import { register, selectAuthLoading, clearError } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
+
+const PASSWORD_RULES = [
+  { test: (p) => p.length >= 8, label: 'At least 8 characters' },
+  { test: (p) => /[A-Z]/.test(p), label: 'One uppercase letter' },
+  { test: (p) => /[a-z]/.test(p), label: 'One lowercase letter' },
+  { test: (p) => /\d/.test(p), label: 'One number' },
+];
 
 const Signup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const loading = useSelector(selectAuthLoading);
-  const error = useSelector(selectAuthError);
 
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
   const { logCustomActivity } = useActivityLog('page_view', { section: 'signup' });
 
   useEffect(() => {
     dispatch(clearError());
     setFormErrors({});
+    setSubmitError('');
   }, [dispatch]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (formErrors[e.target.name]) {
-      setFormErrors({ ...formErrors, [e.target.name]: '' });
-    }
-    if (error) dispatch(clearError());
-    
-    if (e.target.name === 'password') {
-      checkPasswordStrength(e.target.value);
-    }
-  };
+  const passwordStrength = (() => {
+    const passed = PASSWORD_RULES.filter((r) => r.test(formData.password)).length;
+    if (passed <= 1) return 'weak';
+    if (passed <= 2) return 'medium';
+    if (passed === 3) return 'medium';
+    return 'strong';
+  })();
 
-  const checkPasswordStrength = (password) => {
-    if (password.length < 6) {
-      setPasswordStrength('weak');
-    } else if (password.length < 10) {
-      setPasswordStrength('medium');
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      const numeric = value.replace(/\D/g, '').slice(0, 10);
+      setFormData({ ...formData, phone: numeric });
     } else {
-      setPasswordStrength('strong');
+      setFormData({ ...formData, [name]: value });
     }
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: '' });
+    }
+    if (submitError) setSubmitError('');
   };
 
   const validateForm = () => {
     const errors = {};
+
     if (!formData.name.trim()) {
       errors.name = 'Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.name.trim())) {
+      errors.name = 'Name can only contain letters, spaces, hyphens and apostrophes';
     }
+
     if (!formData.phone) {
       errors.phone = 'Phone number is required';
-    } else if (formData.phone.length !== 10) {
-      errors.phone = 'Phone number must be 10 digits';
+    } else if (!/^\d{10}$/.test(formData.phone)) {
+      errors.phone = 'Enter a valid 10-digit phone number';
     }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) {
+      errors.email = 'Enter a valid email address';
+    }
+
     if (!formData.password) {
       errors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    } else if (!/[A-Z]/.test(formData.password)) {
+      errors.password = 'Password must contain at least one uppercase letter';
+    } else if (!/[a-z]/.test(formData.password)) {
+      errors.password = 'Password must contain at least one lowercase letter';
+    } else if (!/\d/.test(formData.password)) {
+      errors.password = 'Password must contain at least one number';
     }
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
     }
+
     return errors;
+  };
+
+  const parseErrorMessage = (err) => {
+    if (!err) return 'Registration failed. Please try again.';
+
+    if (typeof err === 'string') {
+      const lower = err.toLowerCase();
+      if (lower.includes('phone') && lower.includes('exist')) {
+        return 'An account with this phone number already exists.';
+      }
+      if (lower.includes('email') && lower.includes('exist')) {
+        return 'An account with this email already exists.';
+      }
+      if (lower.includes('phone') && (lower.includes('invalid') || lower.includes('format'))) {
+        return 'Invalid phone number format.';
+      }
+      if (lower.includes('server') || lower.includes('500')) {
+        return 'Server error. Please try again later.';
+      }
+      return err;
+    }
+
+    if (typeof err === 'object') {
+      if (err.phone) {
+        const msg = Array.isArray(err.phone) ? err.phone[0] : err.phone;
+        if (msg.toLowerCase().includes('exist')) return 'An account with this phone number already exists.';
+        return msg;
+      }
+      if (err.email) {
+        const msg = Array.isArray(err.email) ? err.email[0] : err.email;
+        return msg;
+      }
+      if (err.detail) return err.detail;
+      if (err.non_field_errors) {
+        return Array.isArray(err.non_field_errors) ? err.non_field_errors[0] : err.non_field_errors;
+      }
+    }
+
+    return 'Registration failed. Please try again.';
   };
 
   const handleSubmit = async (e) => {
@@ -79,6 +148,7 @@ const Signup = () => {
       return;
     }
 
+    setSubmitError('');
     try {
       const nameParts = formData.name.trim().split(' ').filter(Boolean);
       const firstName = nameParts.shift() || '';
@@ -95,24 +165,26 @@ const Signup = () => {
 
       await dispatch(register(payload)).unwrap();
       toast.success('Welcome to Happy Groceries! 🎉');
+      logCustomActivity('register_success', { phone: formData.phone });
       navigate('/');
     } catch (err) {
-      const errorMessage = err || 'Registration failed. Please try again.';
-      setFormErrors({ submit: errorMessage });
+      const errorMessage = parseErrorMessage(err);
+      setSubmitError(errorMessage);
     }
   };
 
   const handleLoginClick = () => {
     dispatch(clearError());
     setFormErrors({});
+    setSubmitError('');
   };
 
   return (
     <div className="container">
       <div className="auth-container">
         <h1 className="auth-title">Create Account 🎉</h1>
-        
-        <form onSubmit={handleSubmit}>
+
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label htmlFor="name">Full Name</label>
             <input
@@ -122,7 +194,7 @@ const Signup = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter your full name"
-              required
+              autoComplete="name"
             />
             {formErrors.name && (
               <div className="error-message show">{formErrors.name}</div>
@@ -132,14 +204,15 @@ const Signup = () => {
           <div className="form-group">
             <label htmlFor="phone">Phone Number</label>
             <input
-              type="tel"
+              type="text"
+              inputMode="numeric"
               id="phone"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
               placeholder="Enter 10-digit phone number"
               maxLength="10"
-              required
+              autoComplete="tel"
             />
             {formErrors.phone && (
               <div className="error-message show">{formErrors.phone}</div>
@@ -147,7 +220,7 @@ const Signup = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email (optional)</label>
+            <label htmlFor="email">Email <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
             <input
               type="email"
               id="email"
@@ -155,6 +228,7 @@ const Signup = () => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
+              autoComplete="email"
             />
             {formErrors.email && (
               <div className="error-message show">{formErrors.email}</div>
@@ -170,13 +244,14 @@ const Signup = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password"
-                required
+                placeholder="Create a strong password"
+                autoComplete="new-password"
               />
               <button
                 type="button"
                 className="toggle-password-btn"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? '🙈' : '👁️'}
               </button>
@@ -185,20 +260,65 @@ const Signup = () => {
               <div className="error-message show">{formErrors.password}</div>
             )}
             {formData.password && (
-              <div className="password-strength">
-                <div className={`password-strength-bar ${passwordStrength}`}></div>
-              </div>
+              <>
+                <div className="password-strength">
+                  <div className={`password-strength-bar ${passwordStrength}`}></div>
+                </div>
+                <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {PASSWORD_RULES.map((rule, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        fontSize: '0.75rem',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '99px',
+                        background: rule.test(formData.password) ? 'var(--primary-green, #22c55e)' : '#f1f5f9',
+                        color: rule.test(formData.password) ? 'white' : '#64748b',
+                        transition: 'background 0.2s',
+                      }}
+                    >
+                      {rule.test(formData.password) ? '✓' : '○'} {rule.label}
+                    </span>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
-          {(error || formErrors.submit) && (
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <div className="password-toggle">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Re-enter your password"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="toggle-password-btn"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+              >
+                {showConfirmPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+            {formErrors.confirmPassword && (
+              <div className="error-message show">{formErrors.confirmPassword}</div>
+            )}
+          </div>
+
+          {submitError && (
             <div className="error-message show" style={{ marginBottom: '1rem' }}>
-              {error || formErrors.submit}
+              {submitError}
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn-submit"
             disabled={loading}
           >

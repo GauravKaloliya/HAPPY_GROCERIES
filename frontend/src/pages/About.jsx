@@ -61,7 +61,7 @@ const About = () => {
         <div className="contact-info">
           <p>📍 123 Fresh Street, Green City, GC 12345</p>
           <p>📞 +1 (555) 123-4567</p>
-          <p>✉️ hello@happygroceries.com</p>
+          <p>✉️ contact@happygroceries.shop</p>
           <p>🕒 Mon - Sat: 8AM - 10PM | Sunday: 9AM - 8PM</p>
         </div>
 
