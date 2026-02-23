@@ -55,6 +55,7 @@ const Orders = () => {
   }
 
   return (
+    <div className="container">
     <div className="orders-container">
       <h2 className="section-title">📦 My Orders</h2>
 
@@ -101,6 +102,7 @@ const Orders = () => {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 };
