@@ -19,8 +19,16 @@ const Profile = () => {
     phone: '',
     address: '',
   });
+  const [initialFormData, setInitialFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+  });
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [emailStatus, setEmailStatus] = useState(null);
+  const [phoneError, setPhoneError] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useActivityLog('page_view', { section: 'profile' });
 
@@ -29,20 +37,80 @@ const Profile = () => {
   }, [dispatch]);
 
   // Sync form data when user data changes (but not during editing)
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (user && !editing) {
-      setFormData({
+      const data = {
         name: user.name || user.first_name + ' ' + user.last_name || '',
         email: user.email || '',
         phone: user.phone || '',
         address: user.address || '',
-      });
+      };
+      setFormData(data);
+      setInitialFormData(data);
     }
   }, [user, editing]);
 
+  const hasChanges = () => {
+    return (
+      formData.name !== initialFormData.name ||
+      formData.email !== initialFormData.email ||
+      formData.phone !== initialFormData.phone ||
+      formData.address !== initialFormData.address
+    );
+  };
+
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      // Only allow numbers
+      const numbersOnly = value.replace(/[^0-9]/g, '');
+      if (numbersOnly.length > 10) {
+        setPhoneError('Phone number must be exactly 10 digits');
+      } else {
+        setPhoneError('');
+      }
+      setFormData({ ...formData, [name]: numbersOnly });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLocationLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+
+          if (data.display_name) {
+            setFormData({ ...formData, address: data.display_name });
+            toast.success('Location fetched successfully!');
+          } else {
+            toast.error('Unable to get address from location');
+          }
+        } catch {
+          toast.error('Failed to fetch address');
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      () => {
+        setLocationLoading(false);
+        toast.error('Unable to get your location. Please enable location access.');
+      }
+    );
   };
 
   const handleEmailBlur = async () => {
@@ -54,7 +122,7 @@ const Profile = () => {
       const response = await authAPI.checkEmail(email);
       const { available, message } = response.data;
       setEmailStatus(available ? { available: true, message } : { available: false, message });
-    } catch (error) {
+    } catch {
       // Silent fail
     } finally {
       setCheckingEmail(false);
@@ -62,6 +130,21 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
+    // Validate phone number
+    if (formData.phone && formData.phone.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
+
+    // Validate email format if provided
+    if (formData.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+    }
+
     try {
       await dispatch(updateProfile(formData)).unwrap();
       setEditing(false);
@@ -132,13 +215,18 @@ const Profile = () => {
             <div className="detail-item">
               <span className="detail-label">Phone</span>
               {editing ? (
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="profile-edit-input"
-                />
+                <div>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="profile-edit-input"
+                    placeholder="10-digit phone number"
+                    maxLength={10}
+                  />
+                  {phoneError && <span style={{ fontSize: '0.75rem', color: '#ef4444', display: 'block', marginTop: '0.25rem' }}>{phoneError}</span>}
+                </div>
               ) : (
                 <span className="detail-value">{formData.phone || 'Not set'}</span>
               )}
@@ -146,13 +234,32 @@ const Profile = () => {
             <div className="detail-item">
               <span className="detail-label">Address</span>
               {editing ? (
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="profile-edit-input"
-                />
+                <div>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="profile-edit-input"
+                    placeholder="Enter your address"
+                    style={{ width: 'calc(100% - 120px)', marginRight: '10px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={locationLoading}
+                    className="btn-secondary"
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      fontSize: '0.85rem',
+                      minWidth: '110px',
+                      opacity: locationLoading ? 0.7 : 1,
+                      cursor: locationLoading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {locationLoading ? '📍...' : '📍 Get Location'}
+                  </button>
+                </div>
               ) : (
                 <span className="detail-value">{formData.address || 'Not set'}</span>
               )}
@@ -162,7 +269,15 @@ const Profile = () => {
           <div className="profile-actions">
             {editing ? (
               <>
-                <button onClick={handleSave} className="btn-submit" disabled={loading}>
+                <button
+                  onClick={handleSave}
+                  className="btn-submit"
+                  disabled={loading || !hasChanges() || phoneError}
+                  style={{
+                    opacity: hasChanges() && !phoneError ? 1 : 0.5,
+                    cursor: hasChanges() && !phoneError ? 'pointer' : 'not-allowed'
+                  }}
+                >
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button onClick={() => setEditing(false)} className="btn-secondary">

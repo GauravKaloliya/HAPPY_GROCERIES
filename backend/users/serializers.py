@@ -5,14 +5,34 @@ from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user profile data."""
-    
+
+    order_count = serializers.SerializerMethodField()
+    wishlist_count = serializers.SerializerMethodField()
+    coupon_count = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id', 'phone', 'email', 'first_name', 'last_name',
-            'avatar', 'is_verified', 'first_order', 'created_at'
+            'avatar', 'is_verified', 'first_order', 'created_at',
+            'address', 'order_count', 'wishlist_count', 'coupon_count'
         ]
         read_only_fields = ['id', 'created_at', 'is_verified']
+
+    def get_order_count(self, obj):
+        """Get the count of non-deleted orders for this user."""
+        from orders.models import Order
+        return Order.objects.filter(user=obj, is_deleted=False).count()
+
+    def get_wishlist_count(self, obj):
+        """Get the count of non-deleted wishlist items for this user."""
+        from wishlist.models import WishlistItem
+        return WishlistItem.objects.filter(user=obj, is_deleted=False).count()
+
+    def get_coupon_count(self, obj):
+        """Get the count of coupons used by this user."""
+        from coupons.models import CouponUsage
+        return CouponUsage.objects.filter(user=obj, is_deleted=False).count()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
