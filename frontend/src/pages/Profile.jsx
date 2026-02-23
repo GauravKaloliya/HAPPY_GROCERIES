@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProfile, updateProfile, selectUser, selectAuthLoading } from '../store/slices/authSlice';
 import { formatDate } from '../utils/helpers';
+import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
@@ -18,6 +19,8 @@ const Profile = () => {
     phone: '',
     address: '',
   });
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null);
 
   useActivityLog('page_view', { section: 'profile' });
 
@@ -40,6 +43,22 @@ const Profile = () => {
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleEmailBlur = async () => {
+    const email = formData.email;
+    if (!email || email === (user.email || '')) return;
+
+    setCheckingEmail(true);
+    try {
+      const response = await authAPI.checkEmail(email);
+      const { available, message } = response.data;
+      setEmailStatus(available ? { available: true, message } : { available: false, message });
+    } catch (error) {
+      // Silent fail
+    } finally {
+      setCheckingEmail(false);
+    }
   };
 
   const handleSave = async () => {
@@ -92,13 +111,20 @@ const Profile = () => {
             <div className="detail-item">
               <span className="detail-label">Email</span>
               {editing ? (
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="profile-edit-input"
-                />
+                <>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    onBlur={handleEmailBlur}
+                    className="profile-edit-input"
+                  />
+                  {checkingEmail && <span style={{ fontSize: '0.75rem', color: '#888' }}>Checking...</span>}
+                  {emailStatus && !emailStatus.available && (
+                    <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>{emailStatus.message}</span>
+                  )}
+                </>
               ) : (
                 <span className="detail-value">{formData.email || 'Not set'}</span>
               )}

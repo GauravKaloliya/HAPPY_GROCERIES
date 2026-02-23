@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { selectUser, selectIsAuthenticated, updateProfile, changePassword } from '../store/slices/authSlice';
 import { toggleTheme, selectIsDarkMode } from '../store/slices/themeSlice';
+import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -52,6 +53,10 @@ const Settings = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null);
+  const [checkingPassword, setCheckingPassword] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -92,6 +97,38 @@ const Settings = () => {
       passwordForm.newPassword.trim() !== '' ||
       passwordForm.confirmPassword.trim() !== ''
     );
+  };
+
+  const handleEmailBlur = async () => {
+    const email = profileForm.email;
+    if (!email || email === (user?.email || '')) return;
+
+    setCheckingEmail(true);
+    try {
+      const response = await authAPI.checkEmail(email);
+      const { available, message } = response.data;
+      setEmailStatus(available ? { available: true, message } : { available: false, message });
+    } catch (error) {
+      // Silent fail
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const handlePasswordBlur = async () => {
+    const password = passwordForm.newPassword;
+    if (!password || password.length < 6) return;
+
+    setCheckingPassword(true);
+    try {
+      const response = await authAPI.checkPassword(password);
+      const { valid, message } = response.data;
+      setPasswordStatus(valid ? { valid: true, message } : { valid: false, message });
+    } catch (error) {
+      // Silent fail
+    } finally {
+      setCheckingPassword(false);
+    }
   };
 
   const handleProfileUpdate = async (e) => {
@@ -244,9 +281,14 @@ const Settings = () => {
                       id="email"
                       value={profileForm.email}
                       onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      onBlur={handleEmailBlur}
                       placeholder="Enter your email"
                       style={getFieldBorderStyle('email')}
                     />
+                    {checkingEmail && <small style={{ color: '#888' }}>Checking...</small>}
+                    {emailStatus && !emailStatus.available && (
+                      <small style={{ color: '#ef4444', display: 'block' }}>{emailStatus.message}</small>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -304,6 +346,7 @@ const Settings = () => {
                         id="newPassword"
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        onBlur={handlePasswordBlur}
                         placeholder="New password (min 6 characters)"
                       />
                       <button
@@ -314,6 +357,10 @@ const Settings = () => {
                         {passwordVisibility.newPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
+                    {checkingPassword && <small style={{ color: '#888' }}>Checking...</small>}
+                    {passwordStatus && !passwordStatus.valid && (
+                      <small style={{ color: '#ef4444', display: 'block' }}>{passwordStatus.message}</small>
+                    )}
                   </div>
 
                   <div className="form-group">
