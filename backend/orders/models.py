@@ -38,7 +38,7 @@ class Order(models.Model):
     
     # Delivery details
     delivery_name = models.CharField(max_length=100)
-    delivery_phone = models.CharField(max_length=10)
+    delivery_phone = models.CharField(max_length=15)
     delivery_address = models.TextField()
     delivery_instructions = models.TextField(blank=True)
     

@@ -83,7 +83,7 @@ const Profile = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  style={{ width: '200px', padding: '0.5rem' }}
+                  className="profile-edit-input"
                 />
               ) : (
                 <span className="detail-value">{formData.name || 'Not set'}</span>
@@ -97,7 +97,7 @@ const Profile = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  style={{ width: '200px', padding: '0.5rem' }}
+                  className="profile-edit-input"
                 />
               ) : (
                 <span className="detail-value">{formData.email || 'Not set'}</span>
@@ -111,7 +111,7 @@ const Profile = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  style={{ width: '200px', padding: '0.5rem' }}
+                  className="profile-edit-input"
                 />
               ) : (
                 <span className="detail-value">{formData.phone || 'Not set'}</span>
@@ -125,7 +125,7 @@ const Profile = () => {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  style={{ width: '200px', padding: '0.5rem' }}
+                  className="profile-edit-input"
                 />
               ) : (
                 <span className="detail-value">{formData.address || 'Not set'}</span>

@@ -13,6 +13,39 @@ import {
 } from '../store/slices/reviewsSlice';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 
+const StarSvg = ({ filled, size = 16 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill={filled ? '#f59e0b' : 'none'}
+    stroke="#f59e0b"
+    strokeWidth="1.5"
+    style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+  >
+    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+  </svg>
+);
+
+const renderStars = (rating, size = 16) => {
+  const fullStars = Math.round(rating);
+  return (
+    <span style={{ display: 'inline-flex', gap: '2px' }}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <StarSvg key={i} filled={i <= fullStars} size={size} />
+      ))}
+    </span>
+  );
+};
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
 const ProductReviews = ({ productId }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -20,18 +53,19 @@ const ProductReviews = ({ productId }) => {
   const reviews = useSelector((state) => selectProductReviews(state, productId));
   const summary = useSelector((state) => selectReviewSummary(state, productId));
   const loading = useSelector(selectReviewsLoading);
-  
+
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [rating, setRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  
+
   useEffect(() => {
     dispatch(fetchProductReviews(productId));
     dispatch(fetchReviewSummary(productId));
   }, [dispatch, productId]);
-  
+
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
@@ -39,12 +73,12 @@ const ProductReviews = ({ productId }) => {
       navigate('/login');
       return;
     }
-    
+
     if (!comment.trim()) {
       toast.error('Please write a comment');
       return;
     }
-    
+
     setSubmitting(true);
     try {
       await dispatch(createReview({
@@ -56,13 +90,14 @@ const ProductReviews = ({ productId }) => {
       setRating(5);
       setTitle('');
       setComment('');
+      dispatch(fetchReviewSummary(productId));
     } catch (err) {
       toast.error(err || 'Failed to submit review');
     } finally {
       setSubmitting(false);
     }
   };
-  
+
   const handleHelpful = async (reviewId) => {
     if (!isAuthenticated) {
       toast.error('Please login to mark helpful');
@@ -74,30 +109,17 @@ const ProductReviews = ({ productId }) => {
       toast.error(err || 'Failed to mark helpful');
     }
   };
-  
-  const renderStars = (rating) => {
-    return '⭐'.repeat(rating);
-  };
-  
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-  
+
   if (loading && !reviews.length) {
     return <div style={{ textAlign: 'center', padding: '2rem' }}>Loading reviews...</div>;
   }
-  
+
   return (
     <div className="product-reviews" style={{ marginTop: '2rem' }}>
       <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
         Customer Reviews {summary?.total_reviews > 0 && `(${summary.total_reviews})`}
       </h3>
-      
-      {/* Review Summary */}
+
       {summary && (
         <div className="review-summary" style={{
           background: 'var(--bg-white)',
@@ -107,41 +129,48 @@ const ProductReviews = ({ productId }) => {
           boxShadow: 'var(--shadow)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--primary-pink)' }}>
+            <div style={{ textAlign: 'center', minWidth: '100px' }}>
+              <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--primary-pink)', lineHeight: 1 }}>
                 {summary.average_rating.toFixed(1)}
               </div>
-              <div style={{ fontSize: '1.5rem' }}>{renderStars(Math.round(summary.average_rating))}</div>
-              <div style={{ color: '#888', fontSize: '0.9rem' }}>
+              <div style={{ marginTop: '0.4rem' }}>{renderStars(summary.average_rating, 18)}</div>
+              <div style={{ color: '#888', fontSize: '0.9rem', marginTop: '0.25rem' }}>
                 {summary.total_reviews} {summary.total_reviews === 1 ? 'review' : 'reviews'}
               </div>
             </div>
-            
+
             <div style={{ flex: 1, minWidth: '200px' }}>
-              {[5, 4, 3, 2, 1].map((star) => (
-                <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                  <span style={{ width: '40px' }}>{star} star</span>
-                  <div style={{
-                    flex: 1,
-                    height: '8px',
-                    background: '#eee',
-                    borderRadius: '4px',
-                    overflow: 'hidden',
-                  }}>
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = summary.rating_breakdown[star] || 0;
+                const pct = summary.total_reviews > 0 ? (count / summary.total_reviews) * 100 : 0;
+                return (
+                  <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', width: '52px', flexShrink: 0, fontSize: '0.85rem', color: 'var(--text-dark)' }}>
+                      {star}
+                      <StarSvg filled size={13} />
+                    </span>
                     <div style={{
-                      width: `${summary.total_reviews > 0 ? (summary.rating_breakdown[star] / summary.total_reviews) * 100 : 0}%`,
-                      height: '100%',
-                      background: 'var(--primary-pink)',
-                      transition: 'width 0.3s',
-                    }} />
+                      flex: 1,
+                      height: '8px',
+                      background: '#eee',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        width: `${pct}%`,
+                        height: '100%',
+                        background: 'var(--primary-pink)',
+                        transition: 'width 0.3s',
+                      }} />
+                    </div>
+                    <span style={{ width: '28px', textAlign: 'right', fontSize: '0.82rem', color: '#888', flexShrink: 0 }}>
+                      {count}
+                    </span>
                   </div>
-                  <span style={{ width: '30px', textAlign: 'right', fontSize: '0.85rem', color: '#888' }}>
-                    {summary.rating_breakdown[star] || 0}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            
+
             <div style={{ textAlign: 'center' }}>
               {summary.can_review ? (
                 <button
@@ -172,8 +201,7 @@ const ProductReviews = ({ productId }) => {
           </div>
         </div>
       )}
-      
-      {/* Write Review Form */}
+
       {showWriteForm && (
         <div className="write-review-form" style={{
           background: 'var(--bg-white)',
@@ -194,20 +222,17 @@ const ProductReviews = ({ productId }) => {
                     key={star}
                     type="button"
                     onClick={() => setRating(star)}
-                    style={{
-                      fontSize: '1.5rem',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      opacity: star <= rating ? 1 : 0.3,
-                    }}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                    aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                   >
-                    ⭐
+                    <StarSvg filled={star <= (hoverRating || rating)} size={28} />
                   </button>
                 ))}
               </div>
             </div>
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
                 Title (optional)
@@ -227,7 +252,7 @@ const ProductReviews = ({ productId }) => {
                 maxLength={100}
               />
             </div>
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
                 Your Review
@@ -252,7 +277,7 @@ const ProductReviews = ({ productId }) => {
                 {comment.length}/1000
               </div>
             </div>
-            
+
             <button
               type="submit"
               className="btn-primary"
@@ -264,8 +289,7 @@ const ProductReviews = ({ productId }) => {
           </form>
         </div>
       )}
-      
-      {/* Reviews List */}
+
       <div className="reviews-list">
         {reviews.length === 0 ? (
           <div style={{
@@ -293,7 +317,7 @@ const ProductReviews = ({ productId }) => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                 <div>
-                  <div style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                  <div style={{ marginBottom: '0.25rem' }}>
                     {renderStars(review.rating)}
                   </div>
                   {review.title && (
@@ -304,9 +328,9 @@ const ProductReviews = ({ productId }) => {
                   {formatDate(review.created_at)}
                 </div>
               </div>
-              
+
               <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>{review.comment}</p>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '0.9rem', color: '#888' }}>
                   By {review.user_name || review.user_phone}
@@ -316,7 +340,7 @@ const ProductReviews = ({ productId }) => {
                     </span>
                   )}
                 </div>
-                
+
                 <button
                   onClick={() => handleHelpful(review.id)}
                   style={{
