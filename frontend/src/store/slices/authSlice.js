@@ -77,7 +77,16 @@ export const register = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(user));
       return { access: access_token, refresh: refresh_token, user };
     } catch (error) {
-      return rejectWithValue(error.response?.data?.phone?.[0] || error.response?.data?.error || 'Registration failed');
+      const contentType = error.response?.headers?.['content-type'];
+      if (contentType && contentType.includes('text/html')) {
+        return rejectWithValue('Server error. Please try again later.');
+      }
+      const errorData = error.response?.data;
+      if (errorData) {
+        if (errorData.detail) return rejectWithValue(errorData.detail);
+        return rejectWithValue(errorData);
+      }
+      return rejectWithValue('Registration failed. Please try again.');
     }
   }
 );

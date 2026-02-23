@@ -278,6 +278,7 @@ const Checkout = () => {
   if (loading) return <PageLoader />;
 
   return (
+    <div className="container">
     <div className="checkout-container">
       <div className="checkout-form">
         <h2 style={{ marginBottom: '1.5rem' }}>Delivery Information</h2>
@@ -442,6 +443,7 @@ const Checkout = () => {
           <span>{formatPrice(computedTotal)}</span>
         </div>
       </div>
+    </div>
     </div>
   );
 };

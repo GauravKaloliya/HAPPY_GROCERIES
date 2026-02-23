@@ -5,17 +5,33 @@ import { productsAPI } from '../api/products';
 import { addToCart } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
+import { fetchReviewSummary, selectReviewSummary } from '../store/slices/reviewsSlice';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import ProductCard from '../components/ProductCard';
 import ProductReviews from '../components/ProductReviews';
 import useActivityLog from '../hooks/useActivityLog';
 
+const StarIcon = ({ filled }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill={filled ? '#f59e0b' : 'none'}
+    stroke="#f59e0b"
+    strokeWidth="1.5"
+    style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+  >
+    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+  </svg>
+);
+
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
+  const reviewSummary = useSelector((state) => selectReviewSummary(state, parseInt(id, 10)));
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -57,6 +73,9 @@ const ProductDetails = () => {
         if (productRes.data.name) {
           logProductView(id, productRes.data.name);
         }
+
+        // Fetch review summary to get actual reviews count
+        dispatch(fetchReviewSummary(productRes.data.id));
 
         // Check if product is in wishlist
         if (isAuthenticated) {
@@ -166,9 +185,10 @@ const ProductDetails = () => {
   };
 
   const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    return '⭐'.repeat(fullStars) + (hasHalfStar ? '⭐' : '');
+    const fullStars = Math.round(rating || 0);
+    return [1, 2, 3, 4, 5].map((i) => (
+      <StarIcon key={i} filled={i <= fullStars} />
+    ));
   };
 
   if (loading) return <PageLoader />;
@@ -236,9 +256,11 @@ const ProductDetails = () => {
               </div>
 
               <div className="product-rating" style={{ marginBottom: '0.25rem' }}>
-                {renderStars(product.rating)}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
+                  {renderStars(product.rating)}
+                </span>
                 <span style={{ color: 'var(--text-dark)', marginLeft: '0.5rem' }}>
-                  ({product.rating}) • {product.reviews_count || 0} reviews
+                  ({parseFloat(product.rating).toFixed(1)}) • {reviewSummary ? reviewSummary.total_reviews : product.reviews_count || 0} reviews
                 </span>
               </div>
 
@@ -337,7 +359,7 @@ const ProductDetails = () => {
               color: activeTab === 'reviews' ? 'var(--primary-pink)' : 'var(--text-dark)'
             }}
           >
-            Reviews ({product.reviews_count || 0})
+            Reviews ({reviewSummary ? reviewSummary.total_reviews : product.reviews_count || 0})
           </button>
         </div>
 
