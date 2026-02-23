@@ -6,12 +6,12 @@
 -- CATEGORIES (5 categories from legacy system)
 -- =====================================================
 
-INSERT INTO categories (name, description, emoji, created_at) VALUES
-    ('Fruits', 'Fresh fruits from local farms', '🍎', NOW()),
-    ('Vegetables', 'Fresh vegetables for a healthy diet', '🥕', NOW()),
-    ('Dairy', 'Dairy products including milk, cheese, and more', '🥛', NOW()),
-    ('Snacks', 'Delicious snacks for every mood', '🍪', NOW()),
-    ('Beverages', 'Refreshing drinks and beverages', '🧃', NOW())
+INSERT INTO categories (name, description, emoji, color, created_at) VALUES
+    ('Fruits', 'Fresh fruits from local farms', '🍎', 'var(--primary-pink)', NOW()),
+    ('Vegetables', 'Fresh vegetables for a healthy diet', '🥕', 'var(--primary-green)', NOW()),
+    ('Dairy', 'Dairy products including milk, cheese, and more', '🥛', 'var(--primary-blue)', NOW()),
+    ('Snacks', 'Delicious snacks for every mood', '🍪', 'var(--primary-orange)', NOW()),
+    ('Beverages', 'Refreshing drinks and beverages', '🧃', 'var(--primary-purple)', NOW())
 ON CONFLICT (name) DO NOTHING;
 
 -- =====================================================
@@ -39,7 +39,7 @@ VALUES
     (34, 'Avocado', 200.00, 1, '🥑', 4.3, 89, 12, 0, 'Creamy ripe avocados, perfect for toast, salads, and healthy fats.', TRUE, NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
--- VEGETABLES (14 products)
+-- VEGETABLES (16 products)
 INSERT INTO products (id, name, price, category_id, emoji, rating, reviews_count, stock, discount_percent, description, is_active, created_at, updated_at)
 VALUES
     (7, 'Carrot', 30.00, 2, '🥕', 4.0, 44, 35, 20, 'Crunchy carrots rich in beta-carotene. Ideal for salads, soups, and healthy snacking.', TRUE, NOW(), NOW()),
@@ -196,18 +196,60 @@ VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
+-- SITE SETTINGS
+-- =====================================================
+
+INSERT INTO site_settings (id, tax_rate, standard_delivery_charge, express_delivery_charge, free_delivery_threshold, site_name, site_currency, created_at, updated_at)
+VALUES (
+    1,
+    0.0800,
+    40.00,
+    50.00,
+    500.00,
+    'HappyGroceries',
+    '₹',
+    NOW(),
+    NOW()
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- =====================================================
+-- SORT OPTIONS
+-- =====================================================
+
+INSERT INTO sort_options (value, label, "order", is_active) VALUES
+    ('popular', 'Most Popular', 1, TRUE),
+    ('price_low', 'Price: Low to High', 2, TRUE),
+    ('price_high', 'Price: High to Low', 3, TRUE),
+    ('rating', 'Highest Rated', 4, TRUE),
+    ('newest', 'Newest First', 5, TRUE)
+ON CONFLICT (value) DO NOTHING;
+
+-- =====================================================
 -- SUMMARY OF SEED DATA
 -- =====================================================
 -- Categories: 5 (Fruits, Vegetables, Dairy, Snacks, Beverages)
 -- Products: 74 total
 --   - Fruits: 16 products (ID 1-6, 25-34)
---   - Vegetables: 14 products (ID 7-12, 35-44)
+--   - Vegetables: 16 products (ID 7-12, 35-44)
 --   - Dairy: 14 products (ID 13-16, 45-54)
 --   - Snacks: 14 products (ID 17-20, 55-64)
 --   - Beverages: 16 products (ID 21-24, 65-74)
 -- Coupons: 5 (SAVE20, FRESH15, WELCOME50, DAIRY10, SNACKS25)
+-- Site Settings: Default tax rate 8%, standard delivery ₹40, express ₹50
+-- Sort Options: 5 options (popular, price_low, price_high, rating, newest)
 --
 -- New tables (empty, created via schema.sql):
+--   - combos (product bundles with discounts)
+--   - combos_products (many-to-many relationship for combos)
+--   - carts (shopping carts)
+--   - cart_items (individual cart items)
+--   - orders (customer orders)
+--   - order_items (individual order items)
+--   - coupon_usages (tracks coupon usage per user)
+--   - wishlist_items (user wishlist)
+--   - product_reviews (product reviews and ratings)
+--   - review_helpful_votes (helpful votes on reviews)
 --   - activity_logs (tracks user activities)
 --   - contact_messages (stores contact form submissions)
 -- =====================================================
