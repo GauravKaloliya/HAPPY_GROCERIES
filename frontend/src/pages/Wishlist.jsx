@@ -95,6 +95,7 @@ const Wishlist = () => {
   }
 
   return (
+    <div className="container">
     <div className="wishlist-container">
       <h2 className="section-title">💝 My Wishlist</h2>
       
@@ -154,6 +155,7 @@ const Wishlist = () => {
           Continue Shopping →
         </Link>
       </div>
+    </div>
     </div>
   );
 };
