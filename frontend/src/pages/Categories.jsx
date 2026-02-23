@@ -14,6 +14,9 @@ const Categories = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   useActivityLog('page_view', { section: 'categories' });
 
@@ -40,20 +43,72 @@ const Categories = () => {
 
   // Fetch products when category changes
   useEffect(() => {
-    const fetchProducts = async () => {
-      setProductsLoading(true);
-      setProducts([]); // Clear products before fetching new ones
+    const fetchProducts = async (page = 1, append = false) => {
+      if (!append) {
+        setProductsLoading(true);
+        setProducts([]); // Clear products before fetching new ones
+      }
       try {
-        const productsRes = await productsAPI.getAll(selectedCategory === 'All' ? {} : { category: selectedCategory });
-        setProducts(productsRes.data.results || productsRes.data);
+        const params = {
+          page: page,
+          page_size: 10,
+        };
+        if (selectedCategory !== 'All') {
+          params.category = selectedCategory;
+        }
+        const productsRes = await productsAPI.getAll(params);
+        const newProducts = productsRes.data.results || productsRes.data;
+        const count = productsRes.data.count || productsRes.data.length;
+        
+        if (append) {
+          setProducts(prev => {
+            setHasMore(newProducts.length === 10 && (prev.length + newProducts.length) < count);
+            return [...prev, ...newProducts];
+          });
+        } else {
+          setProducts(newProducts);
+          setHasMore(newProducts.length === 10 && newProducts.length < count);
+        }
+        setTotalCount(count);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
         setProductsLoading(false);
       }
     };
-    fetchProducts();
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchProducts(1, false);
   }, [selectedCategory]);
+
+  const handleLoadMore = async () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    
+    setProductsLoading(true);
+    try {
+      const params = {
+        page: nextPage,
+        page_size: 10,
+      };
+      if (selectedCategory !== 'All') {
+        params.category = selectedCategory;
+      }
+      const productsRes = await productsAPI.getAll(params);
+      const newProducts = productsRes.data.results || productsRes.data;
+      const count = productsRes.data.count || productsRes.data.length;
+      
+      setProducts(prev => {
+        setHasMore(newProducts.length === 10 && (prev.length + newProducts.length) < count);
+        return [...prev, ...newProducts];
+      });
+      setTotalCount(count);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
 
   const getCategoryEmoji = (name) => {
     const emojis = {
@@ -128,11 +183,24 @@ const Categories = () => {
           <p>Loading products...</p>
         </div>
       ) : products.length > 0 ? (
-        <div className="products-grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <div className="products-grid">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button
+                onClick={handleLoadMore}
+                className="btn-primary"
+                style={{ padding: '0.75rem 2rem' }}
+              >
+                View More Products
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="empty-state">
           <div className="empty-state-icon">📦</div>

@@ -5,9 +5,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, F, ExpressionWrapper, DecimalField, Value
 
-from .models import Category, Product
+from .models import Category, Product, Combo
 from .serializers import (
-    CategorySerializer, ProductSerializer, ProductListSerializer
+    CategorySerializer, ProductSerializer, ProductListSerializer, ComboSerializer
 )
 
 
@@ -112,3 +112,20 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
                 {'error': 'Product not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class ComboViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for product combos."""
+
+    queryset = Combo.objects.filter(is_active=True, is_deleted=False).prefetch_related('products')
+    serializer_class = ComboSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Only return combos where all products are active
+        for combo in queryset:
+            active_products = combo.products.filter(is_active=True, is_deleted=False)
+            if active_products.count() < 2:
+                queryset = queryset.exclude(id=combo.id)
+        return queryset

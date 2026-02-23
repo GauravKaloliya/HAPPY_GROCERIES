@@ -17,6 +17,8 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const sortOptions = useSelector(selectSortOptions);
 
   // Filter states
@@ -49,8 +51,10 @@ const Shop = () => {
     }
   }, [categoriesLoaded]);
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
+  const fetchProducts = useCallback(async (page = 1, append = false) => {
+    if (!append) {
+      setLoading(true);
+    }
     try {
       const params = {
         search: searchQuery,
@@ -59,6 +63,8 @@ const Shop = () => {
         min_price: minPrice,
         max_price: maxPrice,
         in_stock: inStock ? 'true' : undefined,
+        page: page,
+        page_size: 10,
       };
 
       // Remove empty params
@@ -67,9 +73,19 @@ const Shop = () => {
       });
 
       const productsRes = await productsAPI.getAll(params);
+      const newProducts = productsRes.data.results || productsRes.data;
+      const count = productsRes.data.count || productsRes.data.length;
 
-      setProducts(productsRes.data.results || productsRes.data);
-      setTotalCount(productsRes.data.count || productsRes.data.length);
+      if (append) {
+        setProducts(prev => {
+          setHasMore(newProducts.length === 10 && (prev.length + newProducts.length) < count);
+          return [...prev, ...newProducts];
+        });
+      } else {
+        setProducts(newProducts);
+        setHasMore(newProducts.length === 10 && newProducts.length < count);
+      }
+      setTotalCount(count);
 
       // Log search/filter activity
       if (searchQuery) {
@@ -91,10 +107,18 @@ const Shop = () => {
     }
   }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock, logCustomActivity]);
 
+  const handleLoadMore = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchProducts(nextPage, true);
+  };
+
   // Debounce search to reduce API calls
   useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
     const timer = setTimeout(() => {
-      fetchProducts();
+      fetchProducts(1, false);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -287,11 +311,24 @@ const Shop = () => {
           </div>
 
           {products.length > 0 ? (
-            <div className="products-grid">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="products-grid">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {hasMore && (
+                <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                  <button
+                    onClick={handleLoadMore}
+                    className="btn-primary"
+                    style={{ padding: '0.75rem 2rem' }}
+                  >
+                    View More Products
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="empty-state">
               <div className="empty-state-icon">🔍</div>
