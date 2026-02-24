@@ -8,8 +8,8 @@ class Category(models.Model):
     """Product category model."""
     
     name = models.CharField(max_length=50, unique=True, db_index=True)
-    description = models.TextField(blank=True, default='')
-    emoji = models.CharField(max_length=10, blank=True, default='')
+    description = models.TextField(default='')
+    emoji = models.CharField(max_length=10, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     
     # Soft delete fields

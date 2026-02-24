@@ -35,7 +35,7 @@ class ProductReview(models.Model):
         choices=RATING_CHOICES,
         help_text='Rating from 1 to 5 stars'
     )
-    title = models.CharField(max_length=100, blank=True)
+    title = models.CharField(max_length=100, default='')
     comment = models.TextField(max_length=1000, help_text='Review feedback')
     
     # Moderation fields

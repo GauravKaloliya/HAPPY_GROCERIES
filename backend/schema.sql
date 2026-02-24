@@ -522,6 +522,78 @@ CREATE INDEX contact_messages_status_idx ON contact_messages(status);
 CREATE INDEX contact_messages_created_idx ON contact_messages(created_at);
 
 -- =====================================================
+-- PRODUCT REVIEWS
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS product_reviews (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    title VARCHAR(100) NOT NULL DEFAULT '',
+    comment VARCHAR(1000) NOT NULL,
+    is_approved BOOLEAN NOT NULL DEFAULT TRUE,
+    is_verified_purchase BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(user_id, product_id, order_id)
+);
+
+CREATE INDEX product_reviews_user_idx ON product_reviews(user_id);
+CREATE INDEX product_reviews_product_idx ON product_reviews(product_id);
+CREATE INDEX product_reviews_product_approved_idx ON product_reviews(product_id, is_approved, is_deleted);
+CREATE INDEX product_reviews_user_deleted_idx ON product_reviews(user_id, is_deleted);
+CREATE INDEX product_reviews_rating_idx ON product_reviews(rating);
+
+-- =====================================================
+-- REVIEW HELPFUL VOTES
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS review_helpful_votes (
+    id BIGSERIAL PRIMARY KEY,
+    review_id BIGINT NOT NULL REFERENCES product_reviews(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    UNIQUE(review_id, user_id)
+);
+
+CREATE INDEX review_helpful_votes_review_idx ON review_helpful_votes(review_id);
+CREATE INDEX review_helpful_votes_user_idx ON review_helpful_votes(user_id);
+
+-- =====================================================
+-- SITE SETTINGS
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS site_settings (
+    id BIGSERIAL PRIMARY KEY,
+    tax_rate DECIMAL(5, 4) NOT NULL DEFAULT 0.0800,
+    standard_delivery_charge DECIMAL(10, 2) NOT NULL DEFAULT 40.00,
+    express_delivery_charge DECIMAL(10, 2) NOT NULL DEFAULT 50.00,
+    free_delivery_threshold DECIMAL(10, 2) NOT NULL DEFAULT 500.00,
+    site_name VARCHAR(100) NOT NULL DEFAULT 'HappyGroceries',
+    site_currency VARCHAR(10) NOT NULL DEFAULT '₹',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- =====================================================
+-- SORT OPTIONS
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS sort_options (
+    id SERIAL PRIMARY KEY,
+    value VARCHAR(50) NOT NULL UNIQUE,
+    label VARCHAR(100) NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX sort_options_order_idx ON sort_options("order", label);
+
+-- =====================================================
 -- SEED DATA SUMMARY
 -- =====================================================
 -- Total Categories: 5
@@ -545,6 +617,12 @@ CREATE INDEX contact_messages_created_idx ON contact_messages(created_at);
 --   - DAIRY10 (10% off on dairy products)
 --   - SNACKS25 (₹25 off snacks orders)
 --
+-- Additional Tables:
+--   - product_reviews: User reviews and ratings for products
+--   - review_helpful_votes: Track helpful votes on reviews
+--   - site_settings: Site-wide configuration settings
+--   - sort_options: Dynamic sort options for products
+--
 -- New in this version:
 --   - Wishlist items table
 --   - first_order field in users table
@@ -552,6 +630,9 @@ CREATE INDEX contact_messages_created_idx ON contact_messages(created_at);
 --   - Additional indexes for soft delete queries
 --   - Activity logs table for tracking user actions
 --   - Contact messages table for support requests
+--   - Product reviews and ratings system
+--   - Site settings configuration
+--   - Sort options for product listing
 --
 -- Note: This seed data exactly matches the legacy system (js/search.js)
 -- All product IDs, prices, ratings, descriptions, and discounts are preserved
