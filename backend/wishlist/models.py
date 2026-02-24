@@ -19,8 +19,8 @@ class WishlistItem(models.Model):
         indexes = [
             models.Index(fields=['user'], name='wishlist_items_user_idx'),
             models.Index(fields=['product'], name='wishlist_items_product_idx'),
-            models.Index(fields=['user', 'is_deleted'], name='wishlist_items_user_is_deleted_idx'),
-            models.Index(fields=['product', 'is_deleted'], name='wishlist_items_product_is_deleted_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='wishlist_items_user_is_del_idx'),
+            models.Index(fields=['product', 'is_deleted'], name='wishlist_items_prod_is_del_idx'),
         ]
 
     def __str__(self):

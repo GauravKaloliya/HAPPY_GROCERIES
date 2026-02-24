@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 CREATE INDEX products_name_idx ON products(name);
-CREATE INDEX products_category_is_active_idx ON products(category_id, is_active);
+CREATE INDEX products_cat_is_active_idx ON products(category_id, is_active);
 CREATE INDEX products_brand_id_idx ON products(brand_id);
 CREATE INDEX products_unit_idx ON products(unit);
 CREATE INDEX products_mrp_idx ON products(mrp);
@@ -249,9 +249,9 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX order_items_order_idx ON order_items(order_id);
 CREATE INDEX order_items_product_idx ON order_items(product_id);
-CREATE INDEX order_items_order_is_deleted_idx ON order_items(order_id, is_deleted);
+CREATE INDEX order_items_order_is_del_idx ON order_items(order_id, is_deleted);
 CREATE INDEX order_items_is_deleted_idx ON order_items(is_deleted);
-CREATE INDEX order_items_applied_discount_idx ON order_items(applied_discount_amount);
+CREATE INDEX order_items_applied_disc_idx ON order_items(applied_discount_amount);
 
 -- =====================================================
 -- COUPONS
@@ -303,8 +303,8 @@ CREATE TABLE IF NOT EXISTS coupon_usages (
 CREATE INDEX coupon_usages_user_idx ON coupon_usages(user_id);
 CREATE INDEX coupon_usages_coupon_idx ON coupon_usages(coupon_id);
 CREATE INDEX coupon_usages_order_idx ON coupon_usages(order_id);
-CREATE INDEX coupon_usages_user_is_deleted_idx ON coupon_usages(user_id, is_deleted);
-CREATE INDEX coupon_usages_coupon_is_deleted_idx ON coupon_usages(coupon_id, is_deleted);
+CREATE INDEX coupon_usages_user_is_del_idx ON coupon_usages(user_id, is_deleted);
+CREATE INDEX coup_usages_coupon_is_del_idx ON coupon_usages(coupon_id, is_deleted);
 CREATE INDEX coupon_usages_is_deleted_idx ON coupon_usages(is_deleted);
 
 -- =====================================================
@@ -323,8 +323,8 @@ CREATE TABLE IF NOT EXISTS wishlist_items (
 
 CREATE INDEX wishlist_items_user_idx ON wishlist_items(user_id);
 CREATE INDEX wishlist_items_product_idx ON wishlist_items(product_id);
-CREATE INDEX wishlist_items_user_is_deleted_idx ON wishlist_items(user_id, is_deleted);
-CREATE INDEX wishlist_items_product_is_deleted_idx ON wishlist_items(product_id, is_deleted);
+CREATE INDEX wishlist_items_user_is_del_idx ON wishlist_items(user_id, is_deleted);
+CREATE INDEX wishlist_items_prod_is_del_idx ON wishlist_items(product_id, is_deleted);
 
 -- =====================================================
 -- PRODUCT REVIEWS
@@ -350,8 +350,8 @@ CREATE TABLE IF NOT EXISTS product_reviews (
 CREATE INDEX product_reviews_user_idx ON product_reviews(user_id);
 CREATE INDEX product_reviews_product_idx ON product_reviews(product_id);
 CREATE INDEX product_reviews_order_idx ON product_reviews(order_id);
-CREATE INDEX product_reviews_product_approved_deleted_idx ON product_reviews(product_id, is_approved, is_deleted);
-CREATE INDEX product_reviews_user_is_deleted_idx ON product_reviews(user_id, is_deleted);
+CREATE INDEX prod_reviews_prod_app_del_idx ON product_reviews(product_id, is_approved, is_deleted);
+CREATE INDEX prod_reviews_user_is_del_idx ON product_reviews(user_id, is_deleted);
 CREATE INDEX product_reviews_rating_idx ON product_reviews(rating);
 
 -- =====================================================
@@ -366,7 +366,7 @@ CREATE TABLE IF NOT EXISTS review_helpful_votes (
     UNIQUE(review_id, user_id)
 );
 
-CREATE INDEX review_helpful_votes_review_idx ON review_helpful_votes(review_id);
+CREATE INDEX review_helpful_votes_rev_idx ON review_helpful_votes(review_id);
 CREATE INDEX review_helpful_votes_user_idx ON review_helpful_votes(user_id);
 
 -- =====================================================
@@ -391,7 +391,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 );
 
 CREATE INDEX activity_logs_user_created_idx ON activity_logs(user_id, created_at);
-CREATE INDEX activity_logs_action_created_idx ON activity_logs(action, created_at);
+CREATE INDEX act_logs_action_created_idx ON activity_logs(action, created_at);
 CREATE INDEX activity_logs_page_idx ON activity_logs(page);
 CREATE INDEX activity_logs_session_id_idx ON activity_logs(session_id);
 CREATE INDEX activity_logs_user_idx ON activity_logs(user_id);

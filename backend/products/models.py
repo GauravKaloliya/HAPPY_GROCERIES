@@ -134,7 +134,7 @@ class Product(models.Model):
         db_table = 'products'
         indexes = [
             models.Index(fields=['name'], name='products_name_idx'),
-            models.Index(fields=['category', 'is_active'], name='products_category_is_active_idx'),
+            models.Index(fields=['category', 'is_active'], name='products_cat_is_active_idx'),
             models.Index(fields=['brand'], name='products_brand_id_idx'),
             models.Index(fields=['unit'], name='products_unit_idx'),
             models.Index(fields=['mrp'], name='products_mrp_idx'),
