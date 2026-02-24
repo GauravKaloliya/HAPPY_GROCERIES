@@ -85,7 +85,7 @@ const Orders = () => {
                         {item.discount_percent > 0 && (
                           <span className="order-item-discount">
                             -{item.discount_percent}% off
-                            {item.applied_discount_amount > 0 && ` (${formatPrice(item.applied_discount_amount)}`)}
+                            {item.applied_discount_amount > 0 && ` (${formatPrice(item.applied_discount_amount)})`}
                           </span>
                         )}
                       </div>
