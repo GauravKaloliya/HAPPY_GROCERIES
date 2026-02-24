@@ -81,8 +81,8 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     def categories(self, request):
         """Get all unique categories from products."""
         categories = Category.objects.filter(
-            products__is_active=True,
-            products__is_deleted=False,
+            product__is_active=True,
+            product__is_deleted=False,
             is_deleted=False
         ).distinct()
         serializer = CategorySerializer(categories, many=True)

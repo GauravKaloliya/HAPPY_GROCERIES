@@ -19,6 +19,12 @@ class SiteSettings(models.Model):
     def __str__(self):
         return self.site_name
 
+    @classmethod
+    def get_settings(cls):
+        """Get or create site settings singleton."""
+        settings, _ = cls.objects.get_or_create(pk=1)
+        return settings
+
     def save(self, *args, **kwargs):
         # Ensure only one instance exists
         if not self.pk and SiteSettings.objects.exists():
