@@ -96,6 +96,17 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-dark);
     text-decoration: none;
     font-family: 'Comic Neue', cursive;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-logo-icon {
+    flex-shrink: 0;
+}
+
+.nav-logo-text {
+    letter-spacing: -0.01em;
 }
 
 .nav-menu {
@@ -455,9 +466,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .product-card:hover {
-    transform: translateY(-5px);
     box-shadow: var(--shadow-hover);
-    animation: glow 1s ease-in-out;
 }
 
 .product-card-link {

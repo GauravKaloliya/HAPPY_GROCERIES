@@ -14,6 +14,9 @@ const Settings = () => {
 
   const [activeSection, setActiveSection] = useState('account');
   const [loading, setLoading] = useState(false);
+  const [profileErrors, setProfileErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [fetchingLocation, setFetchingLocation] = useState(false);
 
   useActivityLog('page_view', { section: 'settings' });
 
@@ -94,8 +97,73 @@ const Settings = () => {
     );
   };
 
+  const validateProfileForm = () => {
+    const errors = {};
+    if (!profileForm.first_name.trim()) {
+      errors.first_name = 'First name is required';
+    }
+    if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email)) {
+      errors.email = 'Enter a valid email address';
+    }
+    return errors;
+  };
+
+  const validatePasswordForm = () => {
+    const errors = {};
+    if (!passwordForm.currentPassword) {
+      errors.currentPassword = 'Current password is required';
+    }
+    if (!passwordForm.newPassword) {
+      errors.newPassword = 'New password is required';
+    } else if (passwordForm.newPassword.length < 8) {
+      errors.newPassword = 'Password must be at least 8 characters';
+    }
+    if (!passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your new password';
+    } else if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    return errors;
+  };
+
+  const handleFetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          const addr = data.display_name || `${latitude}, ${longitude}`;
+          setProfileForm((prev) => ({ ...prev, address: addr }));
+          toast.success('Location fetched! ✅');
+        } catch {
+          toast.error('Failed to fetch location details');
+        } finally {
+          setFetchingLocation(false);
+        }
+      },
+      () => {
+        toast.error('Unable to retrieve your location');
+        setFetchingLocation(false);
+      }
+    );
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+    const errors = validateProfileForm();
+    if (Object.keys(errors).length > 0) {
+      setProfileErrors(errors);
+      return;
+    }
+    setProfileErrors({});
     setLoading(true);
 
     try {
@@ -112,15 +180,12 @@ const Settings = () => {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match');
+    const errors = validatePasswordForm();
+    if (Object.keys(errors).length > 0) {
+      setPasswordErrors(errors);
       return;
     }
-
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
+    setPasswordErrors({});
 
     setLoading(true);
     try {
@@ -223,6 +288,9 @@ const Settings = () => {
                         placeholder="Enter your first name"
                         style={getFieldBorderStyle('first_name')}
                       />
+                      {profileErrors.first_name && (
+                        <div className="error-message show">{profileErrors.first_name}</div>
+                      )}
                     </div>
                     <div className="form-group">
                       <label htmlFor="last_name">Last Name</label>
@@ -247,18 +315,46 @@ const Settings = () => {
                       placeholder="Enter your email"
                       style={getFieldBorderStyle('email')}
                     />
+                    {profileErrors.email && (
+                      <div className="error-message show">{profileErrors.email}</div>
+                    )}
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="phone">Phone Number</label>
                     <input
                       type="tel"
+                      inputMode="numeric"
                       id="phone"
                       value={profileForm.phone}
                       disabled
                       style={{ background: 'var(--bg-light)', opacity: 0.7 }}
                     />
                     <small style={{ color: '#888', marginTop: '0.25rem', display: 'block' }}>Phone number cannot be changed</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="address">Address</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <input
+                        type="text"
+                        id="address"
+                        value={profileForm.address || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
+                        placeholder="Enter your address"
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleFetchLocation}
+                        disabled={fetchingLocation}
+                        className="btn-secondary"
+                        style={{ whiteSpace: 'nowrap', minWidth: 'unset', padding: '0.6rem 0.8rem', fontSize: '0.85rem' }}
+                        title="Use my current location"
+                      >
+                        {fetchingLocation ? '⌛' : '📍'}
+                      </button>
+                    </div>
                   </div>
 
                   <button
@@ -294,6 +390,9 @@ const Settings = () => {
                         {passwordVisibility.currentPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
+                    {passwordErrors.currentPassword && (
+                      <div className="error-message show">{passwordErrors.currentPassword}</div>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -304,7 +403,7 @@ const Settings = () => {
                         id="newPassword"
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        placeholder="New password (min 6 characters)"
+                        placeholder="New password (min 8 characters)"
                       />
                       <button
                         type="button"
@@ -314,6 +413,9 @@ const Settings = () => {
                         {passwordVisibility.newPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
+                    {passwordErrors.newPassword && (
+                      <div className="error-message show">{passwordErrors.newPassword}</div>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -334,6 +436,9 @@ const Settings = () => {
                         {passwordVisibility.confirmPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
+                    {passwordErrors.confirmPassword && (
+                      <div className="error-message show">{passwordErrors.confirmPassword}</div>
+                    )}
                   </div>
 
                   <button

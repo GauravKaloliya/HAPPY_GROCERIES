@@ -32,8 +32,8 @@ const About = () => {
   const team = [
     { name: 'Gaurav Kaloliya', role: 'Founder & CEO', emoji: '👨‍💼' },
     { name: 'Arpita Makwana', role: 'CTO', emoji: '👩‍💻' },
-    { name: 'Carol White', role: 'Customer Success', emoji: '👩‍💼' },
-    { name: 'David Brown', role: 'Delivery Manager', emoji: '👨‍🚚' },
+    { name: 'Priya Sharma', role: 'Customer Success', emoji: '👩‍💼' },
+    { name: 'Rajesh Patel', role: 'Delivery Manager', emoji: '👨‍🚚' },
   ];
 
   return (
@@ -59,8 +59,8 @@ const About = () => {
 
         <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Contact Us 📞</h3>
         <div className="contact-info">
-          <p>📍 123 Fresh Street, Green City, GC 12345</p>
-          <p>📞 +1 (555) 123-4567</p>
+          <p>📍 42 Market Lane, Ahmedabad, Gujarat 380001</p>
+          <p>📞 +91 98765 43210</p>
           <p>✉️ contact@happygroceries.shop</p>
           <p>🕒 Mon - Sat: 8AM - 10PM | Sunday: 9AM - 8PM</p>
         </div>

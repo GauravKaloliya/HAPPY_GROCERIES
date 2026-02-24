@@ -7,11 +7,14 @@ import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
+const COUPONS_PER_PAGE = 6;
+
 const Offers = () => {
   const [coupons, setCoupons] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const cartTotal = useSelector(selectCartSubtotal);
 
   useActivityLog('page_view', { section: 'offers' });
@@ -64,9 +67,21 @@ const Offers = () => {
     return Math.max(0, diffDays);
   };
 
-  const filteredCoupons = activeCategory === 'all' 
-    ? coupons 
-    : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
+  const filteredCoupons = (activeCategory === 'all'
+    ? coupons
+    : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage')
+  ).filter(c => c.is_active);
+
+  const totalPages = Math.ceil(filteredCoupons.length / COUPONS_PER_PAGE);
+  const paginatedCoupons = filteredCoupons.slice(
+    (currentPage - 1) * COUPONS_PER_PAGE,
+    currentPage * COUPONS_PER_PAGE
+  );
+
+  const handleCategoryChange = (cat) => {
+    setActiveCategory(cat);
+    setCurrentPage(1);
+  };
 
   if (loading) return <PageLoader />;
 
@@ -90,7 +105,7 @@ const Offers = () => {
       {/* Category Filter */}
       <div className="offers-category-filter">
         <button
-          onClick={() => setActiveCategory('all')}
+          onClick={() => handleCategoryChange('all')}
           className={`offers-category-button ${activeCategory === 'all' ? 'active' : ''}`}
         >
           All Coupons
@@ -98,7 +113,7 @@ const Offers = () => {
         {categories.map((cat) => (
           <button
             key={cat.id || cat.name}
-            onClick={() => setActiveCategory(cat.name)}
+            onClick={() => handleCategoryChange(cat.name)}
             className={`offers-category-button ${activeCategory === cat.name ? 'active' : ''}`}
           >
             {cat.name}
@@ -115,7 +130,7 @@ const Offers = () => {
         </div>
       ) : (
         <div className="coupons-list">
-          {filteredCoupons.filter(c => c.is_active).map((coupon) => {
+          {paginatedCoupons.map((coupon) => {
             const eligibility = getEligibilityStatus(coupon);
             const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
             const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
@@ -188,6 +203,38 @@ const Offers = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', margin: '1.5rem 0' }}>
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="btn-secondary"
+            style={{ minWidth: 'unset', padding: '0.5rem 1rem' }}
+          >
+            ← Prev
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={currentPage === page ? 'btn-primary' : 'btn-secondary'}
+              style={{ minWidth: 'unset', padding: '0.5rem 0.9rem' }}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="btn-secondary"
+            style={{ minWidth: 'unset', padding: '0.5rem 1rem' }}
+          >
+            Next →
+          </button>
         </div>
       )}
 

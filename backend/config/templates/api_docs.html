@@ -331,6 +331,18 @@
                         <td>Required</td>
                         <td>Update the current password.</td>
                     </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/check-phone/</td>
+                        <td>Public</td>
+                        <td>Check if a phone number is already registered. Returns <code>{"exists": true/false}</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/check-email/</td>
+                        <td>Public</td>
+                        <td>Check if an email address is already registered. Returns <code>{"exists": true/false}</code>.</td>
+                    </tr>
                 </tbody>
             </table>
             <p><strong>Login example</strong></p>

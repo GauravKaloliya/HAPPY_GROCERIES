@@ -8,6 +8,8 @@ import { selectSortOptions } from '../store/slices/configSlice';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
+const PRODUCTS_PER_PAGE = 12;
+
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { logCustomActivity } = useActivityLog('page_view', { section: 'shop' });
@@ -16,6 +18,7 @@ const Shop = () => {
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const sortOptions = useSelector(selectSortOptions);
 
@@ -70,6 +73,7 @@ const Shop = () => {
 
       setProducts(productsRes.data.results || productsRes.data);
       setTotalCount(productsRes.data.count || productsRes.data.length);
+      setCurrentPage(1);
 
       // Log search/filter activity
       if (searchQuery) {
@@ -121,7 +125,14 @@ const Shop = () => {
     setMinPrice('');
     setMaxPrice('');
     setInStock(false);
+    setCurrentPage(1);
   };
+
+  const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * PRODUCTS_PER_PAGE,
+    currentPage * PRODUCTS_PER_PAGE
+  );
 
   const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy || minPrice || maxPrice || inStock;
 
@@ -287,11 +298,43 @@ const Shop = () => {
           </div>
 
           {products.length > 0 ? (
-            <div className="products-grid">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="products-grid">
+                {paginatedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '2rem' }}>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="btn-secondary"
+                    style={{ minWidth: 'unset', padding: '0.5rem 1rem' }}
+                  >
+                    ← Prev
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={currentPage === page ? 'btn-primary' : 'btn-secondary'}
+                      style={{ minWidth: 'unset', padding: '0.5rem 0.9rem' }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="btn-secondary"
+                    style={{ minWidth: 'unset', padding: '0.5rem 1rem' }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="empty-state">
               <div className="empty-state-icon">🔍</div>

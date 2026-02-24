@@ -5,14 +5,41 @@ from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user profile data."""
-    
+
+    order_count = serializers.SerializerMethodField()
+    wishlist_count = serializers.SerializerMethodField()
+    coupon_count = serializers.SerializerMethodField()
+
+    def get_order_count(self, obj):
+        return obj.orders.filter(is_deleted=False).count()
+
+    def get_wishlist_count(self, obj):
+        return obj.wishlist_items.filter(is_deleted=False).count()
+
+    def get_coupon_count(self, obj):
+        from coupons.models import Coupon
+        from django.utils import timezone
+        from django.db.models import Q, F
+        now = timezone.now()
+        return Coupon.objects.filter(
+            is_active=True,
+            is_deleted=False,
+        ).filter(
+            Q(valid_from__isnull=True) | Q(valid_from__lte=now)
+        ).filter(
+            Q(valid_until__isnull=True) | Q(valid_until__gte=now)
+        ).exclude(
+            Q(usage_limit__isnull=False) & Q(usage_count__gte=F('usage_limit'))
+        ).count()
+
     class Meta:
         model = User
         fields = [
             'id', 'phone', 'email', 'first_name', 'last_name',
-            'avatar', 'is_verified', 'first_order', 'created_at'
+            'avatar', 'is_verified', 'first_order', 'created_at',
+            'order_count', 'wishlist_count', 'coupon_count',
         ]
-        read_only_fields = ['id', 'created_at', 'is_verified']
+        read_only_fields = ['id', 'created_at', 'is_verified', 'order_count', 'wishlist_count', 'coupon_count']
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -69,9 +96,5 @@ class LoginSerializer(serializers.Serializer):
         
         if not phone or not password:
             raise serializers.ValidationError("Phone and password are required")
-        
-        # Check if user exists
-        if not User.objects.filter(phone=phone).exists():
-            raise serializers.ValidationError("Invalid credentials")
         
         return data

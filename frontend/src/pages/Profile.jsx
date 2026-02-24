@@ -18,6 +18,7 @@ const Profile = () => {
     phone: '',
     address: '',
   });
+  const [formErrors, setFormErrors] = useState({});
 
   useActivityLog('page_view', { section: 'profile' });
 
@@ -25,7 +26,6 @@ const Profile = () => {
     dispatch(fetchProfile());
   }, [dispatch]);
 
-  // Sync form data when user data changes (but not during editing)
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (user && !editing) {
@@ -39,16 +39,57 @@ const Profile = () => {
   }, [user, editing]);
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      const numeric = value.replace(/\D/g, '').slice(0, 10);
+      setFormData({ ...formData, phone: numeric });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+    if (formErrors[name]) {
+      setFormErrors({ ...formErrors, [name]: '' });
+    }
+  };
+
+  const validateProfileForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) {
+      errors.name = 'Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters';
+    }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) {
+      errors.email = 'Enter a valid email address';
+    }
+    return errors;
   };
 
   const handleSave = async () => {
+    const errors = validateProfileForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
     try {
       await dispatch(updateProfile(formData)).unwrap();
       setEditing(false);
+      setFormErrors({});
       toast.success('Profile updated successfully! ✨');
     } catch {
       toast.error('Failed to update profile');
+    }
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setFormErrors({});
+    if (user) {
+      setFormData({
+        name: user.name || user.first_name + ' ' + user.last_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+      });
     }
   };
 
@@ -78,13 +119,18 @@ const Profile = () => {
             <div className="detail-item">
               <span className="detail-label">Full Name</span>
               {editing ? (
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="profile-edit-input"
-                />
+                <>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="profile-edit-input"
+                  />
+                  {formErrors.name && (
+                    <div className="error-message show">{formErrors.name}</div>
+                  )}
+                </>
               ) : (
                 <span className="detail-value">{formData.name || 'Not set'}</span>
               )}
@@ -92,13 +138,18 @@ const Profile = () => {
             <div className="detail-item">
               <span className="detail-label">Email</span>
               {editing ? (
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="profile-edit-input"
-                />
+                <>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="profile-edit-input"
+                  />
+                  {formErrors.email && (
+                    <div className="error-message show">{formErrors.email}</div>
+                  )}
+                </>
               ) : (
                 <span className="detail-value">{formData.email || 'Not set'}</span>
               )}
@@ -108,10 +159,14 @@ const Profile = () => {
               {editing ? (
                 <input
                   type="tel"
+                  inputMode="numeric"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
                   className="profile-edit-input"
+                  maxLength="10"
+                  disabled
+                  style={{ background: 'var(--bg-light)', opacity: 0.7 }}
                 />
               ) : (
                 <span className="detail-value">{formData.phone || 'Not set'}</span>
@@ -139,7 +194,7 @@ const Profile = () => {
                 <button onClick={handleSave} className="btn-submit" disabled={loading}>
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button onClick={() => setEditing(false)} className="btn-secondary">
+                <button onClick={handleCancel} className="btn-secondary">
                   Cancel
                 </button>
               </>
@@ -156,7 +211,7 @@ const Profile = () => {
             <div className="summary-icon">📦</div>
             <div className="summary-content">
               <h3>Total Orders</h3>
-              <div className="summary-value">{user.order_count || 0}</div>
+              <div className="summary-value">{user.order_count ?? 0}</div>
               <Link to="/orders" className="summary-link">View Orders →</Link>
             </div>
           </div>
@@ -165,7 +220,7 @@ const Profile = () => {
             <div className="summary-icon">❤️</div>
             <div className="summary-content">
               <h3>Wishlist</h3>
-              <div className="summary-value">{user.wishlist_count || 0}</div>
+              <div className="summary-value">{user.wishlist_count ?? 0}</div>
               <Link to="/wishlist" className="summary-link">View Wishlist →</Link>
             </div>
           </div>
@@ -174,7 +229,7 @@ const Profile = () => {
             <div className="summary-icon">🎁</div>
             <div className="summary-content">
               <h3>Coupons</h3>
-              <div className="summary-value">{user.coupon_count || 0}</div>
+              <div className="summary-value">{user.coupon_count ?? 0}</div>
               <Link to="/shop" className="summary-link">Shop Now →</Link>
             </div>
           </div>

@@ -72,22 +72,25 @@ class LoginView(APIView):
             )
         
         # Authenticate user
-        user = authenticate(username=phone, password=password)
+        db_user = user
+        authenticated_user = authenticate(username=phone, password=password)
         
-        if user is None:
+        if authenticated_user is None:
             # Increment failed login attempts
-            user.failed_login_attempts += 1
+            db_user.failed_login_attempts += 1
             
             # Lock account after 5 failed attempts
-            if user.failed_login_attempts >= 5:
-                user.locked_until = timezone.now() + timedelta(minutes=15)
+            if db_user.failed_login_attempts >= 5:
+                db_user.locked_until = timezone.now() + timedelta(minutes=15)
             
-            user.save()
+            db_user.save()
             
             return Response(
                 {'error': 'Incorrect password. Please try again.'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+        
+        user = authenticated_user
         
         # Reset failed login attempts on successful login
         user.failed_login_attempts = 0
@@ -247,3 +250,26 @@ class ChangePasswordView(APIView):
         user.save()
         
         return Response({'message': 'Password changed successfully'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_phone_exists(request):
+    """Check if a phone number is already registered."""
+    phone = request.data.get('phone', '').strip()
+    phone = ''.join(filter(str.isdigit, phone))
+    if not phone:
+        return Response({'error': 'Phone number is required'}, status=status.HTTP_400_BAD_REQUEST)
+    exists = User.objects.filter(phone=phone).exists()
+    return Response({'exists': exists})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_email_exists(request):
+    """Check if an email address is already registered."""
+    email = request.data.get('email', '').strip()
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+    exists = User.objects.filter(email__iexact=email).exists()
+    return Response({'exists': exists})
