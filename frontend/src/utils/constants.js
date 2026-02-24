@@ -8,7 +8,7 @@ export const DEFAULT_DELIVERY_CHARGE = 40;
 export const DEFAULT_EXPRESS_DELIVERY_CHARGE = 50;
 export const DEFAULT_FREE_DELIVERY_THRESHOLD = 500;
 
-// Note: Sort options are now fetched from /api/config/sort-options/
+// Note: Sort options are now fetched from /config/sort-options/
 // Use selectSortOptions from configSlice
 
 // DEPRECATED: This will be removed in future versions
