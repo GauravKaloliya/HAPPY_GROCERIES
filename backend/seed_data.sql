@@ -197,18 +197,18 @@ ON CONFLICT DO NOTHING;
 -- COUPONS (10 coupons)
 -- =====================================================
 
-INSERT INTO coupons (code, description, coupon_type, value, min_order_value, max_discount, applicable_categories, first_order_only, usage_limit, is_active, valid_from, valid_until, created_at, is_deleted)
+INSERT INTO coupons (code, description, coupon_type, value, min_order_value, max_discount, applicable_categories, first_order_only, usage_limit, usage_count, is_active, valid_from, valid_until, created_at, is_deleted)
 VALUES
-    ('SAVE20', '20% off orders above ₹500', 'percentage', 20.00, 500.00, 100.00, '[]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
-    ('FRESH15', '15% off on fruits & vegetables', 'category', 15.00, 200.00, 75.00, '["Fruits", "Vegetables"]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
-    ('WELCOME50', '₹50 off first order', 'fixed', 50.00, 300.00, 50.00, '[]'::JSONB, TRUE, 1, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
-    ('DAIRY10', '10% off on dairy products', 'category', 10.00, 150.00, 50.00, '["Dairy"]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
-    ('SNACKS25', '₹25 off snacks orders', 'fixed', 25.00, 100.00, 25.00, '["Snacks"]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
-    ('MEGA30', '30% off on orders above ₹1000', 'percentage', 30.00, 1000.00, 200.00, '[]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '6 months', NOW(), FALSE),
-    ('BEVERAGE15', '15% off on beverages', 'category', 15.00, 150.00, 60.00, '["Beverages"]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
-    ('ORGANIC20', '20% off organic products', 'category', 20.00, 300.00, 100.00, '["Fruits", "Vegetables", "Dairy"]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
-    ('FLASH10', 'Flat ₹100 off on orders above ₹800', 'fixed', 100.00, 800.00, 100.00, '[]'::JSONB, FALSE, 100, TRUE, NOW(), NOW() + INTERVAL '1 month', NOW(), FALSE),
-    ('VIP25', '25% off for VIP members', 'percentage', 25.00, 500.00, 150.00, '[]'::JSONB, FALSE, NULL, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE)
+    ('SAVE20', '20% off orders above ₹500', 'percentage', 20.00, 500.00, 100.00, '[]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
+    ('FRESH15', '15% off on fruits & vegetables', 'category', 15.00, 200.00, 75.00, '["Fruits", "Vegetables"]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
+    ('WELCOME50', '₹50 off first order', 'fixed', 50.00, 300.00, 50.00, '[]'::JSONB, TRUE, 1, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
+    ('DAIRY10', '10% off on dairy products', 'category', 10.00, 150.00, 50.00, '["Dairy"]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
+    ('SNACKS25', '₹25 off snacks orders', 'fixed', 25.00, 100.00, 25.00, '["Snacks"]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
+    ('MEGA30', '30% off on orders above ₹1000', 'percentage', 30.00, 1000.00, 200.00, '[]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '6 months', NOW(), FALSE),
+    ('BEVERAGE15', '15% off on beverages', 'category', 15.00, 150.00, 60.00, '["Beverages"]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
+    ('ORGANIC20', '20% off organic products', 'category', 20.00, 300.00, 100.00, '["Fruits", "Vegetables", "Dairy"]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE),
+    ('FLASH10', 'Flat ₹100 off on orders above ₹800', 'fixed', 100.00, 800.00, 100.00, '[]'::JSONB, FALSE, 100, 0, TRUE, NOW(), NOW() + INTERVAL '1 month', NOW(), FALSE),
+    ('VIP25', '25% off for VIP members', 'percentage', 25.00, 500.00, 150.00, '[]'::JSONB, FALSE, NULL, 0, TRUE, NOW(), NOW() + INTERVAL '1 year', NOW(), FALSE)
 ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================

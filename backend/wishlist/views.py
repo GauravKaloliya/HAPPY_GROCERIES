@@ -62,11 +62,9 @@ class WishlistViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    @action(detail=True, methods=['get'], url_path='check')
-    def check_item(self, request, pk=None):
+    @action(detail=False, methods=['get'], url_path='check/(?P<product_id>[0-9]+)')
+    def check(self, request, product_id=None):
         """Check if a product is in the user's wishlist."""
-        product_id = pk
-        
         is_in_wishlist = WishlistItem.objects.filter(
             user=request.user,
             product_id=product_id,
