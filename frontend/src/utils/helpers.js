@@ -138,3 +138,28 @@ export const truncateText = (text, maxLength = 100) => {
 export const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
+
+/**
+ * Get unit label for display
+ * @param {string} unit - Unit code
+ * @returns {string} Display label
+ */
+export const getUnitLabel = (unit) => {
+  const unitLabels = {
+    'kg': 'kg',
+    'g': 'g',
+    'mg': 'mg',
+    'ltr': 'L',
+    'ml': 'ml',
+    'piece': 'pcs',
+    'pack': 'pack',
+    'dozen': 'dozen',
+    'bunch': 'bunch',
+    'bottle': 'bottle',
+    'can': 'can',
+    'box': 'box',
+    'jar': 'jar',
+    'other': 'pcs'
+  };
+  return unitLabels[unit] || 'pcs';
+};

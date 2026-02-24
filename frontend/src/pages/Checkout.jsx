@@ -8,6 +8,7 @@ import {
   selectCartTax,
   selectDeliveryCharge,
   selectDiscount,
+  selectAppliedDiscountAmount,
   clearCartState,
   selectAppliedCoupon,
 } from '../store/slices/cartSlice';
@@ -33,6 +34,7 @@ const Checkout = () => {
   const tax = useSelector(selectCartTax);
   const baseDelivery = useSelector(selectDeliveryCharge);
   const discount = useSelector(selectDiscount);
+  const appliedDiscountAmount = useSelector(selectAppliedDiscountAmount);
   const appliedCoupon = useSelector(selectAppliedCoupon);
   const expressCharge = useSelector(selectExpressDeliveryCharge);
   const freeDeliveryThreshold = useSelector(selectFreeDeliveryThreshold);
@@ -215,7 +217,7 @@ const Checkout = () => {
       const orderData = {
         items: validItems.map(item => {
           const productId = item.product?.id || item.id;
-          const price = parseFloat(item.product?.effective_price || item.product?.price || 0);
+          const price = parseFloat(item.product?.price || item.price || 0);
           return {
             product_id: productId,
             quantity: item.quantity,
@@ -228,8 +230,9 @@ const Checkout = () => {
         delivery_type: deliveryInfo.deliveryType,
         subtotal: parseFloat(subtotal) || 0,
         tax: parseFloat(tax) || 0,
+        applied_discount_amount: parseFloat(appliedDiscountAmount) || 0,
         delivery_charge: parseFloat(deliveryCharge) || 0,
-        discount: parseFloat(discount) || 0,
+        coupon_discount: parseFloat(discount) || 0,
         total: parseFloat(computedTotal) || 0,
         coupon_code: appliedCoupon?.code || null,
       };
@@ -409,7 +412,7 @@ const Checkout = () => {
           {items.map((item) => (
             <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
               <span>{item.product.name} x {item.quantity}</span>
-              <span>{formatPrice((item.product.effective_price || item.product.price) * item.quantity)}</span>
+              <span>{formatPrice((item.product.price || item.price) * item.quantity)}</span>
             </div>
           ))}
         </div>
@@ -419,9 +422,16 @@ const Checkout = () => {
           <span>{formatPrice(subtotal)}</span>
         </div>
 
+        {appliedDiscountAmount > 0 && (
+          <div className="summary-row discount-row">
+            <span>Product Discounts</span>
+            <span>-{formatPrice(appliedDiscountAmount)}</span>
+          </div>
+        )}
+
         {discount > 0 && (
           <div className="summary-row discount-row">
-            <span>Discount</span>
+            <span>Coupon Discount</span>
             <span>-{formatPrice(discount)}</span>
           </div>
         )}

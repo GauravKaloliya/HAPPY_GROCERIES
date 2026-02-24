@@ -143,7 +143,7 @@ export const removeFromCart = createAsyncThunk(
       const response = await cartAPI.removeItem(itemId);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove from cart');
+      return rejectWithValue(error.response?.data?.message || 'Failed to remove item');
     }
   }
 );
@@ -293,16 +293,25 @@ export const selectAppliedCoupon = (state) => state.cart.appliedCoupon;
 export const selectCartSubtotal = (state) => {
   const items = state.cart?.items || [];
   return items.reduce((total, item) => {
-    const regularPrice = parseFloat(item?.product?.price || item?.price || 0) || 0;
-    const effectivePrice = parseFloat(item?.product?.effective_price || regularPrice) || regularPrice;
-    const itemPrice = effectivePrice < regularPrice ? effectivePrice : regularPrice;
+    const itemPrice = parseFloat(item?.product?.price || item?.price || 0) || 0;
     const quantity = item?.quantity || 0;
     return total + itemPrice * quantity;
   }, 0);
 };
 
+export const selectAppliedDiscountAmount = (state) => {
+  const items = state.cart?.items || [];
+  return items.reduce((total, item) => {
+    const product = item?.product || {};
+    const price = parseFloat(product?.price || item?.price || 0) || 0;
+    const mrp = parseFloat(product?.mrp || price) || 0;
+    const discountAmount = mrp > price ? (mrp - price) * (item?.quantity || 0) : 0;
+    return total + discountAmount;
+  }, 0);
+};
+
 export const selectCartTax = (state) => {
-  const taxRate = state.config?.settings?.tax_rate || 0.08;
+  const taxRate = state.config?.settings?.tax_rate || 0;
   const subtotal = selectCartSubtotal(state);
   return isNaN(subtotal) ? 0 : subtotal * taxRate;
 };

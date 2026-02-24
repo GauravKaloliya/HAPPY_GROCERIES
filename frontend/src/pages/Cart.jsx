@@ -11,6 +11,7 @@ import {
   selectDeliveryCharge,
   selectCartTotal,
   selectDiscount,
+  selectAppliedDiscountAmount,
   validateCoupon,
   clearCoupon,
 } from '../store/slices/cartSlice';
@@ -30,6 +31,7 @@ const Cart = () => {
   const tax = useSelector(selectCartTax);
   const delivery = useSelector(selectDeliveryCharge);
   const discount = useSelector(selectDiscount);
+  const appliedDiscountAmount = useSelector(selectAppliedDiscountAmount);
   const total = useSelector(selectCartTotal);
   const appliedCoupon = useSelector(state => state.cart.appliedCoupon);
   useActivityLog('page_view', { section: 'cart' });
@@ -151,9 +153,16 @@ const Cart = () => {
           <span>{formatPrice(subtotal)}</span>
         </div>
 
+        {appliedDiscountAmount > 0 && (
+          <div className="summary-row discount-row">
+            <span>Product Discounts</span>
+            <span>-{formatPrice(appliedDiscountAmount)}</span>
+          </div>
+        )}
+
         {discount > 0 && (
           <div className="summary-row discount-row">
-            <span>Discount</span>
+            <span>Coupon Discount</span>
             <span>-{formatPrice(discount)}</span>
           </div>
         )}
