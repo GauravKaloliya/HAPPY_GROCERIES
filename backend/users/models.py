@@ -8,8 +8,6 @@ class User(AbstractUser):
     phone = models.CharField(max_length=10, unique=True, db_index=True)
     email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
-    is_verified = models.BooleanField(default=False)
     failed_login_attempts = models.IntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
     first_order = models.BooleanField(default=True)
@@ -27,9 +25,14 @@ class User(AbstractUser):
         db_table = 'users'
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+        indexes = [
+            models.Index(fields=['phone'], name='users_phone_idx'),
+            models.Index(fields=['username'], name='users_username_idx'),
+            models.Index(fields=['is_deleted'], name='users_is_deleted_idx'),
+        ]
     
     def __str__(self):
-        return f"{self.phone} - {self.name}" if hasattr(self, 'name') else self.phone
+        return f"{self.phone} - {self.name}"
     
     @property
     def name(self):
