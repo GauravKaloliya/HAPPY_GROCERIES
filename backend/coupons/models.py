@@ -14,7 +14,7 @@ class Coupon(models.Model):
     ]
     
     code = models.CharField(max_length=20, unique=True, db_index=True)
-    description = models.TextField(blank=True, default='')
+    description = models.TextField(default='')
     coupon_type = models.CharField(max_length=20, choices=COUPON_TYPES, default='percentage')
     value = models.DecimalField(
         max_digits=5,
@@ -34,7 +34,7 @@ class Coupon(models.Model):
         blank=True,
         validators=[MinValueValidator(0)]
     )
-    applicable_categories = models.JSONField(default=list, blank=True)
+    applicable_categories = models.JSONField(default=list)
     first_order_only = models.BooleanField(default=False)
     usage_limit = models.PositiveIntegerField(default=None, null=True, blank=True)
     usage_count = models.PositiveIntegerField(default=0)
