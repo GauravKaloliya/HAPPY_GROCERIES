@@ -13,3 +13,4 @@ backend/venv/
 *.log
 .DS_Store
 .playwright-cli/
+staticfiles/
