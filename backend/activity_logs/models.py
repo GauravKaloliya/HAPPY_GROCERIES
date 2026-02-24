@@ -46,7 +46,7 @@ class ActivityLog(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['user', 'created_at'], name='activity_logs_user_created_idx'),
-            models.Index(fields=['action', 'created_at'], name='activity_logs_action_created_idx'),
+            models.Index(fields=['action', 'created_at'], name='act_log_action_created_idx'),
             models.Index(fields=['page'], name='activity_logs_page_idx'),
             models.Index(fields=['session_id'], name='activity_logs_session_id_idx'),
             models.Index(fields=['user'], name='activity_logs_user_idx'),

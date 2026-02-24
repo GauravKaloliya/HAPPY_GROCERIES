@@ -32,13 +32,13 @@ class Migration(migrations.Migration):
             model_name='couponusage',
             index=models.Index(fields=['order'], name='coupon_usages_order_idx'),
         ),
-        migrations.AddIndex(
-            model_name='couponusage',
-            index=models.Index(fields=['user', 'is_deleted'], name='coupon_usages_user_is_deleted_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX coupon_usages_user_is_deleted_idx ON coupon_usages(user_id, is_deleted);",
+            reverse_sql="DROP INDEX IF EXISTS coupon_usages_user_is_deleted_idx;",
         ),
-        migrations.AddIndex(
-            model_name='couponusage',
-            index=models.Index(fields=['coupon', 'is_deleted'], name='coupon_usages_coupon_is_deleted_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX coupon_usages_coupon_is_deleted_idx ON coupon_usages(coupon_id, is_deleted);",
+            reverse_sql="DROP INDEX IF EXISTS coupon_usages_coupon_is_deleted_idx;",
         ),
         migrations.AddIndex(
             model_name='couponusage',

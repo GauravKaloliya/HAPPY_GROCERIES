@@ -42,13 +42,13 @@ class Migration(migrations.Migration):
             model_name='productreview',
             index=models.Index(fields=['order'], name='product_reviews_order_idx'),
         ),
-        migrations.AddIndex(
-            model_name='productreview',
-            index=models.Index(fields=['product', 'is_approved', 'is_deleted'], name='product_reviews_product_approved_deleted_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX product_reviews_product_approved_deleted_idx ON product_reviews(product_id, is_approved, is_deleted);",
+            reverse_sql="DROP INDEX IF EXISTS product_reviews_product_approved_deleted_idx;",
         ),
-        migrations.AddIndex(
-            model_name='productreview',
-            index=models.Index(fields=['user', 'is_deleted'], name='product_reviews_user_is_deleted_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX product_reviews_user_is_deleted_idx ON product_reviews(user_id, is_deleted);",
+            reverse_sql="DROP INDEX IF EXISTS product_reviews_user_is_deleted_idx;",
         ),
         migrations.AddIndex(
             model_name='productreview',
@@ -66,9 +66,9 @@ class Migration(migrations.Migration):
             name='productreview',
             unique_together={('user', 'product', 'order')},
         ),
-        migrations.AddIndex(
-            model_name='reviewhelpful',
-            index=models.Index(fields=['review'], name='review_helpful_votes_review_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX review_helpful_votes_review_idx ON review_helpful_votes(review_id);",
+            reverse_sql="DROP INDEX IF EXISTS review_helpful_votes_review_idx;",
         ),
         migrations.AddIndex(
             model_name='reviewhelpful',

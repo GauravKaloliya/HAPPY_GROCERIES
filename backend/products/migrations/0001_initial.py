@@ -126,9 +126,9 @@ class Migration(migrations.Migration):
             model_name='product',
             index=models.Index(fields=['name'], name='products_name_idx'),
         ),
-        migrations.AddIndex(
-            model_name='product',
-            index=models.Index(fields=['category', 'is_active'], name='products_category_is_active_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX products_category_is_active_idx ON products(category_id, is_active);",
+            reverse_sql="DROP INDEX IF EXISTS products_category_is_active_idx;",
         ),
         migrations.AddIndex(
             model_name='product',
