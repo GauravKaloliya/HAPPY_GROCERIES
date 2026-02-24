@@ -122,7 +122,7 @@ class OrderItem(models.Model):
         indexes = [
             models.Index(fields=['order']),
             models.Index(fields=['is_deleted']),
-            models.Index(fields=['applied_discount_amount'], name='order_items_applied_discount_idx'),
+            models.Index(fields=['applied_discount_amount'], name='order_itm_applied_disc_idx'),
         ]
 
     def __str__(self):

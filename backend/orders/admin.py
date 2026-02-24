@@ -24,4 +24,4 @@ class OrderItemAdmin(admin.ModelAdmin):
                     'applied_discount_amount', 'subtotal']
     list_filter = ['order__status']
     search_fields = ['product_name', 'order__order_id']
-    readonly_fields = ['created_at', 'deleted_at']
+    readonly_fields = ['deleted_at']
