@@ -17,7 +17,15 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-# Redis configuration uses REDIS_URL from base settings.
+# Use local memory cache for development instead of Redis
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
+# Use database sessions for development instead of cache
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Development logging
 LOGGING['loggers']['django']['level'] = 'DEBUG'
