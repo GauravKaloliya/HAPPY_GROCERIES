@@ -42,7 +42,7 @@ class Product(models.Model):
     """Product model for the grocery store."""
     
     id = models.AutoField(primary_key=True)  # This will match the legacy IDs
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=30, db_index=True)
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -79,9 +79,9 @@ class Product(models.Model):
         db_table = 'products'
         ordering = ['id']
         indexes = [
-            models.Index(fields=['category', 'is_active'], name='products_category_is_active_idx'),
-            models.Index(fields=['name'], name='products_name_idx'),
-            models.Index(fields=['is_deleted'], name='products_is_deleted_idx'),
+            models.Index(fields=['category', 'is_active'], name='prod_cat_active_idx'),
+            models.Index(fields=['name'], name='prod_name_idx'),
+            models.Index(fields=['is_deleted'], name='prod_is_deleted_idx'),
         ]
     
     def __str__(self):

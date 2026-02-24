@@ -145,8 +145,8 @@ class OrderItem(models.Model):
         indexes = [
             models.Index(fields=['order'], name='order_items_order_idx'),
             models.Index(fields=['product'], name='order_items_product_idx'),
-            models.Index(fields=['order', 'is_deleted'], name='order_items_order_is_deleted_idx'),
-            models.Index(fields=['is_deleted'], name='order_items_is_deleted_idx'),
+            models.Index(fields=['order', 'is_deleted'], name='ord_items_order_del_idx'),
+            models.Index(fields=['is_deleted'], name='order_items_is_del_idx'),
         ]
 
     def __str__(self):
