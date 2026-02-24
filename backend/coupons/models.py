@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.contrib.postgres.fields import JSONField
 
 
 class Coupon(models.Model):
@@ -34,7 +33,7 @@ class Coupon(models.Model):
         blank=True,
         validators=[MinValueValidator(0)]
     )
-    applicable_categories = JSONField(default=list)
+    applicable_categories = models.JSONField(default=list)
     first_order_only = models.BooleanField(default=False)
     usage_limit = models.PositiveIntegerField(default=None, null=True, blank=True)
     usage_count = models.PositiveIntegerField(default=0)

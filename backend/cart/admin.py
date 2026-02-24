@@ -21,4 +21,4 @@ class CartItemAdmin(admin.ModelAdmin):
     list_display = ['cart', 'product', 'quantity', 'total', 'original_total', 'added_at']
     list_filter = ['added_at', 'is_deleted']
     search_fields = ['cart__user__phone', 'product__name']
-    readonly_fields = ['created_at', 'deleted_at']
+    readonly_fields = ['added_at', 'deleted_at']

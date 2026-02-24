@@ -16,4 +16,4 @@ class CouponUsageAdmin(admin.ModelAdmin):
     list_display = ['id', 'user', 'coupon', 'order', 'discount_amount', 'used_at', 'is_deleted']
     list_filter = ['used_at', 'is_deleted']
     search_fields = ['user__phone', 'coupon__code', 'order__order_id']
-    readonly_fields = ['created_at', 'deleted_at']
+    readonly_fields = ['used_at', 'deleted_at']
