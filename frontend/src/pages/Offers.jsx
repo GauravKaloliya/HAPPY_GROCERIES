@@ -7,11 +7,14 @@ import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
+const COUPONS_PER_PAGE = 6;
+
 const Offers = () => {
   const [coupons, setCoupons] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const cartTotal = useSelector(selectCartSubtotal);
 
   useActivityLog('page_view', { section: 'offers' });
@@ -68,6 +71,29 @@ const Offers = () => {
     ? coupons 
     : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCoupons.filter(c => c.is_active).length / COUPONS_PER_PAGE);
+  const startIndex = (currentPage - 1) * COUPONS_PER_PAGE;
+  const endIndex = startIndex + COUPONS_PER_PAGE;
+  const displayedCoupons = filteredCoupons.filter(c => c.is_active).slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      handlePageChange(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1);
+    }
+  };
+
   if (loading) return <PageLoader />;
 
   return (
@@ -114,81 +140,114 @@ const Offers = () => {
           <p>Check back later for exciting offers!</p>
         </div>
       ) : (
-        <div className="coupons-list">
-          {filteredCoupons.filter(c => c.is_active).map((coupon) => {
-            const eligibility = getEligibilityStatus(coupon);
-            const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
-            const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
+        <>
+          <div className="coupons-list">
+            {displayedCoupons.map((coupon) => {
+              const eligibility = getEligibilityStatus(coupon);
+              const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
+              const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
 
-            return (
-              <div
-                key={coupon.code}
-                className={`coupon-card ${eligibility.status}`}
+              return (
+                <div
+                  key={coupon.code}
+                  className={`coupon-card ${eligibility.status}`}
+                >
+                  <div className="coupon-header">
+                    <h3 className="coupon-code">{coupon.code}</h3>
+                    {coupon.first_order_only && (
+                      <span className="coupon-tag">First Order Only</span>
+                    )}
+                  </div>
+
+                  <div className="coupon-body">
+                    <p className="coupon-description">
+                      {coupon.description}
+                    </p>
+
+                    <div className={`coupon-eligibility ${eligibility.status}`}>
+                      {eligibility.icon} {eligibility.text}
+                    </div>
+
+                    {eligibility.status === 'almost' && (
+                      <div className="coupon-almost">
+                        <p>
+                          Add ₹{(coupon.min_order_value - cartTotal).toFixed(0)} more to unlock this offer!
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="coupon-info">
+                      <div className="coupon-info-item">
+                        <strong>Minimum Order:</strong>
+                        <span>₹{coupon.min_order_value}</span>
+                      </div>
+                      {coupon.coupon_type === 'percentage' && (
+                        <div className="coupon-info-item">
+                          <strong>Max Discount:</strong>
+                          <span>₹{coupon.max_discount}</span>
+                        </div>
+                      )}
+                      <div className="coupon-info-item">
+                        <strong>Expires:</strong>
+                        <span className={isExpiringSoon ? 'coupon-expiring' : ''}>
+                          {coupon.valid_until
+                            ? (isExpiringSoon ? `${daysLeft} days left!` : new Date(coupon.valid_until).toLocaleDateString())
+                            : 'No expiry'}
+                        </span>
+                      </div>
+                      {coupon.applicable_categories?.length > 0 && (
+                        <div className="coupon-info-item">
+                          <strong>Valid for:</strong>
+                          <span>{coupon.applicable_categories.join(', ')}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="coupon-footer">
+                    <button
+                      onClick={() => handleCopyCode(coupon.code)}
+                      className="btn-copy-coupon"
+                    >
+                      Copy Code
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="pagination-btn"
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
               >
-                <div className="coupon-header">
-                  <h3 className="coupon-code">{coupon.code}</h3>
-                  {coupon.first_order_only && (
-                    <span className="coupon-tag">First Order Only</span>
-                  )}
-                </div>
-
-                <div className="coupon-body">
-                  <p className="coupon-description">
-                    {coupon.description}
-                  </p>
-
-                  <div className={`coupon-eligibility ${eligibility.status}`}>
-                    {eligibility.icon} {eligibility.text}
-                  </div>
-
-                  {eligibility.status === 'almost' && (
-                    <div className="coupon-almost">
-                      <p>
-                        Add ₹{(coupon.min_order_value - cartTotal).toFixed(0)} more to unlock this offer!
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="coupon-info">
-                    <div className="coupon-info-item">
-                      <strong>Minimum Order:</strong>
-                      <span>₹{coupon.min_order_value}</span>
-                    </div>
-                    {coupon.coupon_type === 'percentage' && (
-                      <div className="coupon-info-item">
-                        <strong>Max Discount:</strong>
-                        <span>₹{coupon.max_discount}</span>
-                      </div>
-                    )}
-                    <div className="coupon-info-item">
-                      <strong>Expires:</strong>
-                      <span className={isExpiringSoon ? 'coupon-expiring' : ''}>
-                        {coupon.valid_until
-                          ? (isExpiringSoon ? `${daysLeft} days left!` : new Date(coupon.valid_until).toLocaleDateString())
-                          : 'No expiry'}
-                      </span>
-                    </div>
-                    {coupon.applicable_categories?.length > 0 && (
-                      <div className="coupon-info-item">
-                        <strong>Valid for:</strong>
-                        <span>{coupon.applicable_categories.join(', ')}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="coupon-footer">
+                ← Previous
+              </button>
+              <div className="pagination-pages">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
-                    onClick={() => handleCopyCode(coupon.code)}
-                    className="btn-copy-coupon"
+                    key={page}
+                    className={`pagination-page ${currentPage === page ? 'active' : ''}`}
+                    onClick={() => handlePageChange(page)}
                   >
-                    Copy Code
+                    {page}
                   </button>
-                </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
+              <button
+                className="pagination-btn"
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* How to Use */}

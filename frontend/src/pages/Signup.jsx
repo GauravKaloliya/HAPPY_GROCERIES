@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, selectAuthLoading, clearError } from '../store/slices/authSlice';
+import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -28,6 +29,10 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [submitError, setSubmitError] = useState('');
+  const [validationStatus, setValidationStatus] = useState({
+    phone: { checking: false, available: null },
+    email: { checking: false, available: null },
+  });
   const { logCustomActivity } = useActivityLog('page_view', { section: 'signup' });
 
   useEffect(() => {
@@ -56,6 +61,47 @@ const Signup = () => {
       setFormErrors({ ...formErrors, [name]: '' });
     }
     if (submitError) setSubmitError('');
+    // Reset validation status when field changes
+    if (name === 'phone' || name === 'email') {
+      setValidationStatus(prev => ({
+        ...prev,
+        [name]: { checking: false, available: null }
+      }));
+    }
+  };
+
+  const handlePhoneBlur = async () => {
+    const phone = formData.phone;
+    if (!phone || !/^\d{10}$/.test(phone)) return;
+    
+    setValidationStatus(prev => ({ ...prev, phone: { checking: true, available: null } }));
+    try {
+      const response = await authAPI.checkPhone(phone);
+      const available = response.data.available;
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available } }));
+      if (!available) {
+        setFormErrors(prev => ({ ...prev, phone: response.data.message }));
+      }
+    } catch {
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available: null } }));
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    const email = formData.email;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return;
+    
+    setValidationStatus(prev => ({ ...prev, email: { checking: true, available: null } }));
+    try {
+      const response = await authAPI.checkEmail(email);
+      const available = response.data.available;
+      setValidationStatus(prev => ({ ...prev, email: { checking: false, available } }));
+      if (!available) {
+        setFormErrors(prev => ({ ...prev, email: response.data.message }));
+      }
+    } catch {
+      setValidationStatus(prev => ({ ...prev, email: { checking: false, available: null } }));
+    }
   };
 
   const validateForm = () => {
@@ -117,20 +163,21 @@ const Signup = () => {
       if (lower.includes('server') || lower.includes('500')) {
         return 'Server error. Please try again later.';
       }
-      return err;
+      return 'Registration failed. Please try again.';
     }
 
     if (typeof err === 'object') {
       if (err.phone) {
         const msg = Array.isArray(err.phone) ? err.phone[0] : err.phone;
         if (msg.toLowerCase().includes('exist')) return 'An account with this phone number already exists.';
-        return msg;
+        return 'Invalid phone number.';
       }
       if (err.email) {
         const msg = Array.isArray(err.email) ? err.email[0] : err.email;
-        return msg;
+        if (msg.toLowerCase().includes('exist')) return 'An account with this email already exists.';
+        return 'Invalid email address.';
       }
-      if (err.detail) return err.detail;
+      if (err.detail) return 'Registration failed. Please try again.';
       if (err.non_field_errors) {
         return Array.isArray(err.non_field_errors) ? err.non_field_errors[0] : err.non_field_errors;
       }
@@ -179,6 +226,14 @@ const Signup = () => {
     setSubmitError('');
   };
 
+  const getValidationIcon = (field) => {
+    const status = validationStatus[field];
+    if (status.checking) return '⏳';
+    if (status.available === true) return '✅';
+    if (status.available === false) return '❌';
+    return null;
+  };
+
   return (
     <div className="container">
       <div className="auth-container">
@@ -203,17 +258,26 @@ const Signup = () => {
 
           <div className="form-group">
             <label htmlFor="phone">Phone Number</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Enter 10-digit phone number"
-              maxLength="10"
-              autoComplete="tel"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                inputMode="numeric"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                onBlur={handlePhoneBlur}
+                placeholder="Enter 10-digit phone number"
+                maxLength="10"
+                autoComplete="tel"
+                style={{ paddingRight: validationStatus.phone.available !== null ? '2.5rem' : undefined }}
+              />
+              {getValidationIcon('phone') && (
+                <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                  {getValidationIcon('phone')}
+                </span>
+              )}
+            </div>
             {formErrors.phone && (
               <div className="error-message show">{formErrors.phone}</div>
             )}
@@ -221,15 +285,24 @@ const Signup = () => {
 
           <div className="form-group">
             <label htmlFor="email">Email <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              autoComplete="email"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleEmailBlur}
+                placeholder="Enter your email"
+                autoComplete="email"
+                style={{ paddingRight: validationStatus.email.available !== null ? '2.5rem' : undefined }}
+              />
+              {getValidationIcon('email') && (
+                <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                  {getValidationIcon('email')}
+                </span>
+              )}
+            </div>
             {formErrors.email && (
               <div className="error-message show">{formErrors.email}</div>
             )}

@@ -29,13 +29,6 @@ const About = () => {
     }
   };
 
-  const team = [
-    { name: 'Gaurav Kaloliya', role: 'Founder & CEO', emoji: '👨‍💼' },
-    { name: 'Arpita Makwana', role: 'CTO', emoji: '👩‍💻' },
-    { name: 'Carol White', role: 'Customer Success', emoji: '👩‍💼' },
-    { name: 'David Brown', role: 'Delivery Manager', emoji: '👨‍🚚' },
-  ];
-
   return (
     <div className="container">
       <section className="about-section">
@@ -46,22 +39,11 @@ const About = () => {
           accessible to everyone, delivered with a smile! 🌟
         </p>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Meet the Team 👥</h3>
-        <div className="team-grid">
-          {team.map((member, index) => (
-            <div key={index} className="team-member">
-              <div className="team-avatar">{member.emoji}</div>
-              <h4>{member.name}</h4>
-              <p>{member.role}</p>
-            </div>
-          ))}
-        </div>
-
         <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Contact Us 📞</h3>
         <div className="contact-info">
-          <p>📍 123 Fresh Street, Green City, GC 12345</p>
-          <p>📞 +1 (555) 123-4567</p>
-          <p>✉️ contact@happygroceries.shop</p>
+          <p>📍 456 Fresh Avenue, Green City, Mumbai, MH 400001</p>
+          <p>📞 +91 98765 43210</p>
+          <p>✉️ support@happygroceries.shop</p>
           <p>🕒 Mon - Sat: 8AM - 10PM | Sunday: 9AM - 8PM</p>
         </div>
 
