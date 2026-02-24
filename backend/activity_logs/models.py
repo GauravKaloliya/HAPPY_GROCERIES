@@ -1,9 +1,10 @@
 from django.db import models
-from django.conf import settings
+
+from users.models import User
 
 
 class ActivityLog(models.Model):
-    """Model to track user activities on the frontend."""
+    """User activity log model."""
 
     ACTION_CHOICES = [
         ('page_view', 'Page View'),
@@ -19,36 +20,29 @@ class ActivityLog(models.Model):
         ('login', 'Login'),
         ('logout', 'Logout'),
         ('signup', 'Signup'),
-        ('contact_form', 'Contact Form Submit'),
+        ('contact_form', 'Contact Form'),
         ('profile_update', 'Profile Update'),
         ('settings_change', 'Settings Change'),
     ]
 
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='activity_logs'
-    )
-    action = models.CharField(max_length=50, choices=ACTION_CHOICES, db_index=True)
-    page = models.CharField(max_length=255, db_index=True)
-    details = models.JSONField(default=dict, blank=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
-    session_id = models.CharField(max_length=255, blank=True, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, db_index=True)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    page = models.CharField(max_length=255)
+    details = models.JSONField(default=dict)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.TextField(blank=True, null=True)
+    session_id = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'activity_logs'
-        verbose_name = 'Activity Log'
-        verbose_name_plural = 'Activity Logs'
-        ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user', 'created_at'], name='activity_log_user_created_idx'),
-            models.Index(fields=['action', 'created_at'], name='act_log_act_created_idx'),
+            models.Index(fields=['user', 'created_at'], name='activity_logs_user_created_idx'),
+            models.Index(fields=['action', 'created_at'], name='activity_logs_action_created_idx'),
+            models.Index(fields=['page'], name='activity_logs_page_idx'),
+            models.Index(fields=['session_id'], name='activity_logs_session_id_idx'),
+            models.Index(fields=['user'], name='activity_logs_user_idx'),
         ]
 
     def __str__(self):
-        user_display = self.user.phone if self.user else 'Anonymous'
-        return f"{user_display} - {self.action} on {self.page}"
+        return f"{self.action} - {self.page}"

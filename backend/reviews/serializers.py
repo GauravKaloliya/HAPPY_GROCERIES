@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProductReview, ReviewHelpful
+from .models import ProductReview, ReviewHelpfulVote
 
 
 class ProductReviewSerializer(serializers.ModelSerializer):
