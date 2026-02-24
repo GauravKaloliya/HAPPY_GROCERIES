@@ -45,8 +45,8 @@ class ActivityLog(models.Model):
         verbose_name_plural = 'Activity Logs'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user', 'created_at'], name='activity_log_user_created_idx'),
-            models.Index(fields=['action', 'created_at'], name='act_log_act_created_idx'),
+            models.Index(fields=['user', 'created_at'], name='activity_logs_user_created_idx'),
+            models.Index(fields=['action', 'created_at'], name='activity_logs_action_created_idx'),
         ]
 
     def __str__(self):
