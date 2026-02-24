@@ -28,8 +28,13 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'wishlist_items',
                 'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['user', 'is_deleted'], name='wishlist_it_user_id_962b2c_idx'), models.Index(fields=['product', 'is_deleted'], name='wishlist_it_product_40b251_idx')],
                 'unique_together': {('user', 'product')},
+                'indexes': [
+                    models.Index(fields=['user'], name='wishlist_items_user_idx'),
+                    models.Index(fields=['product'], name='wishlist_items_product_idx'),
+                    models.Index(fields=['user', 'is_deleted'], name='wishlist_items_user_is_deleted_idx'),
+                    models.Index(fields=['product', 'is_deleted'], name='wishlist_items_product_is_deleted_idx'),
+                ],
             },
         ),
     ]

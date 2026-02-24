@@ -7,6 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class Category(models.Model):
     """Product category model."""
     
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50, unique=True, db_index=True)
     description = models.TextField(default='')
     emoji = models.CharField(max_length=10, default='')
@@ -78,9 +79,9 @@ class Product(models.Model):
         db_table = 'products'
         ordering = ['id']
         indexes = [
-            models.Index(fields=['category', 'is_active']),
-            models.Index(fields=['name']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['category', 'is_active'], name='products_category_is_active_idx'),
+            models.Index(fields=['name'], name='products_name_idx'),
+            models.Index(fields=['is_deleted'], name='products_is_deleted_idx'),
         ]
     
     def __str__(self):

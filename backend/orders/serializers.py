@@ -45,7 +45,7 @@ class CreateOrderSerializer(serializers.Serializer):
     """Serializer for creating new orders."""
     
     delivery_name = serializers.CharField(max_length=100)
-    delivery_phone = serializers.CharField(max_length=15)
+    delivery_phone = serializers.CharField(max_length=10)
     delivery_address = serializers.CharField()
     delivery_instructions = serializers.CharField(required=False, allow_blank=True, default='')
     delivery_type = serializers.ChoiceField(choices=Order.DELIVERY_TYPES, default='standard')

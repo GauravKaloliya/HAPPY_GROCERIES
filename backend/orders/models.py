@@ -83,11 +83,11 @@ class Order(models.Model):
         db_table = 'orders'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['status']),
-            models.Index(fields=['user', 'status']),
-            models.Index(fields=['is_deleted']),
-            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['user'], name='orders_user_idx'),
+            models.Index(fields=['status'], name='orders_status_idx'),
+            models.Index(fields=['user', 'status'], name='orders_user_status_idx'),
+            models.Index(fields=['is_deleted'], name='orders_is_deleted_idx'),
+            models.Index(fields=['user', '-created_at'], name='orders_user_created_idx'),
         ]
 
     def __str__(self):
@@ -117,7 +117,9 @@ class OrderItem(models.Model):
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
-        related_name='order_items'
+        related_name='order_items',
+        null=True,
+        blank=True
     )
     product_name = models.CharField(max_length=100)
     product_price = models.DecimalField(
@@ -141,10 +143,10 @@ class OrderItem(models.Model):
     class Meta:
         db_table = 'order_items'
         indexes = [
-            models.Index(fields=['order']),
-            models.Index(fields=['product']),
-            models.Index(fields=['order', 'is_deleted']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['order'], name='order_items_order_idx'),
+            models.Index(fields=['product'], name='order_items_product_idx'),
+            models.Index(fields=['order', 'is_deleted'], name='order_items_order_is_deleted_idx'),
+            models.Index(fields=['is_deleted'], name='order_items_is_deleted_idx'),
         ]
 
     def __str__(self):
