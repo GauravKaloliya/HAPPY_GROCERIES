@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.postgres.indexes import GinIndex
+from django.core.validators import MinValueValidator
 
 
 class Coupon(models.Model):
@@ -13,7 +14,7 @@ class Coupon(models.Model):
     ]
     
     code = models.CharField(max_length=20, unique=True, db_index=True)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, default='')
     coupon_type = models.CharField(max_length=20, choices=COUPON_TYPES, default='percentage')
     value = models.DecimalField(
         max_digits=5,
@@ -50,8 +51,11 @@ class Coupon(models.Model):
         db_table = 'coupons'
         ordering = ['-created_at']
         indexes = [
+            models.Index(fields=['is_active']),
+            models.Index(fields=['is_active', 'valid_until']),
             models.Index(fields=['code', 'is_active']),
             models.Index(fields=['is_deleted']),
+            GinIndex(fields=['applicable_categories']),
         ]
     
     def __str__(self):
@@ -109,7 +113,11 @@ class CouponUsage(models.Model):
         on_delete=models.CASCADE,
         related_name='coupon_usages'
     )
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
     used_at = models.DateTimeField(auto_now_add=True)
     
     # Soft delete fields
@@ -122,6 +130,9 @@ class CouponUsage(models.Model):
         indexes = [
             models.Index(fields=['user']),
             models.Index(fields=['coupon']),
+            models.Index(fields=['order']),
+            models.Index(fields=['user', 'is_deleted']),
+            models.Index(fields=['coupon', 'is_deleted']),
             models.Index(fields=['is_deleted']),
         ]
     

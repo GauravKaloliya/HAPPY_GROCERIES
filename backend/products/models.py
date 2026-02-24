@@ -8,14 +8,8 @@ class Category(models.Model):
     """Product category model."""
     
     name = models.CharField(max_length=50, unique=True, db_index=True)
-    description = models.TextField(blank=True)
-    emoji = models.CharField(max_length=10, blank=True)
-    color = models.CharField(
-        max_length=50, 
-        blank=True,
-        default='var(--primary-pink)',
-        help_text='CSS color variable or hex color for category'
-    )
+    description = models.TextField(blank=True, default='')
+    emoji = models.CharField(max_length=10, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     
     # Soft delete fields
@@ -55,10 +49,10 @@ class Product(models.Model):
     )
     category = models.ForeignKey(
         Category,
-        on_delete=models.CASCADE,
+        on_delete=models.RESTRICT,
         related_name='products'
     )
-    emoji = models.CharField(max_length=10, blank=True)
+    emoji = models.CharField(max_length=10, blank=True, default='')
     rating = models.DecimalField(
         max_digits=2,
         decimal_places=1,
@@ -71,7 +65,7 @@ class Product(models.Model):
         default=0,
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, default='')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

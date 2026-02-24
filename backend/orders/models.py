@@ -1,11 +1,12 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator, RegexValidator
 from products.models import Product
 
 
 class Order(models.Model):
     """Order model for storing customer orders."""
-    
+
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
@@ -14,61 +15,90 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
-    
+
     DELIVERY_TYPES = [
         ('standard', 'Standard'),
         ('express', 'Express'),
     ]
-    
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='orders'
     )
-    order_id = models.CharField(max_length=20, unique=True, db_index=True)
+    order_id = models.CharField(
+        max_length=20,
+        unique=True,
+        db_index=True,
+        validators=[RegexValidator(regex=r'^HG[0-9]{8}$')]
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPES, default='standard')
-    
+
     # Pricing
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-    tax = models.DecimalField(max_digits=10, decimal_places=2)
-    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2)
-    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=10, decimal_places=2)
-    
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    tax = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    delivery_charge = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    coupon_discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)]
+    )
+    total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+
     # Delivery details
     delivery_name = models.CharField(max_length=100)
-    delivery_phone = models.CharField(max_length=15)
+    delivery_phone = models.CharField(max_length=10)
     delivery_address = models.TextField()
-    delivery_instructions = models.TextField(blank=True)
-    
+    delivery_instructions = models.TextField(blank=True, default='')
+
     # Timestamps
     estimated_delivery = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     # Soft delete fields
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         db_table = 'orders'
         ordering = ['-created_at']
         indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['status']),
             models.Index(fields=['user', 'status']),
             models.Index(fields=['is_deleted']),
+            models.Index(fields=['user', '-created_at']),
         ]
-    
+
     def __str__(self):
         return f"Order {self.order_id} - {self.user.phone}"
-    
+
     def soft_delete(self):
         """Perform soft delete on the order."""
         self.is_deleted = True
         self.deleted_at = models.functions.Now()
         self.save(update_fields=['is_deleted', 'deleted_at'])
-    
+
     def restore(self):
         """Restore a soft-deleted order."""
         self.is_deleted = False
@@ -78,7 +108,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     """Individual items in an order."""
-    
+
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
@@ -90,32 +120,42 @@ class OrderItem(models.Model):
         related_name='order_items'
     )
     product_name = models.CharField(max_length=100)
-    product_price = models.DecimalField(max_digits=10, decimal_places=2)
-    product_emoji = models.CharField(max_length=10, blank=True)
-    quantity = models.PositiveIntegerField()
+    product_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+    product_emoji = models.CharField(max_length=10, blank=True, default='')
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     discount_percent = models.PositiveIntegerField(default=0)
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-    
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+
     # Soft delete fields
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         db_table = 'order_items'
         indexes = [
             models.Index(fields=['order']),
+            models.Index(fields=['product']),
+            models.Index(fields=['order', 'is_deleted']),
             models.Index(fields=['is_deleted']),
         ]
-    
+
     def __str__(self):
         return f"{self.product_name} x {self.quantity}"
-    
+
     def soft_delete(self):
         """Perform soft delete on the order item."""
         self.is_deleted = True
         self.deleted_at = models.functions.Now()
         self.save(update_fields=['is_deleted', 'deleted_at'])
-    
+
     def restore(self):
         """Restore a soft-deleted order item."""
         self.is_deleted = False
