@@ -1,101 +1,88 @@
 from django.db import models
-from django.conf import settings
+
 from products.models import Product
+from users.models import User
 
 
 class Cart(models.Model):
-    """Shopping cart with OneToOne relationship to User."""
-    
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='cart'
-    )
+    """Shopping cart model."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    # Soft delete fields
     is_deleted = models.BooleanField(default=False)
-    deleted_at = models.DateTimeField(null=True, blank=True)
-    
+    deleted_at = models.DateTimeField(blank=True, null=True)
+
     class Meta:
         db_table = 'carts'
         indexes = [
-            models.Index(fields=['user', 'is_deleted']),
+            models.Index(fields=['user'], name='carts_user_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='carts_user_is_deleted_idx'),
         ]
-    
+
     def __str__(self):
-        return f"Cart for {self.user.phone}"
-    
-    @property
-    def total_items(self):
-        return sum(item.quantity for item in self.items.filter(is_deleted=False))
-    
-    @property
-    def subtotal(self):
-        return sum(item.total for item in self.items.filter(is_deleted=False))
-    
+        return f"Cart - {self.user.phone}"
+
     def soft_delete(self):
-        """Perform soft delete on the cart."""
+        from django.utils import timezone
         self.is_deleted = True
-        self.deleted_at = models.functions.Now()
-        self.save(update_fields=['is_deleted', 'deleted_at'])
-        # Also soft delete all cart items
-        self.items.update(is_deleted=True, deleted_at=models.functions.Now())
-    
+        self.deleted_at = timezone.now()
+        self.save()
+
     def restore(self):
-        """Restore a soft-deleted cart."""
         self.is_deleted = False
         self.deleted_at = None
-        self.save(update_fields=['is_deleted', 'deleted_at'])
+        self.save()
+
+    @property
+    def total_items(self):
+        """Get total number of items in cart."""
+        return self.items.filter(is_deleted=False).count()
+
+    @property
+    def total_amount(self):
+        """Get total amount of items in cart."""
+        total = sum(
+            item.product.price * item.quantity
+            for item in self.items.filter(is_deleted=False)
+        )
+        return total
 
 
 class CartItem(models.Model):
-    """Individual items in a shopping cart."""
-    
-    cart = models.ForeignKey(
-        Cart,
-        on_delete=models.CASCADE,
-        related_name='items'
-    )
-    product = models.ForeignKey(
-        Product,
-        on_delete=models.CASCADE,
-        related_name='cart_items'
-    )
-    quantity = models.PositiveIntegerField(default=1)
+    """Cart item model."""
+
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items', db_index=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, db_index=True)
+    quantity = models.IntegerField(default=1)
     added_at = models.DateTimeField(auto_now_add=True)
-    
-    # Soft delete fields
     is_deleted = models.BooleanField(default=False)
-    deleted_at = models.DateTimeField(null=True, blank=True)
-    
+    deleted_at = models.DateTimeField(blank=True, null=True)
+
     class Meta:
         db_table = 'cart_items'
-        unique_together = ['cart', 'product']
+        unique_together = ('cart', 'product')
         indexes = [
-            models.Index(fields=['cart', 'is_deleted']),
+            models.Index(fields=['cart'], name='cart_items_cart_idx'),
+            models.Index(fields=['product'], name='cart_items_product_idx'),
+            models.Index(fields=['cart', 'is_deleted'], name='cart_items_cart_is_deleted_idx'),
         ]
-    
+
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
-    
-    @property
-    def total(self):
-        return self.product.effective_price * self.quantity
-    
-    @property
-    def original_total(self):
-        return self.product.price * self.quantity
-    
+
     def soft_delete(self):
-        """Perform soft delete on the cart item."""
+        from django.utils import timezone
         self.is_deleted = True
-        self.deleted_at = models.functions.Now()
-        self.save(update_fields=['is_deleted', 'deleted_at'])
-    
+        self.deleted_at = timezone.now()
+        self.save()
+
     def restore(self):
-        """Restore a soft-deleted cart item."""
         self.is_deleted = False
         self.deleted_at = None
-        self.save(update_fields=['is_deleted', 'deleted_at'])
+        self.save()
+
+    @property
+    def subtotal(self):
+        """Get subtotal for this cart item."""
+        return self.product.price * self.quantity

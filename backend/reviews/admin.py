@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import ProductReview, ReviewHelpful
+from .models import ProductReview, ReviewHelpfulVote
 
 
 @admin.register(ProductReview)
 class ProductReviewAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'user', 'product', 'rating', 'title', 
+        'id', 'user', 'product', 'rating', 'title',
         'is_approved', 'is_verified_purchase', 'created_at'
     ]
     list_filter = ['rating', 'is_approved', 'is_verified_purchase', 'created_at']
@@ -15,8 +15,8 @@ class ProductReviewAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
 
 
-@admin.register(ReviewHelpful)
-class ReviewHelpfulAdmin(admin.ModelAdmin):
+@admin.register(ReviewHelpfulVote)
+class ReviewHelpfulVoteAdmin(admin.ModelAdmin):
     list_display = ['review', 'user', 'created_at']
     list_filter = ['created_at']
     search_fields = ['review__id', 'user__phone']

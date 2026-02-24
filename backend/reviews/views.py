@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404
 
-from .models import ProductReview, ReviewHelpful
+from .models import ProductReview, ReviewHelpfulVote
 from .serializers import (
     ProductReviewSerializer,
     CreateReviewSerializer,
@@ -172,7 +172,7 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         """Mark a review as helpful."""
         review = self.get_object()
         
-        helpful_vote, created = ReviewHelpful.objects.get_or_create(
+        helpful_vote, created = ReviewHelpfulVote.objects.get_or_create(
             review=review,
             user=request.user
         )
