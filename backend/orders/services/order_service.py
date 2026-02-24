@@ -179,10 +179,9 @@ class OrderService:
     
     @classmethod
     def _generate_order_id(cls):
-        """Generate a unique order ID."""
-        timestamp = timezone.now().strftime('%Y%m%d')
-        unique_id = uuid.uuid4().hex[:6].upper()
-        return f"ORD-{timestamp}-{unique_id}"
+        """Generate a unique order ID in format HG{8 digits}."""
+        timestamp = timezone.now().strftime('%m%d%H%M')
+        return f"HG{timestamp}"
     
     @classmethod
     def get_order_statistics(cls, user):

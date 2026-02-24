@@ -6,7 +6,7 @@ import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { formatPrice } from '../utils/helpers';
 import { PageLoader } from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import api from '../api/axios';
+import { combosAPI } from '../api/combos';
 import useActivityLog from '../hooks/useActivityLog';
 
 const Combos = () => {
@@ -21,7 +21,7 @@ const Combos = () => {
   useEffect(() => {
     const fetchCombos = async () => {
       try {
-        const response = await api.get('/products/combos/');
+        const response = await combosAPI.getAll();
         setCombos(response.data.results || response.data);
       } catch (error) {
         console.error('Error fetching combos:', error);
