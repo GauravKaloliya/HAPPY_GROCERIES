@@ -55,9 +55,9 @@ class ProductReview(models.Model):
         ordering = ['-created_at']
         unique_together = ['user', 'product', 'order']
         indexes = [
-            models.Index(fields=['product', 'is_approved', 'is_deleted']),
-            models.Index(fields=['user', 'is_deleted']),
-            models.Index(fields=['rating']),
+            models.Index(fields=['product', 'is_approved', 'is_deleted'], name='pr_prod_approved_deleted_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='pr_user_is_deleted_idx'),
+            models.Index(fields=['rating'], name='pr_rating_idx'),
         ]
 
     def __str__(self):
@@ -95,8 +95,8 @@ class ReviewHelpful(models.Model):
         db_table = 'review_helpful_votes'
         unique_together = ['review', 'user']
         indexes = [
-            models.Index(fields=['review']),
-            models.Index(fields=['user']),
+            models.Index(fields=['review'], name='rhv_review_idx'),
+            models.Index(fields=['user'], name='rhv_user_idx'),
         ]
 
     def __str__(self):

@@ -14,10 +14,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'phone', 'email', 'first_name', 'last_name',
-            'avatar', 'is_verified', 'first_order', 'created_at',
+            'first_order', 'created_at',
             'address', 'order_count', 'wishlist_count', 'coupon_count'
         ]
-        read_only_fields = ['id', 'created_at', 'is_verified']
+        read_only_fields = ['id', 'created_at']
 
     def get_order_count(self, obj):
         """Get the count of non-deleted orders for this user."""

@@ -27,10 +27,10 @@ class WishlistItem(models.Model):
         unique_together = ['user', 'product']
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['product']),
-            models.Index(fields=['user', 'is_deleted']),
-            models.Index(fields=['product', 'is_deleted']),
+            models.Index(fields=['user'], name='wi_user_idx'),
+            models.Index(fields=['product'], name='wi_product_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='wi_user_is_deleted_idx'),
+            models.Index(fields=['product', 'is_deleted'], name='wi_product_is_deleted_idx'),
         ]
 
     def __str__(self):

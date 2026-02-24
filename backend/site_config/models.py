@@ -5,6 +5,8 @@ from decimal import Decimal
 class SiteSettings(models.Model):
     """Site-wide configuration settings."""
 
+    id = models.AutoField(primary_key=True)
+
     # Tax settings
     tax_rate = models.DecimalField(
         max_digits=5,
@@ -61,6 +63,7 @@ class SiteSettings(models.Model):
 class SortOption(models.Model):
     """Dynamic sort options for products."""
 
+    id = models.AutoField(primary_key=True)
     value = models.CharField(max_length=50, unique=True)
     label = models.CharField(max_length=100)
     order = models.PositiveIntegerField(default=0, help_text='Display order')
@@ -72,7 +75,7 @@ class SortOption(models.Model):
         verbose_name = 'Sort Option'
         verbose_name_plural = 'Sort Options'
         indexes = [
-            models.Index(fields=['order']),
+            models.Index(fields=['order'], name='sort_options_order_idx'),
         ]
 
     def __str__(self):

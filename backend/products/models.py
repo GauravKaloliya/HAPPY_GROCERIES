@@ -7,6 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class Category(models.Model):
     """Product category model."""
 
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50, unique=True, db_index=True)
     description = models.TextField(default='')
     emoji = models.CharField(max_length=10, default='')
@@ -26,8 +27,8 @@ class Category(models.Model):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
         indexes = [
-            models.Index(fields=['name']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['name'], name='categories_name_idx'),
+            models.Index(fields=['is_deleted'], name='categories_is_deleted_idx'),
         ]
 
     def __str__(self):
@@ -49,6 +50,7 @@ class Category(models.Model):
 class Brand(models.Model):
     """Brand model for products."""
 
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, unique=True, db_index=True)
     slug = models.SlugField(max_length=120, unique=True, null=True, blank=True)
     description = models.TextField(blank=True, null=True)
@@ -67,9 +69,9 @@ class Brand(models.Model):
         verbose_name_plural = 'Brands'
         ordering = ['name']
         indexes = [
-            models.Index(fields=['name']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['name'], name='brands_name_idx'),
+            models.Index(fields=['is_active'], name='brands_is_active_idx'),
+            models.Index(fields=['is_deleted'], name='brands_is_deleted_idx'),
         ]
 
     def __str__(self):
@@ -218,16 +220,16 @@ class Product(models.Model):
         db_table = 'products'
         ordering = ['id']
         indexes = [
-            models.Index(fields=['category', 'is_active']),
-            models.Index(fields=['name']),
-            models.Index(fields=['is_deleted']),
-            models.Index(fields=['brand']),
-            models.Index(fields=['unit']),
-            models.Index(fields=['mrp']),
-            models.Index(fields=['gst_rate']),
-            models.Index(fields=['is_veg']),
-            models.Index(fields=['is_organic']),
-            models.Index(fields=['is_fresh']),
+            models.Index(fields=['category', 'is_active'], name='prod_cat_is_active_idx'),
+            models.Index(fields=['name'], name='products_name_idx'),
+            models.Index(fields=['is_deleted'], name='products_is_deleted_idx'),
+            models.Index(fields=['brand'], name='products_brand_id_idx'),
+            models.Index(fields=['unit'], name='products_unit_idx'),
+            models.Index(fields=['mrp'], name='products_mrp_idx'),
+            models.Index(fields=['gst_rate'], name='products_gst_rate_idx'),
+            models.Index(fields=['is_veg'], name='products_is_veg_idx'),
+            models.Index(fields=['is_organic'], name='products_is_organic_idx'),
+            models.Index(fields=['is_fresh'], name='products_is_fresh_idx'),
         ]
 
     def __str__(self):
@@ -282,8 +284,8 @@ class ComboProduct(models.Model):
         db_table = 'combos_products'
         unique_together = ['combo', 'product']
         indexes = [
-            models.Index(fields=['combo']),
-            models.Index(fields=['product']),
+            models.Index(fields=['combo'], name='combos_products_combo_idx'),
+            models.Index(fields=['product'], name='combos_products_product_idx'),
         ]
 
     def __str__(self):
@@ -293,6 +295,7 @@ class ComboProduct(models.Model):
 class Combo(models.Model):
     """Product combo model - combines 2-3 similar products together."""
 
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200)
     description = models.TextField(default='')
     products = models.ManyToManyField(
@@ -316,8 +319,8 @@ class Combo(models.Model):
         db_table = 'combos'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['is_active'], name='combos_is_active_idx'),
+            models.Index(fields=['is_deleted'], name='combos_is_deleted_idx'),
         ]
 
     def __str__(self):

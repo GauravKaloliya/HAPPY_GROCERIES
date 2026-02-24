@@ -71,18 +71,19 @@ class LoginView(APIView):
                 status=status.HTTP_423_LOCKED
             )
         
-        # Authenticate user
+        # Authenticate user - keep reference to DB user object before authenticate overwrites it
+        db_user = user
         user = authenticate(username=phone, password=password)
         
         if user is None:
-            # Increment failed login attempts
-            user.failed_login_attempts += 1
+            # Increment failed login attempts on the original db_user object
+            db_user.failed_login_attempts += 1
             
             # Lock account after 5 failed attempts
-            if user.failed_login_attempts >= 5:
-                user.locked_until = timezone.now() + timedelta(minutes=15)
+            if db_user.failed_login_attempts >= 5:
+                db_user.locked_until = timezone.now() + timedelta(minutes=15)
             
-            user.save()
+            db_user.save()
             
             return Response(
                 {'error': 'Incorrect password. Please try again.'},

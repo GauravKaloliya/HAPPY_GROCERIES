@@ -6,6 +6,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class Coupon(models.Model):
     """Coupon model for discounts."""
 
+    id = models.AutoField(primary_key=True)
+
     COUPON_TYPES = [
         ('percentage', 'Percentage'),
         ('fixed', 'Fixed Amount'),
@@ -50,9 +52,9 @@ class Coupon(models.Model):
         db_table = 'coupons'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['code', 'is_active']),
-            models.Index(fields=['is_active', 'valid_until']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['code', 'is_active'], name='coupons_code_is_active_idx'),
+            models.Index(fields=['is_active', 'valid_until'], name='coupons_active_valid_idx'),
+            models.Index(fields=['is_deleted'], name='coupons_is_deleted_idx'),
         ]
 
     def __str__(self):
@@ -121,11 +123,12 @@ class CouponUsage(models.Model):
         db_table = 'coupon_usages'
         unique_together = ['user', 'coupon']
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['coupon']),
-            models.Index(fields=['user', 'is_deleted']),
-            models.Index(fields=['coupon', 'is_deleted']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['user'], name='cu_user_idx'),
+            models.Index(fields=['coupon'], name='cu_coupon_idx'),
+            models.Index(fields=['order'], name='cu_order_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='cu_user_is_deleted_idx'),
+            models.Index(fields=['coupon', 'is_deleted'], name='cu_coupon_is_deleted_idx'),
+            models.Index(fields=['is_deleted'], name='cu_is_deleted_idx'),
         ]
 
     def __str__(self):

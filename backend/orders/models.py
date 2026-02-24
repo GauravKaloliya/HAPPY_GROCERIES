@@ -63,8 +63,8 @@ class Order(models.Model):
         db_table = 'orders'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user', 'status']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['user', 'status'], name='orders_user_status_idx'),
+            models.Index(fields=['is_deleted'], name='orders_is_deleted_idx'),
             models.Index(fields=['user', 'created_at'], name='orders_user_created_idx'),
             models.Index(fields=['applied_discount_amount'], name='orders_applied_discount_idx'),
         ]
@@ -120,9 +120,11 @@ class OrderItem(models.Model):
     class Meta:
         db_table = 'order_items'
         indexes = [
-            models.Index(fields=['order']),
-            models.Index(fields=['is_deleted']),
-            models.Index(fields=['applied_discount_amount'], name='order_itm_applied_disc_idx'),
+            models.Index(fields=['order'], name='oi_order_idx'),
+            models.Index(fields=['product'], name='oi_product_idx'),
+            models.Index(fields=['order', 'is_deleted'], name='oi_order_is_deleted_idx'),
+            models.Index(fields=['is_deleted'], name='oi_is_deleted_idx'),
+            models.Index(fields=['applied_discount_amount'], name='oi_applied_disc_idx'),
         ]
 
     def __str__(self):
