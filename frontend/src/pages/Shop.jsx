@@ -8,15 +8,18 @@ import { selectSortOptions } from '../store/slices/configSlice';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
+const PRODUCTS_PER_PAGE = 6;
+
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { logCustomActivity } = useActivityLog('page_view', { section: 'shop' });
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const sortOptions = useSelector(selectSortOptions);
 
   // Filter states
@@ -51,6 +54,7 @@ const Shop = () => {
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
+    setCurrentPage(1); // Reset to first page when filters change
     try {
       const params = {
         search: searchQuery,
@@ -68,7 +72,7 @@ const Shop = () => {
 
       const productsRes = await productsAPI.getAll(params);
 
-      setProducts(productsRes.data.results || productsRes.data);
+      setAllProducts(productsRes.data.results || productsRes.data);
       setTotalCount(productsRes.data.count || productsRes.data.length);
 
       // Log search/filter activity
@@ -125,7 +129,30 @@ const Shop = () => {
 
   const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy || minPrice || maxPrice || inStock;
 
-  if (loading && products.length === 0) return <PageLoader />;
+  // Calculate paginated products
+  const totalPages = Math.ceil(allProducts.length / PRODUCTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+  const endIndex = startIndex + PRODUCTS_PER_PAGE;
+  const displayedProducts = allProducts.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      handlePageChange(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1);
+    }
+  };
+
+  if (loading && allProducts.length === 0) return <PageLoader />;
 
   return (
     <div className="container">
@@ -135,7 +162,7 @@ const Shop = () => {
         onClick={() => setShowMobileFilters(true)}
       >
         🔍 Filters & Sort
-        {hasFilters && <span className="mobile-filter-badge">{products.length}</span>}
+        {hasFilters && <span className="mobile-filter-badge">{allProducts.length}</span>}
       </button>
 
       <div className="shop-layout">
@@ -286,12 +313,49 @@ const Shop = () => {
             <p className="results-count">{totalCount} products found</p>
           </div>
 
-          {products.length > 0 ? (
-            <div className="products-grid">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+          {displayedProducts.length > 0 ? (
+            <>
+              <div className="products-grid">
+                {displayedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    className="pagination-btn"
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    ← Previous
+                  </button>
+                  <div className="pagination-pages">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        className={`pagination-page ${currentPage === page ? 'active' : ''}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className="pagination-btn"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+              
+              <p className="pagination-info">
+                Showing {startIndex + 1}-{Math.min(endIndex, allProducts.length)} of {allProducts.length} products
+              </p>
+            </>
           ) : (
             <div className="empty-state">
               <div className="empty-state-icon">🔍</div>

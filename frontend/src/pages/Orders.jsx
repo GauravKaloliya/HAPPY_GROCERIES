@@ -76,9 +76,9 @@ const Orders = () => {
               <div className="order-items">
                 {order.items?.map((item, index) => (
                   <div key={index} className="order-item">
-                    <span className="order-item-name">{item.product?.name || 'Product'}</span>
+                    <span className="order-item-name">{item.product_name || item.product?.name || 'Product'}</span>
                     <span className="order-item-qty">x{item.quantity}</span>
-                    <span className="order-item-price">{formatPrice(item.price * item.quantity)}</span>
+                    <span className="order-item-price">{formatPrice((item.product_price || item.price) * item.quantity)}</span>
                   </div>
                 ))}
               </div>
