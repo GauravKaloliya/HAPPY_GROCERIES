@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from products.models import Product
 
 
 class Cart(models.Model):
@@ -60,7 +59,7 @@ class CartItem(models.Model):
         related_name='items'
     )
     product = models.ForeignKey(
-        Product,
+        'products.Product',
         on_delete=models.CASCADE,
         related_name='cart_items'
     )

@@ -9,15 +9,15 @@ class UserAdmin(BaseUserAdmin):
                     'first_order', 'failed_login_attempts', 'is_deleted']
     list_filter = ['is_active', 'is_superuser', 'first_order', 'is_deleted']
     search_fields = ['phone', 'username', 'email', 'first_name', 'last_name']
-    readonly_fields = ['last_login', 'date_joined', 'created_at', 'updated_at', 'deleted_at', 'locked_until']
+    readonly_fields = ['last_login', 'created_at', 'updated_at', 'deleted_at', 'locked_until']
 
     fieldsets = (
         (None, {'fields': ('phone', 'username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'address', 'avatar')}),
-        ('Authentication', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'address')}),
+        ('Authentication', {'fields': ('is_active', 'is_superuser')}),
         ('Security', {'fields': ('failed_login_attempts', 'locked_until')}),
         ('Order info', {'fields': ('first_order',)}),
-        ('Timestamps', {'fields': ('last_login', 'date_joined', 'created_at', 'updated_at', 'deleted_at')}),
+        ('Timestamps', {'fields': ('last_login', 'created_at', 'updated_at', 'deleted_at')}),
     )
 
     add_fieldsets = (

@@ -1,5 +1,6 @@
 -- Happy Groceries Database Schema
 -- PostgreSQL 14+ compatible
+-- This schema matches the Django models and migrations
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -51,6 +52,9 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE INDEX categories_name_idx ON categories(name);
 CREATE INDEX categories_is_deleted_idx ON categories(is_deleted);
 
+-- =====================================================
+-- BRANDS
+-- =====================================================
 
 CREATE TABLE IF NOT EXISTS brands (
     id SERIAL PRIMARY KEY,
@@ -76,29 +80,24 @@ CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     -- Pricing
-    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),                    -- selling price / discounted price
-    mrp DECIMAL(10, 2) NOT NULL CHECK (mrp >= price),                    -- Maximum Retail Price (mandatory in India)
-
-    -- Unit & Packaging (critical for display: "500 g", "1 ltr", "pack of 6")
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    mrp DECIMAL(10, 2) NOT NULL CHECK (mrp >= price),
+    -- Unit & Packaging
     unit VARCHAR(20) NOT NULL DEFAULT 'piece'
         CHECK (unit IN ('kg', 'g', 'mg', 'ltr', 'ml', 'piece', 'pack', 'dozen', 'bunch', 'bottle', 'can', 'box', 'jar', 'other')),
-    pack_size DECIMAL(8, 2) CHECK (pack_size > 0),                       -- e.g. 0.5 for 500g, 1 for 1kg, 6 for pack of 6
-
+    pack_size DECIMAL(8, 2) CHECK (pack_size > 0),
     -- Category & Brand
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
     brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
-    brand_name VARCHAR(100),                                             -- optional denormalized copy for faster reads / legacy
-
+    brand_name VARCHAR(100),
     -- Tax & Compliance (India-specific)
     hsn_code VARCHAR(8),
     gst_rate DECIMAL(4, 2) NOT NULL DEFAULT 5.00
         CHECK (gst_rate IN (0.00, 0.25, 5.00, 12.00, 18.00, 28.00)),
-
     -- Flags / Badges
     is_veg BOOLEAN NOT NULL DEFAULT TRUE,
     is_organic BOOLEAN NOT NULL DEFAULT FALSE,
     is_fresh BOOLEAN NOT NULL DEFAULT FALSE,
-
     -- Display & Quality
     emoji VARCHAR(10) NOT NULL DEFAULT '',
     rating DECIMAL(2, 1) NOT NULL DEFAULT 4.0 CHECK (rating >= 0 AND rating <= 5),
@@ -106,7 +105,6 @@ CREATE TABLE IF NOT EXISTS products (
     stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
     discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100),
     description TEXT NOT NULL DEFAULT '',
-
     -- Status
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -115,16 +113,16 @@ CREATE TABLE IF NOT EXISTS products (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX products_name_idx                    ON products(name);
-CREATE INDEX products_category_is_active_idx      ON products(category_id, is_active);
-CREATE INDEX products_brand_id_idx                ON products(brand_id);
-CREATE INDEX products_unit_idx                    ON products(unit);
-CREATE INDEX products_mrp_idx                     ON products(mrp);
-CREATE INDEX products_gst_rate_idx                ON products(gst_rate);
-CREATE INDEX products_is_veg_idx                  ON products(is_veg);
-CREATE INDEX products_is_organic_idx              ON products(is_organic);
-CREATE INDEX products_is_fresh_idx                ON products(is_fresh);
-CREATE INDEX products_is_deleted_idx              ON products(is_deleted);
+CREATE INDEX products_name_idx ON products(name);
+CREATE INDEX products_category_is_active_idx ON products(category_id, is_active);
+CREATE INDEX products_brand_id_idx ON products(brand_id);
+CREATE INDEX products_unit_idx ON products(unit);
+CREATE INDEX products_mrp_idx ON products(mrp);
+CREATE INDEX products_gst_rate_idx ON products(gst_rate);
+CREATE INDEX products_is_veg_idx ON products(is_veg);
+CREATE INDEX products_is_organic_idx ON products(is_organic);
+CREATE INDEX products_is_fresh_idx ON products(is_fresh);
+CREATE INDEX products_is_deleted_idx ON products(is_deleted);
 
 -- =====================================================
 -- COMBOS
@@ -202,7 +200,7 @@ CREATE TABLE IF NOT EXISTS orders (
     delivery_type VARCHAR(20) NOT NULL DEFAULT 'standard' CHECK (delivery_type IN ('standard', 'express')),
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
     tax DECIMAL(10, 2) NOT NULL CHECK (tax >= 0),
-    applied_discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (applied_discount_amount >= 0),  -- FIXED: comma added here
+    applied_discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00 CHECK (applied_discount_amount >= 0),
     delivery_charge DECIMAL(10, 2) NOT NULL CHECK (delivery_charge >= 0),
     coupon_discount DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (coupon_discount >= 0),
     total DECIMAL(10, 2) NOT NULL CHECK (total >= 0),
@@ -239,7 +237,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     product_emoji VARCHAR(10) NOT NULL DEFAULT '',
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0),
-    applied_discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00 CHECK (applied_discount_amount >= 0),
+    applied_discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00 CHECK (applied_discount_amount >= 0),
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -446,81 +444,6 @@ CREATE TABLE IF NOT EXISTS sort_options (
 CREATE INDEX sort_options_order_idx ON sort_options("order");
 
 -- =====================================================
--- DJANGO AUTH TABLES (for reference)
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS auth_group (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(150) NOT NULL UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS users_groups (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    UNIQUE(user_id, group_id)
-);
-
-CREATE TABLE IF NOT EXISTS django_content_type (
-    id SERIAL PRIMARY KEY,
-    app_label VARCHAR(100) NOT NULL,
-    model VARCHAR(100) NOT NULL,
-    UNIQUE(app_label, model)
-);
-
-CREATE TABLE IF NOT EXISTS auth_permission (
-    id SERIAL PRIMARY KEY,
-    content_type_id INTEGER NOT NULL REFERENCES django_content_type(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    codename VARCHAR(100) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    UNIQUE(content_type_id, codename)
-);
-
-
-CREATE TABLE IF NOT EXISTS auth_group_permissions (
-    id BIGSERIAL PRIMARY KEY,
-    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    UNIQUE(group_id, permission_id)
-);
-
-CREATE TABLE IF NOT EXISTS users_user_permissions (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    UNIQUE(user_id, permission_id)
-);
-
-CREATE TABLE IF NOT EXISTS django_session (
-    session_key VARCHAR(40) NOT NULL PRIMARY KEY,
-    session_data TEXT NOT NULL,
-    expire_date TIMESTAMP WITH TIME ZONE NOT NULL
-);
-
-CREATE INDEX django_session_expire_date_idx ON django_session(expire_date);
-
-CREATE TABLE IF NOT EXISTS django_admin_log (
-    id SERIAL PRIMARY KEY,
-    action_time TIMESTAMP WITH TIME ZONE NOT NULL,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    content_type_id INTEGER REFERENCES django_content_type(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED,
-    object_id TEXT,
-    object_repr VARCHAR(200) NOT NULL,
-    action_flag SMALLINT NOT NULL CHECK (action_flag >= 0),
-    change_message TEXT NOT NULL
-);
-
-CREATE INDEX django_admin_log_content_type_idx ON django_admin_log(content_type_id);
-CREATE INDEX django_admin_log_user_idx ON django_admin_log(user_id);
-
-CREATE TABLE IF NOT EXISTS django_migrations (
-    id BIGSERIAL PRIMARY KEY,
-    app VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    applied TIMESTAMP WITH TIME ZONE NOT NULL
-);
-
--- =====================================================
 -- AUTOMATED UPDATE TRIGGERS FOR updated_at
 -- =====================================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -531,7 +454,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Triggers (apply once)
+-- Triggers
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -541,44 +464,20 @@ CREATE TRIGGER update_brands_updated_at BEFORE UPDATE ON brands FOR EACH ROW EXE
 DROP TRIGGER IF EXISTS update_products_updated_at ON products;
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to combos table
 DROP TRIGGER IF EXISTS update_combos_updated_at ON combos;
-CREATE TRIGGER update_combos_updated_at
-    BEFORE UPDATE ON combos
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_combos_updated_at BEFORE UPDATE ON combos FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to carts table
 DROP TRIGGER IF EXISTS update_carts_updated_at ON carts;
-CREATE TRIGGER update_carts_updated_at
-    BEFORE UPDATE ON carts
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_carts_updated_at BEFORE UPDATE ON carts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to orders table
 DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
-CREATE TRIGGER update_orders_updated_at
-    BEFORE UPDATE ON orders
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to product_reviews table
 DROP TRIGGER IF EXISTS update_product_reviews_updated_at ON product_reviews;
-CREATE TRIGGER update_product_reviews_updated_at
-    BEFORE UPDATE ON product_reviews
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_product_reviews_updated_at BEFORE UPDATE ON product_reviews FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to contact_messages table
 DROP TRIGGER IF EXISTS update_contact_messages_updated_at ON contact_messages;
-CREATE TRIGGER update_contact_messages_updated_at
-    BEFORE UPDATE ON contact_messages
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_contact_messages_updated_at BEFORE UPDATE ON contact_messages FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Apply trigger to site_settings table
 DROP TRIGGER IF EXISTS update_site_settings_updated_at ON site_settings;
-CREATE TRIGGER update_site_settings_updated_at
-    BEFORE UPDATE ON site_settings
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_site_settings_updated_at BEFORE UPDATE ON site_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
