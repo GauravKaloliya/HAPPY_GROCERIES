@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('rating', models.PositiveIntegerField(choices=[(1, '1 - Poor'), (2, '2 - Fair'), (3, '3 - Good'), (4, '4 - Very Good'), (5, '5 - Excellent')], help_text='Rating from 1 to 5 stars', validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(5)])),
-                ('title', models.CharField(blank=True, max_length=100)),
+                ('title', models.CharField(default='', max_length=100)),
                 ('comment', models.TextField(help_text='Review feedback', max_length=1000)),
                 ('is_approved', models.BooleanField(default=True)),
                 ('is_verified_purchase', models.BooleanField(default=True, help_text='Verified as purchased')),

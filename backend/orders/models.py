@@ -67,7 +67,7 @@ class Order(models.Model):
     delivery_name = models.CharField(max_length=100)
     delivery_phone = models.CharField(max_length=10)
     delivery_address = models.TextField()
-    delivery_instructions = models.TextField(blank=True, default='')
+    delivery_instructions = models.TextField(default='')
 
     # Timestamps
     estimated_delivery = models.DateTimeField(null=True, blank=True)
