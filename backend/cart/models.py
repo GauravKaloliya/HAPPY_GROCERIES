@@ -48,6 +48,15 @@ class Cart(models.Model):
         )
         return total
 
+    @property
+    def subtotal(self):
+        """Get subtotal of items in cart (with discounts applied)."""
+        total = sum(
+            item.product.effective_price * item.quantity
+            for item in self.items.filter(is_deleted=False)
+        )
+        return total
+
 
 class CartItem(models.Model):
     """Cart item model."""
@@ -85,4 +94,14 @@ class CartItem(models.Model):
     @property
     def subtotal(self):
         """Get subtotal for this cart item."""
+        return self.product.price * self.quantity
+
+    @property
+    def total(self):
+        """Get total price for this cart item (with discount applied)."""
+        return self.product.effective_price * self.quantity
+
+    @property
+    def original_total(self):
+        """Get original total price for this cart item (without discount)."""
         return self.product.price * self.quantity

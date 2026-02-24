@@ -148,6 +148,20 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def effective_price(self):
+        """Calculate effective price after discount."""
+        if self.discount_percent and self.discount_percent > 0:
+            return self.price * (1 - self.discount_percent / 100)
+        return self.price
+
+    @property
+    def discount_amount(self):
+        """Calculate discount amount."""
+        if self.discount_percent and self.discount_percent > 0:
+            return self.price * (self.discount_percent / 100)
+        return 0
+
     def clean(self):
         from django.core.exceptions import ValidationError
         if self.mrp < self.price:
@@ -188,6 +202,21 @@ class Combo(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def original_price(self):
+        """Calculate total original price of all products in the combo."""
+        return sum(p.price for p in self.products.all())
+
+    @property
+    def discounted_price(self):
+        """Calculate discounted price of the combo."""
+        return self.original_price * (1 - self.discount_percent / 100)
+
+    @property
+    def savings(self):
+        """Calculate savings from the combo."""
+        return self.original_price - self.discounted_price
 
     def soft_delete(self):
         from django.utils import timezone

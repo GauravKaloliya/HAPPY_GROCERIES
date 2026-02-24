@@ -160,7 +160,8 @@ class RefreshTokenView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        refresh_token = request.COOKIES.get('refresh_token')
+        # Accept refresh token from either cookie or request body
+        refresh_token = request.COOKIES.get('refresh_token') or request.data.get('refresh')
         
         if not refresh_token:
             return Response(
