@@ -24,9 +24,9 @@ class Migration(migrations.Migration):
             model_name='activitylog',
             index=models.Index(fields=['user', 'created_at'], name='activity_logs_user_created_idx'),
         ),
-        migrations.AddIndex(
-            model_name='activitylog',
-            index=models.Index(fields=['action', 'created_at'], name='activity_logs_action_created_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX activity_logs_action_created_idx ON activity_logs(action, created_at);",
+            reverse_sql="DROP INDEX IF EXISTS activity_logs_action_created_idx;",
         ),
         migrations.AddIndex(
             model_name='activitylog',

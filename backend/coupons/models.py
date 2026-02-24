@@ -128,8 +128,8 @@ class CouponUsage(models.Model):
             models.Index(fields=['user'], name='coupon_usages_user_idx'),
             models.Index(fields=['coupon'], name='coupon_usages_coupon_idx'),
             models.Index(fields=['order'], name='coupon_usages_order_idx'),
-            models.Index(fields=['user', 'is_deleted'], name='coupon_usages_user_is_deleted_idx'),
-            models.Index(fields=['coupon', 'is_deleted'], name='coupon_usages_coupon_is_deleted_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='cu_user_is_deleted_idx'),
+            models.Index(fields=['coupon', 'is_deleted'], name='cu_coupon_is_deleted_idx'),
             models.Index(fields=['is_deleted'], name='coupon_usages_is_deleted_idx'),
         ]
 

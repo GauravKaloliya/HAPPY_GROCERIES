@@ -67,16 +67,16 @@ class Migration(migrations.Migration):
             model_name='orderitem',
             index=models.Index(fields=['product'], name='order_items_product_idx'),
         ),
-        migrations.AddIndex(
-            model_name='orderitem',
-            index=models.Index(fields=['order', 'is_deleted'], name='order_items_order_is_deleted_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX order_items_order_is_deleted_idx ON order_items(order_id, is_deleted);",
+            reverse_sql="DROP INDEX IF EXISTS order_items_order_is_deleted_idx;",
         ),
         migrations.AddIndex(
             model_name='orderitem',
             index=models.Index(fields=['is_deleted'], name='order_items_is_deleted_idx'),
         ),
-        migrations.AddIndex(
-            model_name='orderitem',
-            index=models.Index(fields=['applied_discount_amount'], name='order_items_applied_discount_idx'),
+        migrations.RunSQL(
+            sql="CREATE INDEX order_items_applied_discount_idx ON order_items(applied_discount_amount);",
+            reverse_sql="DROP INDEX IF EXISTS order_items_applied_discount_idx;",
         ),
     ]

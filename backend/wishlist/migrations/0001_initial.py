@@ -28,8 +28,16 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'wishlist_items',
                 'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['user'], name='wishlist_items_user_idx'), models.Index(fields=['product'], name='wishlist_items_product_idx'), models.Index(fields=['user', 'is_deleted'], name='wishlist_items_user_is_deleted_idx'), models.Index(fields=['product', 'is_deleted'], name='wishlist_items_product_is_deleted_idx')],
+                'indexes': [models.Index(fields=['user'], name='wishlist_items_user_idx'), models.Index(fields=['product'], name='wishlist_items_product_idx'), models.Index(fields=['user', 'is_deleted'], name='wi_user_is_deleted_idx'), models.Index(fields=['product', 'is_deleted'], name='wi_product_is_deleted_idx')],
                 'unique_together': {('user', 'product')},
             },
+        ),
+        migrations.RunSQL(
+            sql="CREATE INDEX wishlist_items_user_is_deleted_idx ON wishlist_items(user_id, is_deleted);",
+            reverse_sql="DROP INDEX IF EXISTS wishlist_items_user_is_deleted_idx;",
+        ),
+        migrations.RunSQL(
+            sql="CREATE INDEX wishlist_items_product_is_deleted_idx ON wishlist_items(product_id, is_deleted);",
+            reverse_sql="DROP INDEX IF EXISTS wishlist_items_product_is_deleted_idx;",
         ),
     ]
