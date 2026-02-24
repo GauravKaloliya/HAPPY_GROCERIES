@@ -57,8 +57,8 @@ class ProductReview(models.Model):
         indexes = [
             models.Index(fields=['user'], name='product_reviews_user_idx'),
             models.Index(fields=['product'], name='product_reviews_product_idx'),
-            models.Index(fields=['product', 'is_approved', 'is_deleted'], name='product_reviews_product_approved_idx'),
-            models.Index(fields=['user', 'is_deleted'], name='product_reviews_user_deleted_idx'),
+            models.Index(fields=['product', 'is_approved', 'is_deleted'], name='prod_rev_prod_app_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='prod_rev_user_del_idx'),
             models.Index(fields=['rating'], name='product_reviews_rating_idx'),
         ]
     
@@ -97,7 +97,7 @@ class ReviewHelpful(models.Model):
         db_table = 'review_helpful_votes'
         unique_together = ['review', 'user']
         indexes = [
-            models.Index(fields=['review'], name='review_helpful_votes_review_idx'),
+            models.Index(fields=['review'], name='rev_help_votes_rev_idx'),
             models.Index(fields=['user'], name='review_helpful_votes_user_idx'),
         ]
     
