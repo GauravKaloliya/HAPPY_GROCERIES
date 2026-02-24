@@ -24,7 +24,7 @@ class ContactMessage(models.Model):
     message = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
+    user_agent = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -34,9 +34,9 @@ class ContactMessage(models.Model):
         verbose_name_plural = 'Contact Messages'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['status']),
-            models.Index(fields=['created_at']),
+            models.Index(fields=['user'], name='contact_messages_user_idx'),
+            models.Index(fields=['status'], name='contact_messages_status_idx'),
+            models.Index(fields=['created_at'], name='contact_messages_created_idx'),
         ]
 
     def __str__(self):

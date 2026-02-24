@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.validators import MinValueValidator
+from django.db.models import Q, CheckConstraint
 from decimal import Decimal
 
 
@@ -10,6 +12,7 @@ class SiteSettings(models.Model):
         max_digits=5,
         decimal_places=4,
         default=Decimal('0.0800'),
+        validators=[MinValueValidator(0)],
         help_text='Tax rate as decimal (e.g., 0.08 for 8%)'
     )
 
@@ -18,12 +21,14 @@ class SiteSettings(models.Model):
         max_digits=10,
         decimal_places=2,
         default=Decimal('40.00'),
+        validators=[MinValueValidator(0)],
         help_text='Standard delivery charge'
     )
     express_delivery_charge = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=Decimal('50.00'),
+        validators=[MinValueValidator(0)],
         help_text='Express delivery charge'
     )
 
@@ -32,6 +37,7 @@ class SiteSettings(models.Model):
         max_digits=10,
         decimal_places=2,
         default=Decimal('500.00'),
+        validators=[MinValueValidator(0)],
         help_text='Order amount above which delivery is free'
     )
 
@@ -47,6 +53,12 @@ class SiteSettings(models.Model):
         db_table = 'site_settings'
         verbose_name = 'Site Setting'
         verbose_name_plural = 'Site Settings'
+        constraints = [
+            CheckConstraint(condition=Q(tax_rate__gte=0), name='site_settings_tax_rate_gte_0'),
+            CheckConstraint(condition=Q(standard_delivery_charge__gte=0), name='site_settings_standard_delivery_gte_0'),
+            CheckConstraint(condition=Q(express_delivery_charge__gte=0), name='site_settings_express_delivery_gte_0'),
+            CheckConstraint(condition=Q(free_delivery_threshold__gte=0), name='site_settings_free_threshold_gte_0'),
+        ]
 
     def __str__(self):
         return f'Site Settings (updated: {self.updated_at})'
@@ -72,7 +84,10 @@ class SortOption(models.Model):
         verbose_name = 'Sort Option'
         verbose_name_plural = 'Sort Options'
         indexes = [
-            models.Index(fields=['order']),
+            models.Index(fields=['order'], name='sort_options_order_idx'),
+        ]
+        constraints = [
+            CheckConstraint(condition=Q(order__gte=0), name='sort_options_order_gte_0'),
         ]
 
     def __str__(self):

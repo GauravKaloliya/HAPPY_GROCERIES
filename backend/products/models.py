@@ -2,12 +2,13 @@ from decimal import Decimal
 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Q, F, CheckConstraint
 
 
 class Category(models.Model):
     """Product category model."""
 
-    name = models.CharField(max_length=50, unique=True, db_index=True)
+    name = models.CharField(max_length=50, unique=True)
     description = models.TextField(default='')
     emoji = models.CharField(max_length=10, default='')
     color = models.CharField(
@@ -26,8 +27,8 @@ class Category(models.Model):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
         indexes = [
-            models.Index(fields=['name']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['name'], name='categories_name_idx'),
+            models.Index(fields=['is_deleted'], name='categories_is_deleted_idx'),
         ]
 
     def __str__(self):
@@ -49,7 +50,7 @@ class Category(models.Model):
 class Brand(models.Model):
     """Brand model for products."""
 
-    name = models.CharField(max_length=100, unique=True, db_index=True)
+    name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True, null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     logo = models.CharField(max_length=200, blank=True, null=True)
@@ -67,9 +68,9 @@ class Brand(models.Model):
         verbose_name_plural = 'Brands'
         ordering = ['name']
         indexes = [
-            models.Index(fields=['name']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['name'], name='brands_name_idx'),
+            models.Index(fields=['is_active'], name='brands_is_active_idx'),
+            models.Index(fields=['is_deleted'], name='brands_is_deleted_idx'),
         ]
 
     def __str__(self):
@@ -118,7 +119,7 @@ class Product(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=100)
 
     # Pricing
     price = models.DecimalField(
@@ -138,8 +139,7 @@ class Product(models.Model):
     unit = models.CharField(
         max_length=20,
         choices=UNIT_CHOICES,
-        default='piece',
-        db_index=True
+        default='piece'
     )
     pack_size = models.DecimalField(
         max_digits=8,
@@ -161,8 +161,7 @@ class Product(models.Model):
         on_delete=models.SET_NULL,
         related_name='products',
         null=True,
-        blank=True,
-        db_index=True
+        blank=True
     )
     brand_name = models.CharField(
         max_length=100,
@@ -177,7 +176,6 @@ class Product(models.Model):
         decimal_places=2,
         choices=GST_RATE_CHOICES,
         default=5.00,
-        db_index=True,
         validators=[
             MinValueValidator(0.00),
             MaxValueValidator(28.00)
@@ -185,9 +183,9 @@ class Product(models.Model):
     )
 
     # Flags / Badges
-    is_veg = models.BooleanField(default=True, db_index=True)
-    is_organic = models.BooleanField(default=False, db_index=True)
-    is_fresh = models.BooleanField(default=False, db_index=True)
+    is_veg = models.BooleanField(default=True)
+    is_organic = models.BooleanField(default=False)
+    is_fresh = models.BooleanField(default=False)
 
     # Display & Quality
     emoji = models.CharField(max_length=10, default='')
@@ -218,20 +216,34 @@ class Product(models.Model):
         db_table = 'products'
         ordering = ['id']
         indexes = [
-            models.Index(fields=['category', 'is_active']),
-            models.Index(fields=['name']),
-            models.Index(fields=['is_deleted']),
-            models.Index(fields=['brand']),
-            models.Index(fields=['unit']),
-            models.Index(fields=['mrp']),
-            models.Index(fields=['gst_rate']),
-            models.Index(fields=['is_veg']),
-            models.Index(fields=['is_organic']),
-            models.Index(fields=['is_fresh']),
+            models.Index(fields=['name'], name='products_name_idx'),
+            models.Index(fields=['category', 'is_active'], name='products_category_is_active_idx'),
+            models.Index(fields=['brand'], name='products_brand_id_idx'),
+            models.Index(fields=['unit'], name='products_unit_idx'),
+            models.Index(fields=['mrp'], name='products_mrp_idx'),
+            models.Index(fields=['gst_rate'], name='products_gst_rate_idx'),
+            models.Index(fields=['is_veg'], name='products_is_veg_idx'),
+            models.Index(fields=['is_organic'], name='products_is_organic_idx'),
+            models.Index(fields=['is_fresh'], name='products_is_fresh_idx'),
+            models.Index(fields=['is_deleted'], name='products_is_deleted_idx'),
+        ]
+        constraints = [
+            CheckConstraint(condition=Q(mrp__gte=F('price')), name='products_mrp_gte_price'),
+            CheckConstraint(condition=Q(reviews_count__gte=0), name='products_reviews_count_gte_0'),
+            CheckConstraint(condition=Q(stock__gte=0), name='products_stock_gte_0'),
+            CheckConstraint(condition=Q(discount_percent__gte=0, discount_percent__lte=100), name='products_discount_percent_range'),
+            CheckConstraint(condition=Q(price__gte=0), name='products_price_gte_0'),
         ]
 
     def __str__(self):
         return f"{self.name} ({self.category.name})"
+
+    def clean(self):
+        """Validate product data."""
+        super().clean()
+        from django.core.exceptions import ValidationError
+        if self.mrp is not None and self.price is not None and self.mrp < self.price:
+            raise ValidationError({'mrp': 'MRP must be greater than or equal to price.'})
 
     @property
     def effective_price(self):
@@ -282,8 +294,8 @@ class ComboProduct(models.Model):
         db_table = 'combos_products'
         unique_together = ['combo', 'product']
         indexes = [
-            models.Index(fields=['combo']),
-            models.Index(fields=['product']),
+            models.Index(fields=['combo'], name='combos_products_combo_idx'),
+            models.Index(fields=['product'], name='combos_products_product_idx'),
         ]
 
     def __str__(self):
@@ -316,8 +328,11 @@ class Combo(models.Model):
         db_table = 'combos'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['is_active']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['is_active'], name='combos_is_active_idx'),
+            models.Index(fields=['is_deleted'], name='combos_is_deleted_idx'),
+        ]
+        constraints = [
+            CheckConstraint(condition=Q(discount_percent__gte=0, discount_percent__lte=50), name='combos_discount_percent_range'),
         ]
 
     def __str__(self):

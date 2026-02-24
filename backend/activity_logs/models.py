@@ -31,13 +31,13 @@ class ActivityLog(models.Model):
         blank=True,
         related_name='activity_logs'
     )
-    action = models.CharField(max_length=50, choices=ACTION_CHOICES, db_index=True)
-    page = models.CharField(max_length=255, db_index=True)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    page = models.CharField(max_length=255)
     details = models.JSONField(default=dict)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
-    session_id = models.CharField(max_length=255, blank=True, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    user_agent = models.TextField(blank=True, null=True)
+    session_id = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'activity_logs'
@@ -45,11 +45,11 @@ class ActivityLog(models.Model):
         verbose_name_plural = 'Activity Logs'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user', 'created_at'], name='activity_log_user_created_idx'),
-            models.Index(fields=['action', 'created_at'], name='act_log_act_created_idx'),
-            models.Index(fields=['page']),
-            models.Index(fields=['session_id']),
-            models.Index(fields=['user']),
+            models.Index(fields=['user', 'created_at'], name='activity_logs_user_created_idx'),
+            models.Index(fields=['action', 'created_at'], name='activity_logs_action_created_idx'),
+            models.Index(fields=['page'], name='activity_logs_page_idx'),
+            models.Index(fields=['session_id'], name='activity_logs_session_id_idx'),
+            models.Index(fields=['user'], name='activity_logs_user_idx'),
         ]
 
     def __str__(self):
