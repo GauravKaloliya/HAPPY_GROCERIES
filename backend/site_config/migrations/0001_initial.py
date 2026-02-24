@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SortOption',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('value', models.CharField(max_length=50, unique=True)),
                 ('label', models.CharField(max_length=100)),
                 ('order', models.PositiveIntegerField(default=0, help_text='Display order')),
@@ -45,6 +45,9 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Sort Options',
                 'db_table': 'sort_options',
                 'ordering': ['order', 'label'],
+                'indexes': [
+                    models.Index(fields=['order', 'label'], name='sort_options_order_idx'),
+                ],
             },
         ),
     ]

@@ -33,6 +33,11 @@ class ContactMessage(models.Model):
         verbose_name = 'Contact Message'
         verbose_name_plural = 'Contact Messages'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user'], name='contact_messages_user_idx'),
+            models.Index(fields=['status'], name='contact_messages_status_idx'),
+            models.Index(fields=['created_at'], name='contact_messages_created_idx'),
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.email}"
