@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
-from products.models import Product
 
 
 class Order(models.Model):
@@ -94,7 +93,7 @@ class OrderItem(models.Model):
         related_name='items'
     )
     product = models.ForeignKey(
-        Product,
+        'products.Product',
         on_delete=models.PROTECT,
         related_name='order_items',
         null=True,
