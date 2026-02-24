@@ -194,7 +194,7 @@ class Product(models.Model):
     rating = models.DecimalField(
         max_digits=2,
         decimal_places=1,
-        default=0.0,
+        default=4.0,
         validators=[MinValueValidator(0), MaxValueValidator(5)]
     )
     reviews_count = models.PositiveIntegerField(default=0)
