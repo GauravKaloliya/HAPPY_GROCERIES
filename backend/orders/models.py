@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 
 
 class Order(models.Model):
@@ -25,7 +25,11 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name='orders'
     )
-    order_id = models.CharField(max_length=20, unique=True, db_index=True)
+    order_id = models.CharField(
+        max_length=20,
+        unique=True,
+        validators=[RegexValidator(regex=r'^HG[0-9]{8}$')]
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPES, default='standard')
 
@@ -62,8 +66,11 @@ class Order(models.Model):
         db_table = 'orders'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['user', 'status']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['order_id'], name='orders_order_id_idx'),
+            models.Index(fields=['user'], name='orders_user_idx'),
+            models.Index(fields=['status'], name='orders_status_idx'),
+            models.Index(fields=['user', 'status'], name='orders_user_status_idx'),
+            models.Index(fields=['is_deleted'], name='orders_is_deleted_idx'),
             models.Index(fields=['user', 'created_at'], name='orders_user_created_idx'),
             models.Index(fields=['applied_discount_amount'], name='orders_applied_discount_idx'),
         ]
@@ -119,9 +126,11 @@ class OrderItem(models.Model):
     class Meta:
         db_table = 'order_items'
         indexes = [
-            models.Index(fields=['order']),
-            models.Index(fields=['is_deleted']),
-            models.Index(fields=['applied_discount_amount'], name='order_itm_applied_disc_idx'),
+            models.Index(fields=['order'], name='order_items_order_idx'),
+            models.Index(fields=['product'], name='order_items_product_idx'),
+            models.Index(fields=['order', 'is_deleted'], name='order_items_order_is_deleted_idx'),
+            models.Index(fields=['is_deleted'], name='order_items_is_deleted_idx'),
+            models.Index(fields=['applied_discount_amount'], name='order_items_applied_discount_idx'),
         ]
 
     def __str__(self):

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.contrib.postgres.indexes import GinIndex
 
 
 class Coupon(models.Model):
@@ -12,7 +13,7 @@ class Coupon(models.Model):
         ('category', 'Category-based'),
     ]
 
-    code = models.CharField(max_length=20, unique=True, db_index=True)
+    code = models.CharField(max_length=20, unique=True)
     description = models.TextField(default='')
     coupon_type = models.CharField(max_length=20, choices=COUPON_TYPES, default='percentage')
     value = models.DecimalField(
@@ -50,9 +51,12 @@ class Coupon(models.Model):
         db_table = 'coupons'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['code', 'is_active']),
-            models.Index(fields=['is_active', 'valid_until']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['code'], name='coupons_code_idx'),
+            models.Index(fields=['is_active'], name='coupons_is_active_idx'),
+            models.Index(fields=['is_active', 'valid_until'], name='coupons_active_valid_idx'),
+            GinIndex(fields=['applicable_categories'], name='coupons_categories_gin'),
+            models.Index(fields=['code', 'is_active'], name='coupons_code_is_active_idx'),
+            models.Index(fields=['is_deleted'], name='coupons_is_deleted_idx'),
         ]
 
     def __str__(self):
@@ -121,11 +125,12 @@ class CouponUsage(models.Model):
         db_table = 'coupon_usages'
         unique_together = ['user', 'coupon']
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['coupon']),
-            models.Index(fields=['user', 'is_deleted']),
-            models.Index(fields=['coupon', 'is_deleted']),
-            models.Index(fields=['is_deleted']),
+            models.Index(fields=['user'], name='coupon_usages_user_idx'),
+            models.Index(fields=['coupon'], name='coupon_usages_coupon_idx'),
+            models.Index(fields=['order'], name='coupon_usages_order_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='coupon_usages_user_is_deleted_idx'),
+            models.Index(fields=['coupon', 'is_deleted'], name='coupon_usages_coupon_is_deleted_idx'),
+            models.Index(fields=['is_deleted'], name='coupon_usages_is_deleted_idx'),
         ]
 
     def __str__(self):

@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
+from django.db.models import Q, CheckConstraint
 
 
 class Cart(models.Model):
@@ -20,8 +22,8 @@ class Cart(models.Model):
     class Meta:
         db_table = 'carts'
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['user', 'is_deleted']),
+            models.Index(fields=['user'], name='carts_user_idx'),
+            models.Index(fields=['user', 'is_deleted'], name='carts_user_is_deleted_idx'),
         ]
 
     def __str__(self):
@@ -63,7 +65,10 @@ class CartItem(models.Model):
         on_delete=models.CASCADE,
         related_name='cart_items'
     )
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)]
+    )
     added_at = models.DateTimeField(auto_now_add=True)
 
     # Soft delete fields
@@ -74,9 +79,12 @@ class CartItem(models.Model):
         db_table = 'cart_items'
         unique_together = ['cart', 'product']
         indexes = [
-            models.Index(fields=['cart']),
-            models.Index(fields=['product']),
-            models.Index(fields=['cart', 'is_deleted']),
+            models.Index(fields=['cart'], name='cart_items_cart_idx'),
+            models.Index(fields=['product'], name='cart_items_product_idx'),
+            models.Index(fields=['cart', 'is_deleted'], name='cart_items_cart_is_deleted_idx'),
+        ]
+        constraints = [
+            CheckConstraint(condition=Q(quantity__gt=0), name='cart_items_quantity_gt_0'),
         ]
 
     def __str__(self):
