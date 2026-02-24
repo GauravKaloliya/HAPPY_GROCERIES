@@ -27,6 +27,8 @@ class WishlistItem(models.Model):
         unique_together = ['user', 'product']
         ordering = ['-created_at']
         indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['product']),
             models.Index(fields=['user', 'is_deleted']),
             models.Index(fields=['product', 'is_deleted']),
         ]
