@@ -10,13 +10,14 @@ class Cart(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='cart'
+        related_name='cart',
+        blank=False
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -58,21 +59,24 @@ class CartItem(models.Model):
     cart = models.ForeignKey(
         Cart,
         on_delete=models.CASCADE,
-        related_name='items'
+        related_name='items',
+        blank=False
     )
     product = models.ForeignKey(
         'products.Product',
         on_delete=models.CASCADE,
-        related_name='cart_items'
+        related_name='cart_items',
+        blank=False
     )
     quantity = models.PositiveIntegerField(
         default=1,
+        blank=False,
         validators=[MinValueValidator(1)]
     )
-    added_at = models.DateTimeField(auto_now_add=True)
+    added_at = models.DateTimeField(auto_now_add=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

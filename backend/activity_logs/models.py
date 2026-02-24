@@ -31,13 +31,13 @@ class ActivityLog(models.Model):
         blank=True,
         related_name='activity_logs'
     )
-    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
-    page = models.CharField(max_length=255)
-    details = models.JSONField(default=dict)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES, blank=False)
+    page = models.CharField(max_length=255, blank=False)
+    details = models.JSONField(default=dict, blank=False)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True, null=True)
     session_id = models.CharField(max_length=255, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
 
     class Meta:
         db_table = 'activity_logs'

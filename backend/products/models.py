@@ -8,18 +8,19 @@ from django.db.models import Q, F, CheckConstraint
 class Category(models.Model):
     """Product category model."""
 
-    name = models.CharField(max_length=50, unique=True)
-    description = models.TextField(default='')
-    emoji = models.CharField(max_length=10, default='')
+    name = models.CharField(max_length=50, unique=True, blank=False)
+    description = models.TextField(default='', blank=False)
+    emoji = models.CharField(max_length=10, default='', blank=False)
     color = models.CharField(
         max_length=50,
         default='var(--primary-pink)',
+        blank=False,
         help_text='CSS color variable or hex color for category'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -50,16 +51,16 @@ class Category(models.Model):
 class Brand(models.Model):
     """Brand model for products."""
 
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True, blank=False)
     slug = models.SlugField(max_length=120, unique=True, null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     logo = models.CharField(max_length=200, blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -119,18 +120,20 @@ class Product(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, blank=False)
 
     # Pricing
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
+        blank=False,
         validators=[MinValueValidator(0)],
         help_text='Selling price / discounted price'
     )
     mrp = models.DecimalField(
         max_digits=10,
         decimal_places=2,
+        blank=False,
         validators=[MinValueValidator(0)],
         help_text='Maximum Retail Price (mandatory in India)'
     )
@@ -139,7 +142,8 @@ class Product(models.Model):
     unit = models.CharField(
         max_length=20,
         choices=UNIT_CHOICES,
-        default='piece'
+        default='piece',
+        blank=False
     )
     pack_size = models.DecimalField(
         max_digits=8,
@@ -154,7 +158,8 @@ class Product(models.Model):
     category = models.ForeignKey(
         Category,
         on_delete=models.RESTRICT,
-        related_name='products'
+        related_name='products',
+        blank=False
     )
     brand = models.ForeignKey(
         Brand,
@@ -166,6 +171,7 @@ class Product(models.Model):
     brand_name = models.CharField(
         max_length=100,
         blank=True,
+        null=True,
         help_text='Denormalized copy for faster reads'
     )
 
@@ -183,33 +189,35 @@ class Product(models.Model):
     )
 
     # Flags / Badges
-    is_veg = models.BooleanField(default=True)
-    is_organic = models.BooleanField(default=False)
-    is_fresh = models.BooleanField(default=False)
+    is_veg = models.BooleanField(default=True, blank=False)
+    is_organic = models.BooleanField(default=False, blank=False)
+    is_fresh = models.BooleanField(default=False, blank=False)
 
     # Display & Quality
-    emoji = models.CharField(max_length=10, default='')
+    emoji = models.CharField(max_length=10, default='', blank=False)
     rating = models.DecimalField(
         max_digits=2,
         decimal_places=1,
         default=4.0,
+        blank=False,
         validators=[MinValueValidator(0), MaxValueValidator(5)]
     )
-    reviews_count = models.PositiveIntegerField(default=0)
-    stock = models.PositiveIntegerField(default=0)
+    reviews_count = models.PositiveIntegerField(default=0, blank=False)
+    stock = models.PositiveIntegerField(default=0, blank=False)
     discount_percent = models.PositiveIntegerField(
         default=0,
+        blank=False,
         validators=[MinValueValidator(0), MaxValueValidator(100)]
     )
-    description = models.TextField(default='')
+    description = models.TextField(default='', blank=False)
 
     # Status
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -305,8 +313,8 @@ class ComboProduct(models.Model):
 class Combo(models.Model):
     """Product combo model - combines 2-3 similar products together."""
 
-    name = models.CharField(max_length=200)
-    description = models.TextField(default='')
+    name = models.CharField(max_length=200, blank=False)
+    description = models.TextField(default='', blank=False)
     products = models.ManyToManyField(
         Product,
         through=ComboProduct,
@@ -314,14 +322,15 @@ class Combo(models.Model):
     )
     discount_percent = models.PositiveIntegerField(
         default=10,
+        blank=False,
         validators=[MinValueValidator(0), MaxValueValidator(50)]
     )
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

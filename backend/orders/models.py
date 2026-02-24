@@ -23,43 +23,46 @@ class Order(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='orders'
+        related_name='orders',
+        blank=False
     )
     order_id = models.CharField(
         max_length=20,
         unique=True,
+        blank=False,
         validators=[RegexValidator(regex=r'^HG[0-9]{8}$')]
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPES, default='standard')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', blank=False)
+    delivery_type = models.CharField(max_length=20, choices=DELIVERY_TYPES, default='standard', blank=False)
 
     # Pricing
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    tax = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(0)])
+    tax = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(0)])
     applied_discount_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0.00,
+        blank=False,
         validators=[MinValueValidator(0)]
     )
-    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
-    total = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    delivery_charge = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(0)])
+    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, blank=False, validators=[MinValueValidator(0)])
+    total = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(0)])
 
     # Delivery details
-    delivery_name = models.CharField(max_length=100)
-    delivery_phone = models.CharField(max_length=15)
-    delivery_address = models.TextField()
-    delivery_instructions = models.TextField(default='')
+    delivery_name = models.CharField(max_length=100, blank=False)
+    delivery_phone = models.CharField(max_length=15, blank=False)
+    delivery_address = models.TextField(blank=False)
+    delivery_instructions = models.TextField(default='', blank=False)
 
     # Timestamps
     estimated_delivery = models.DateTimeField(null=True, blank=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -97,7 +100,8 @@ class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
-        related_name='items'
+        related_name='items',
+        blank=False
     )
     product = models.ForeignKey(
         'products.Product',
@@ -106,21 +110,22 @@ class OrderItem(models.Model):
         null=True,
         blank=True
     )
-    product_name = models.CharField(max_length=100)
-    product_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    product_emoji = models.CharField(max_length=10, default='')
-    quantity = models.PositiveIntegerField()
-    discount_percent = models.PositiveIntegerField(default=0)
+    product_name = models.CharField(max_length=100, blank=False)
+    product_price = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(0)])
+    product_emoji = models.CharField(max_length=10, default='', blank=False)
+    quantity = models.PositiveIntegerField(blank=False)
+    discount_percent = models.PositiveIntegerField(default=0, blank=False)
     applied_discount_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0.00,
+        blank=False,
         validators=[MinValueValidator(0)]
     )
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(0)])
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

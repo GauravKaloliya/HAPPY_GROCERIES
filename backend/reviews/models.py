@@ -18,37 +18,41 @@ class ProductReview(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        blank=False
     )
     product = models.ForeignKey(
         'products.Product',
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        blank=False
     )
     order = models.ForeignKey(
         'orders.Order',
         on_delete=models.CASCADE,
         related_name='reviews',
+        blank=False,
         help_text='The order that contained this product'
     )
     rating = models.PositiveIntegerField(
+        blank=False,
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         choices=RATING_CHOICES,
         help_text='Rating from 1 to 5 stars'
     )
-    title = models.CharField(max_length=100, default='')
-    comment = models.TextField(max_length=1000, help_text='Review feedback')
+    title = models.CharField(max_length=100, default='', blank=False)
+    comment = models.TextField(max_length=1000, blank=False, help_text='Review feedback')
 
     # Moderation fields
-    is_approved = models.BooleanField(default=True)
-    is_verified_purchase = models.BooleanField(default=True, help_text='Verified as purchased')
+    is_approved = models.BooleanField(default=True, blank=False)
+    is_verified_purchase = models.BooleanField(default=True, blank=False, help_text='Verified as purchased')
 
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -90,14 +94,16 @@ class ReviewHelpful(models.Model):
     review = models.ForeignKey(
         ProductReview,
         on_delete=models.CASCADE,
-        related_name='helpful_votes'
+        related_name='helpful_votes',
+        blank=False
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='review_votes'
+        related_name='review_votes',
+        blank=False
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
 
     class Meta:
         db_table = 'review_helpful_votes'

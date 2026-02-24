@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db import models
 from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404
 
@@ -178,14 +179,16 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         )
         
         if not created:
-            # User already voted, remove their vote
-            helpful_vote.delete()
+            # User already voted, remove their vote (soft delete)
+            helpful_vote.is_deleted = True
+            helpful_vote.deleted_at = models.functions.Now()
+            helpful_vote.save(update_fields=['is_deleted', 'deleted_at'])
             return Response(
-                {'message': 'Helpful vote removed', 'helpful_count': review.helpful_votes.count()}
+                {'message': 'Helpful vote removed', 'helpful_count': review.helpful_votes.filter(is_deleted=False).count()}
             )
         
         return Response(
-            {'message': 'Review marked as helpful', 'helpful_count': review.helpful_votes.count()},
+            {'message': 'Review marked as helpful', 'helpful_count': review.helpful_votes.filter(is_deleted=False).count()},
             status=status.HTTP_201_CREATED
         )
 

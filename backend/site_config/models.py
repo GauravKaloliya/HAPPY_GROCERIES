@@ -12,6 +12,7 @@ class SiteSettings(models.Model):
         max_digits=5,
         decimal_places=4,
         default=Decimal('0.0800'),
+        blank=False,
         validators=[MinValueValidator(0)],
         help_text='Tax rate as decimal (e.g., 0.08 for 8%)'
     )
@@ -21,6 +22,7 @@ class SiteSettings(models.Model):
         max_digits=10,
         decimal_places=2,
         default=Decimal('40.00'),
+        blank=False,
         validators=[MinValueValidator(0)],
         help_text='Standard delivery charge'
     )
@@ -28,6 +30,7 @@ class SiteSettings(models.Model):
         max_digits=10,
         decimal_places=2,
         default=Decimal('50.00'),
+        blank=False,
         validators=[MinValueValidator(0)],
         help_text='Express delivery charge'
     )
@@ -37,17 +40,18 @@ class SiteSettings(models.Model):
         max_digits=10,
         decimal_places=2,
         default=Decimal('500.00'),
+        blank=False,
         validators=[MinValueValidator(0)],
         help_text='Order amount above which delivery is free'
     )
 
     # Site info
-    site_name = models.CharField(max_length=100, default='HappyGroceries')
-    site_currency = models.CharField(max_length=10, default='₹')
+    site_name = models.CharField(max_length=100, default='HappyGroceries', blank=False)
+    site_currency = models.CharField(max_length=10, default='₹', blank=False)
 
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     class Meta:
         db_table = 'site_settings'
@@ -73,10 +77,10 @@ class SiteSettings(models.Model):
 class SortOption(models.Model):
     """Dynamic sort options for products."""
 
-    value = models.CharField(max_length=50, unique=True)
-    label = models.CharField(max_length=100)
-    order = models.PositiveIntegerField(default=0, help_text='Display order')
-    is_active = models.BooleanField(default=True)
+    value = models.CharField(max_length=50, unique=True, blank=False)
+    label = models.CharField(max_length=100, blank=False)
+    order = models.PositiveIntegerField(default=0, blank=False, help_text='Display order')
+    is_active = models.BooleanField(default=True, blank=False)
 
     class Meta:
         db_table = 'sort_options'

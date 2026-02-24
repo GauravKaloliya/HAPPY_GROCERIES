@@ -19,14 +19,14 @@ class ContactMessage(models.Model):
         blank=True,
         related_name='contact_messages'
     )
-    name = models.CharField(max_length=255)
-    email = models.EmailField()
-    message = models.TextField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    name = models.CharField(max_length=255, blank=False)
+    email = models.EmailField(blank=False)
+    message = models.TextField(blank=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', blank=False)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
 
     class Meta:
         db_table = 'contact_messages'

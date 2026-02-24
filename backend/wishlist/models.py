@@ -8,17 +8,19 @@ class WishlistItem(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='wishlist_items'
+        related_name='wishlist_items',
+        blank=False
     )
     product = models.ForeignKey(
         'products.Product',
         on_delete=models.CASCADE,
-        related_name='wishlist_items'
+        related_name='wishlist_items',
+        blank=False
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

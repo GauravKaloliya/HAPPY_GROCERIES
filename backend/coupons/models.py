@@ -13,18 +13,20 @@ class Coupon(models.Model):
         ('category', 'Category-based'),
     ]
 
-    code = models.CharField(max_length=20, unique=True)
-    description = models.TextField(default='')
-    coupon_type = models.CharField(max_length=20, choices=COUPON_TYPES, default='percentage')
+    code = models.CharField(max_length=20, unique=True, blank=False)
+    description = models.TextField(default='', blank=False)
+    coupon_type = models.CharField(max_length=20, choices=COUPON_TYPES, default='percentage', blank=False)
     value = models.DecimalField(
         max_digits=5,
         decimal_places=2,
+        blank=False,
         validators=[MinValueValidator(0)]
     )
     min_order_value = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
+        blank=False,
         validators=[MinValueValidator(0)]
     )
     max_discount = models.DecimalField(
@@ -34,17 +36,17 @@ class Coupon(models.Model):
         blank=True,
         validators=[MinValueValidator(0)]
     )
-    applicable_categories = models.JSONField(default=list)
-    first_order_only = models.BooleanField(default=False)
+    applicable_categories = models.JSONField(default=list, blank=False)
+    first_order_only = models.BooleanField(default=False, blank=False)
     usage_limit = models.PositiveIntegerField(default=None, null=True, blank=True)
-    usage_count = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
+    usage_count = models.PositiveIntegerField(default=0, blank=False)
+    is_active = models.BooleanField(default=True, blank=False)
     valid_from = models.DateTimeField(null=True, blank=True)
     valid_until = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -102,23 +104,26 @@ class CouponUsage(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='coupon_usages'
+        related_name='coupon_usages',
+        blank=False
     )
     coupon = models.ForeignKey(
         Coupon,
         on_delete=models.CASCADE,
-        related_name='usages'
+        related_name='usages',
+        blank=False
     )
     order = models.ForeignKey(
         'orders.Order',
         on_delete=models.CASCADE,
-        related_name='coupon_usages'
+        related_name='coupon_usages',
+        blank=False
     )
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    used_at = models.DateTimeField(auto_now_add=True)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=False, validators=[MinValueValidator(0)])
+    used_at = models.DateTimeField(auto_now_add=True, blank=False)
 
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

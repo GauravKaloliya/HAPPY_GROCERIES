@@ -33,10 +33,12 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """Custom User model with phone as the primary identifier."""
     
-    username = models.CharField(max_length=150, unique=True)
+    username = models.CharField(max_length=150, unique=True, blank=False)
+    password = models.CharField(max_length=128, blank=False)
+    last_login = models.DateTimeField(blank=True, null=True)
     first_name = models.CharField(max_length=150, default='')
     last_name = models.CharField(max_length=150, default='')
-    phone = models.CharField(max_length=10, unique=True, db_index=True)
+    phone = models.CharField(max_length=10, unique=True, db_index=True, blank=False)
     email = models.EmailField(blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     
@@ -45,18 +47,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     
     # Login tracking
-    failed_login_attempts = models.IntegerField(default=0)
+    failed_login_attempts = models.IntegerField(default=0, blank=False)
     locked_until = models.DateTimeField(null=True, blank=True)
     
     # Order tracking
-    first_order = models.BooleanField(default=True)
+    first_order = models.BooleanField(default=True, blank=False)
     
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=False)
+    updated_at = models.DateTimeField(auto_now=True, blank=False)
     
     # Soft delete fields
-    is_deleted = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False, blank=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
     
     objects = UserManager()
