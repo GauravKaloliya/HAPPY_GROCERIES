@@ -316,26 +316,17 @@ class APIKeyMiddleware:
     
     def __call__(self, request):
         # Only check for API keys on protected endpoints
-        if request.path.startswith('/api/'):
-            # Skip for authentication endpoints
-            if '/auth/' not in request.path or request.path == '/api/auth/profile/':
-                # Check if API key is provided
-                api_key = request.META.get(self.API_KEY_HEADER)
-                
-                if not api_key:
-                    return JsonResponse({
-                        'error': 'API key required',
-                        'status': 401,
-                        'timestamp': datetime.utcnow().isoformat()
-                    }, status=401)
-                
-                # Validate API key
-                if not self.validate_api_key(api_key):
-                    return JsonResponse({
-                        'error': 'Invalid API key',
-                        'status': 403,
-                        'timestamp': datetime.utcnow().isoformat()
-                    }, status=403)
+        # Skip for authentication endpoints
+        if '/auth/' not in request.path or request.path == '/auth/profile/':
+            # Check if API key is provided
+            api_key = request.META.get(self.API_KEY_HEADER)
+            
+            if api_key and not self.validate_api_key(api_key):
+                return JsonResponse({
+                    'error': 'Invalid API key',
+                    'status': 403,
+                    'timestamp': datetime.utcnow().isoformat()
+                }, status=403)
         
         return self.get_response(request)
     
@@ -355,18 +346,17 @@ class JWTAuthenticationMiddleware:
         self.get_response = get_response
     
     def __call__(self, request):
-        if request.path.startswith('/api/'):
-            # Skip authentication endpoints
-            if '/auth/' not in request.path:
-                # Get auth header
-                auth_header = request.META.get('HTTP_AUTHORIZATION')
-                
-                if auth_header:
-                    if not auth_header.startswith('Bearer '):
-                        return JsonResponse({
-                            'error': 'Invalid authorization header',
-                            'status': 401,
-                            'timestamp': datetime.utcnow().isoformat()
-                        }, status=401)
+        # Skip authentication endpoints
+        if '/auth/' not in request.path:
+            # Get auth header
+            auth_header = request.META.get('HTTP_AUTHORIZATION')
+            
+            if auth_header:
+                if not auth_header.startswith('Bearer '):
+                    return JsonResponse({
+                        'error': 'Invalid authorization header',
+                        'status': 401,
+                        'timestamp': datetime.utcnow().isoformat()
+                    }, status=401)
         
         return self.get_response(request)

@@ -181,6 +181,8 @@
         .method.get { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
         .method.post { background: rgba(34, 197, 94, 0.12); color: #15803d; }
         .method.patch { background: rgba(14, 116, 144, 0.12); color: #0e7490; }
+        .method.put { background: rgba(234, 179, 8, 0.12); color: #a16207; }
+        .method.delete { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
 
         .tag {
             display: inline-flex;
@@ -244,7 +246,7 @@
                 </div>
                 <div class="meta-card">
                     <span>Version</span>
-                    <strong>3.1 - End User Routes</strong>
+                    <strong>4.0 - End User Routes</strong>
                 </div>
                 <div class="meta-card">
                     <span>Authentication</span>
@@ -271,7 +273,7 @@
                 </div>
                 <div class="info-card">
                     <h3>Pagination</h3>
-                    <p>List endpoints return paginated results when supported by the backend. Use <strong>?page</strong> and <strong>?page_size</strong> when available.</p>
+                    <p>List endpoints return paginated results. Use <strong>?page</strong> and <strong>?page_size</strong> parameters.</p>
                 </div>
                 <div class="info-card">
                     <h3>Errors</h3>
@@ -283,7 +285,7 @@
         <section class="section">
             <div class="section-header">
                 <h2>Authentication</h2>
-                <span>/api/auth/</span>
+                <span>/auth/</span>
             </div>
             <table class="endpoint-table">
                 <thead>
@@ -331,6 +333,24 @@
                         <td>Required</td>
                         <td>Update the current password.</td>
                     </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/check-username/</td>
+                        <td>Public</td>
+                        <td>Check if phone number is available.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/check-email/</td>
+                        <td>Public</td>
+                        <td>Check if email is available.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/auth/check-password/</td>
+                        <td>Public</td>
+                        <td>Validate password strength.</td>
+                    </tr>
                 </tbody>
             </table>
             <p><strong>Login example</strong></p>
@@ -343,7 +363,7 @@
         <section class="section">
             <div class="section-header">
                 <h2>Products</h2>
-                <span>/api/products/</span>
+                <span>/products/</span>
             </div>
             <table class="endpoint-table">
                 <thead>
@@ -359,7 +379,7 @@
                         <td><span class="method get">GET</span></td>
                         <td>/products/</td>
                         <td>Public</td>
-                        <td>List products with filters (category, search, min_price, max_price, in_stock, ordering).</td>
+                        <td>List products with filters (category, brand, search, min_price, max_price, in_stock, ordering).</td>
                     </tr>
                     <tr>
                         <td><span class="method get">GET</span></td>
@@ -379,51 +399,35 @@
                         <td>Public</td>
                         <td>Get related products from the same category.</td>
                     </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/categories/</td>
+                        <td>Public</td>
+                        <td>List all product categories.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/products/brands/</td>
+                        <td>Public</td>
+                        <td>List all product brands.</td>
+                    </tr>
                 </tbody>
             </table>
             <p><strong>Popular filters</strong></p>
             <ul class="list">
                 <li>• ?category=Fruits</li>
+                <li>• ?brand=Organic Farms</li>
                 <li>• ?search=organic</li>
                 <li>• ?min_price=10&amp;max_price=120&amp;ordering=-price</li>
+                <li>• ?in_stock=true</li>
+                <li>• ?is_veg=true&amp;is_organic=true</li>
             </ul>
         </section>
 
         <section class="section">
             <div class="section-header">
-                <h2>Categories</h2>
-                <span>/api/products/categories/</span>
-            </div>
-            <table class="endpoint-table">
-                <thead>
-                    <tr>
-                        <th>Method</th>
-                        <th>Endpoint</th>
-                        <th>Auth</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="method get">GET</span></td>
-                        <td>/products/categories/</td>
-                        <td>Public</td>
-                        <td>List every available category.</td>
-                    </tr>
-                    <tr>
-                        <td><span class="method get">GET</span></td>
-                        <td>/products/categories/{id}/</td>
-                        <td>Public</td>
-                        <td>Return a single category with metadata.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <section class="section">
-            <div class="section-header">
                 <h2>Shopping Cart</h2>
-                <span>/api/cart/ <span class="tag">Auth required</span></span>
+                <span>/cart/ <span class="tag">Auth required</span></span>
             </div>
             <table class="endpoint-table">
                 <thead>
@@ -467,12 +471,17 @@
                     </tr>
                 </tbody>
             </table>
+            <p><strong>Add to cart example</strong></p>
+            <div class="code-block">{
+  "product_id": 1,
+  "quantity": 2
+}</div>
         </section>
 
         <section class="section">
             <div class="section-header">
                 <h2>Orders</h2>
-                <span>/api/orders/ <span class="tag">Auth required</span></span>
+                <span>/orders/ <span class="tag">Auth required</span></span>
             </div>
             <table class="endpoint-table">
                 <thead>
@@ -506,18 +515,10 @@
             </table>
             <p><strong>Create order payload</strong></p>
             <div class="code-block">{
-  "items": [
-    { "product_id": 1, "quantity": 2, "price": 99.99 }
-  ],
   "delivery_name": "John Doe",
   "delivery_phone": "9876543210",
-  "delivery_address": "123 Main St",
+  "delivery_address": "123 Main St, City",
   "delivery_type": "standard",
-  "subtotal": 199.98,
-  "tax": 15.99,
-  "delivery_charge": 50,
-  "discount": 0,
-  "total": 265.97,
   "coupon_code": "WELCOME10"
 }</div>
         </section>
@@ -525,7 +526,7 @@
         <section class="section">
             <div class="section-header">
                 <h2>Coupons</h2>
-                <span>/api/coupons/</span>
+                <span>/coupons/</span>
             </div>
             <table class="endpoint-table">
                 <thead>
@@ -586,7 +587,7 @@
         <section class="section">
             <div class="section-header">
                 <h2>Wishlist</h2>
-                <span>/api/wishlist/ <span class="tag">Auth required</span></span>
+                <span>/wishlist/ <span class="tag">Auth required</span></span>
             </div>
             <table class="endpoint-table">
                 <thead>
@@ -634,8 +635,81 @@
 
         <section class="section">
             <div class="section-header">
+                <h2>Reviews</h2>
+                <span>/reviews/</span>
+            </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/reviews/product/{product_id}/</td>
+                        <td>Public</td>
+                        <td>Get all reviews for a product.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/reviews/product/{product_id}/</td>
+                        <td>Required</td>
+                        <td>Create a review for a purchased product.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/reviews/product/{product_id}/summary/</td>
+                        <td>Public</td>
+                        <td>Get review summary with rating breakdown.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method patch">PATCH</span></td>
+                        <td>/reviews/{id}/</td>
+                        <td>Required</td>
+                        <td>Update your own review.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method delete">DELETE</span></td>
+                        <td>/reviews/{id}/</td>
+                        <td>Required</td>
+                        <td>Delete your own review.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td>/reviews/{id}/helpful/</td>
+                        <td>Required</td>
+                        <td>Mark a review as helpful.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/reviews/my-reviews/</td>
+                        <td>Required</td>
+                        <td>Get all reviews by the current user.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/reviews/pending/</td>
+                        <td>Required</td>
+                        <td>Get products purchased but not yet reviewed.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Create review example</strong></p>
+            <div class="code-block">{
+  "rating": 5,
+  "title": "Great product!",
+  "review": "Fresh and good quality."
+}</div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
                 <h2>Contact & Support</h2>
-                <span>/api/contact/</span>
+                <span>/contact/</span>
             </div>
             <table class="endpoint-table">
                 <thead>
@@ -665,8 +739,46 @@
             <div class="code-block">{
   "name": "Jane Doe",
   "email": "jane@example.com",
+  "subject": "Order Inquiry",
   "message": "Need help with my last order"
 }</div>
+        </section>
+
+        <section class="section">
+            <div class="section-header">
+                <h2>Site Configuration</h2>
+                <span>/config/</span>
+            </div>
+            <table class="endpoint-table">
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Endpoint</th>
+                        <th>Auth</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/config/all/</td>
+                        <td>Public</td>
+                        <td>Get all site settings and sort options in one request.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/config/settings/</td>
+                        <td>Public</td>
+                        <td>Get site-wide settings (tax, delivery charges, etc.).</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/config/sort-options/</td>
+                        <td>Public</td>
+                        <td>Get available sort options for products.</td>
+                    </tr>
+                </tbody>
+            </table>
         </section>
 
         <div class="footer">
