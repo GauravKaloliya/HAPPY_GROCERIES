@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from products.models import Product
 
 
@@ -63,7 +64,10 @@ class CartItem(models.Model):
         on_delete=models.CASCADE,
         related_name='cart_items'
     )
-    quantity = models.PositiveIntegerField(default=1)
+    quantity = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)]
+    )
     added_at = models.DateTimeField(auto_now_add=True)
     
     # Soft delete fields
@@ -74,6 +78,8 @@ class CartItem(models.Model):
         db_table = 'cart_items'
         unique_together = ['cart', 'product']
         indexes = [
+            models.Index(fields=['cart']),
+            models.Index(fields=['product']),
             models.Index(fields=['cart', 'is_deleted']),
         ]
     
