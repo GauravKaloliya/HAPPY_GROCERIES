@@ -2,6 +2,7 @@
 
 import django.core.validators
 import django.db.models.deletion
+from django.conf import settings
 from django.db import migrations, models
 
 
@@ -12,19 +13,10 @@ class Migration(migrations.Migration):
     dependencies = [
         ('orders', '0001_initial'),
         ('products', '0001_initial'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='ReviewHelpful',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-            ],
-            options={
-                'db_table': 'review_helpful_votes',
-            },
-        ),
         migrations.CreateModel(
             name='ProductReview',
             fields=[
@@ -40,10 +32,36 @@ class Migration(migrations.Migration):
                 ('deleted_at', models.DateTimeField(blank=True, null=True)),
                 ('order', models.ForeignKey(help_text='The order that contained this product', on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to='orders.order')),
                 ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to='products.product')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'db_table': 'product_reviews',
                 'ordering': ['-created_at'],
+                'unique_together': {('user', 'product', 'order')},
+                'indexes': [
+                    models.Index(fields=['user'], name='product_reviews_user_idx'),
+                    models.Index(fields=['product'], name='product_reviews_product_idx'),
+                    models.Index(fields=['product', 'is_approved', 'is_deleted'], name='product_reviews_product_approved_idx'),
+                    models.Index(fields=['user', 'is_deleted'], name='product_reviews_user_deleted_idx'),
+                    models.Index(fields=['rating'], name='product_reviews_rating_idx'),
+                ],
+            },
+        ),
+        migrations.CreateModel(
+            name='ReviewHelpful',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('review', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='helpful_votes', to='reviews.productreview')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='review_votes', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'db_table': 'review_helpful_votes',
+                'unique_together': {('review', 'user')},
+                'indexes': [
+                    models.Index(fields=['review'], name='review_helpful_votes_review_idx'),
+                    models.Index(fields=['user'], name='review_helpful_votes_user_idx'),
+                ],
             },
         ),
     ]

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Category',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('name', models.CharField(db_index=True, max_length=50, unique=True)),
                 ('description', models.TextField(default='')),
                 ('emoji', models.CharField(default='', max_length=10)),
@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'products',
                 'ordering': ['id'],
-                'indexes': [models.Index(fields=['category', 'is_active'], name='products_categor_9e60b3_idx'), models.Index(fields=['name'], name='products_name_6f9890_idx'), models.Index(fields=['is_deleted'], name='products_is_dele_3d7311_idx')],
+                'indexes': [models.Index(fields=['category', 'is_active'], name='products_category_is_active_idx'), models.Index(fields=['name'], name='products_name_idx'), models.Index(fields=['is_deleted'], name='products_is_deleted_idx')],
             },
         ),
     ]
