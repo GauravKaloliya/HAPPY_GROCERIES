@@ -21,7 +21,7 @@ const Combos = () => {
   useEffect(() => {
     const fetchCombos = async () => {
       try {
-        const response = await api.get('/api/products/combos/');
+        const response = await api.get('/products/combos/');
         setCombos(response.data.results || response.data);
       } catch (error) {
         console.error('Error fetching combos:', error);
