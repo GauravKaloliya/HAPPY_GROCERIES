@@ -6,6 +6,7 @@ import { addToCart } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { fetchReviewSummary, selectReviewSummary } from '../store/slices/reviewsSlice';
+import { formatPrice, getUnitLabel } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import ProductCard from '../components/ProductCard';
@@ -43,8 +44,8 @@ const ProductDetails = () => {
   const [showImageViewer, setShowImageViewer] = useState(false);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
-  
-  // Memoize the log function to prevent infinite re-renders
+
+  // Memoize log function to prevent infinite re-renders
   const logProductView = useCallback((productId, productName) => {
     logCustomActivity('product_view', { product_id: productId, product_name: productName });
   }, [logCustomActivity]);
@@ -54,17 +55,17 @@ const ProductDetails = () => {
       try {
         setLoading(true);
         setProduct(null); // Reset product before fetching
-        
+
         const [productRes, relatedRes] = await Promise.all([
           productsAPI.getById(id),
           productsAPI.getRelated(id),
         ]);
-        
+
         // Validate product data exists
         if (!productRes.data || !productRes.data.id) {
           throw new Error('Product not found');
         }
-        
+
         setProduct(productRes.data);
         const relatedData = relatedRes.data?.results || relatedRes.data;
         setRelatedProducts(Array.isArray(relatedData) ? relatedData.slice(0, 4) : []);
@@ -100,11 +101,11 @@ const ProductDetails = () => {
     };
 
     fetchProduct();
-  }, [id, navigate, isAuthenticated, logProductView]);
+  }, [id, navigate, isAuthenticated, logProductView, dispatch]);
 
   const handleAddToCart = async () => {
     if (isAddingToCart) return;
-    
+
     setIsAddingToCart(true);
     try {
       await dispatch(addToCart({ productId: product.id, quantity, product })).unwrap();
@@ -134,7 +135,7 @@ const ProductDetails = () => {
       } else {
         await wishlistAPI.addToWishlist(product.id);
         setIsWishlisted(true);
-        toast.success('Added to wishlist 💖');
+        toast.success('Added to wishlist ❤️');
         logCustomActivity('add_to_wishlist', { product_id: product.id, product_name: product.name });
       }
     } catch {
@@ -168,8 +169,8 @@ const ProductDetails = () => {
   };
 
   const getStockInfo = (stock) => {
-    if (stock <= 0) return { label: 'Out of stock', className: 'out-of-stock', icon: '⛔' };
-    if (stock <= 5) return { label: `Low stock (${stock} left)`, className: 'low-stock', icon: '⚡' };
+    if (stock <= 0) return { label: 'Out of stock', className: 'out-of-stock', icon: '🛔' };
+    if (stock <= 5) return { label: `Low stock (${stock} left)`, className: 'low-stock', icon: '⚠️' };
     return { label: `In stock (${stock} available)`, className: 'in-stock', icon: '✅' };
   };
 
@@ -201,13 +202,13 @@ const ProductDetails = () => {
     );
   }
 
-  const hasDiscount = product.discount_percent > 0;
-  const priceValue = parseFloat(product.price) || 0;
-  const discountPercent = parseFloat(product.discount_percent) || 0;
-  const discountedPrice = hasDiscount
-    ? priceValue * (1 - discountPercent / 100)
-    : priceValue;
-  const savings = hasDiscount ? priceValue - discountedPrice : 0;
+  const hasDiscount = product.mrp && product.price && parseFloat(product.mrp) > parseFloat(product.price);
+  const displayPrice = parseFloat(product.price) || 0;
+  const originalPrice = parseFloat(product.mrp) || 0;
+  const discountPercent = hasDiscount
+    ? Math.round((1 - displayPrice / originalPrice) * 100)
+    : 0;
+  const savings = hasDiscount ? originalPrice - displayPrice : 0;
   const stockInfo = getStockInfo(product.stock);
 
   return (
@@ -235,7 +236,7 @@ const ProductDetails = () => {
               </div>
               {hasDiscount && (
                 <div className="discount-badge">
-                  <span className="discount-percentage">{product.discount_percent}% OFF</span>
+                  <span className="discount-percentage">{discountPercent}% OFF</span>
                 </div>
               )}
             </div>
@@ -244,8 +245,8 @@ const ProductDetails = () => {
               <h1 className="product-details-name">{product.name}</h1>
 
               <div className="product-details-meta">
-                <span 
-                  className="product-category" 
+                <span
+                  className="product-category"
                   style={{ background: getCategoryColor(product.category?.name || product.category) }}
                 >
                   {product.category?.name || product.category}
@@ -264,50 +265,120 @@ const ProductDetails = () => {
                 </span>
               </div>
 
+              {/* Brand Name */}
+              {product.brand_name && (
+                <div className="product-details-brand" style={{
+                  fontSize: '0.9rem',
+                  color: '#6b7280',
+                  marginBottom: '0.5rem',
+                  fontWeight: 500
+                }}>
+                  Brand: {product.brand_name}
+                </div>
+              )}
+
+              {/* Unit & Pack Size */}
+              {product.unit && (
+                <div className="product-details-unit" style={{
+                  fontSize: '0.9rem',
+                  color: '#6b7280',
+                  marginBottom: '1rem'
+                }}>
+                  Pack Size: {product.pack_size && `${product.pack_size} `}
+                  {getUnitLabel(product.unit)}
+                </div>
+              )}
+
+              {/* Product Badges */}
+              <div className="product-details-badges" style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                {product.is_veg !== undefined && (
+                  <span className="badge veg" style={{
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    backgroundColor: product.is_veg ? '#22c55e' : '#ef4444',
+                    color: 'white',
+                    fontWeight: 600
+                  }}>
+                    {product.is_veg ? '🥬 Veg' : '🍖 Non-Veg'}
+                  </span>
+                )}
+                {product.is_organic && (
+                  <span className="badge organic" style={{
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    backgroundColor: '#22c55e',
+                    color: 'white',
+                    fontWeight: 600
+                  }}>
+                    🌿 Organic
+                  </span>
+                )}
+                {product.is_fresh && (
+                  <span className="badge fresh" style={{
+                    fontSize: '11px',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    fontWeight: 600
+                  }}>
+                    🥬 Fresh
+                  </span>
+                )}
+              </div>
+
               <div className="product-details-price-section">
                 {hasDiscount ? (
                   <>
                     <div className="price-with-discount">
-                      <span className="original-price">₹{product.price}</span>
-                      <span className="discounted-price">₹{discountedPrice.toFixed(0)}</span>
+                      <span className="original-price">{formatPrice(originalPrice)}</span>
+                      <span className="discounted-price">{formatPrice(displayPrice)}</span>
+                      <span className="discount-label">MRP</span>
                     </div>
-                    <div className="savings-amount">You save ₹{savings.toFixed(0)}!</div>
+                    <div className="savings-amount">You save {formatPrice(savings)}!</div>
                   </>
                 ) : (
-                  <div className="product-details-price">₹{product.price}</div>
+                  <>
+                    <div className="product-details-price">{formatPrice(displayPrice)}</div>
+                    <div className="savings-amount" style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                      MRP: {formatPrice(originalPrice)}
+                    </div>
+                  </>
                 )}
               </div>
 
               <div className="product-details-description">
                 <h3 style={{ marginBottom: '0.5rem' }}>Details</h3>
-                <p>{product.description || 'Fresh, high-quality groceries delivered with love. 💖'}</p>
+                <p>{product.description || 'Fresh, high-quality groceries delivered with love. ❤️'}</p>
               </div>
 
               <div className="product-details-actions">
                 <div className="quantity-controls" aria-label="Quantity selector">
-                  <button 
-                    className="qty-btn" 
+                  <button
+                    className="qty-btn"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={product.stock <= 0}
                   >−</button>
-                  <input 
-                    type="number" 
-                    className="qty-input" 
-                    value={quantity} 
-                    min="1" 
-                    max={Math.min(99, product.stock)} 
+                  <input
+                    type="number"
+                    className="qty-input"
+                    value={quantity}
+                    min="1"
+                    max={Math.min(99, product.stock)}
                     onChange={(e) => setQuantity(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.min(99, product.stock)))}
                     disabled={product.stock <= 0}
                   />
-                  <button 
-                    className="qty-btn" 
+                  <button
+                    className="qty-btn"
                     onClick={() => setQuantity(Math.min(Math.min(99, product.stock), quantity + 1))}
                     disabled={product.stock <= 0}
                   >+</button>
                 </div>
 
-                <button 
-                  className="btn-add-cart" 
+                <button
+                  className="btn-add-cart"
                   onClick={handleAddToCart}
                   disabled={product.stock <= 0 || isAddingToCart}
                   style={{ minWidth: '200px' }}
@@ -315,12 +386,12 @@ const ProductDetails = () => {
                   {product.stock <= 0 ? 'Out of Stock' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
                 </button>
 
-                <button 
+                <button
                   className={`product-details-wishlist ${isWishlisted ? 'active' : ''}`}
                   onClick={handleWishlistToggle}
                   aria-label="Toggle wishlist"
                 >
-                  {isWishlisted ? '💖' : '🤍'}
+                  {isWishlisted ? '❤️' : '🤍'}
                 </button>
               </div>
             </div>
@@ -331,11 +402,11 @@ const ProductDetails = () => {
       {/* Tabs Section */}
       <div className="product-tabs" style={{ marginTop: '2rem' }}>
         <div className="tab-buttons" style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid var(--primary-pink)', marginBottom: '1.5rem' }}>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'details' ? 'active' : ''}`}
             onClick={() => setActiveTab('details')}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
+            style={{
+              padding: '0.75rem 1.5rem',
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === 'details' ? '3px solid var(--primary-pink)' : 'none',
@@ -346,11 +417,11 @@ const ProductDetails = () => {
           >
             Details
           </button>
-          <button 
+          <button
             className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
             onClick={() => setActiveTab('reviews')}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
+            style={{
+              padding: '0.75rem 1.5rem',
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === 'reviews' ? '3px solid var(--primary-pink)' : 'none',
@@ -377,9 +448,34 @@ const ProductDetails = () => {
                 <div>
                   <strong>Rating:</strong> {product.rating}/5
                 </div>
+                {product.brand_name && (
+                  <div>
+                    <strong>Brand:</strong> {product.brand_name}
+                  </div>
+                )}
+                {product.unit && (
+                  <div>
+                    <strong>Unit:</strong> {getUnitLabel(product.unit)}
+                  </div>
+                )}
+                {product.pack_size && (
+                  <div>
+                    <strong>Pack Size:</strong> {product.pack_size}
+                  </div>
+                )}
+                {product.gst_rate !== undefined && (
+                  <div>
+                    <strong>GST Rate:</strong> {product.gst_rate}%
+                  </div>
+                )}
+                {product.hsn_code && (
+                  <div>
+                    <strong>HSN Code:</strong> {product.hsn_code}
+                  </div>
+                )}
                 {hasDiscount && (
                   <div>
-                    <strong>Discount:</strong> {product.discount_percent}% off
+                    <strong>Discount:</strong> {discountPercent}% off
                   </div>
                 )}
               </div>
@@ -397,7 +493,7 @@ const ProductDetails = () => {
       {/* Related Products */}
       {relatedProducts.length > 0 && (
         <section style={{ marginTop: '3rem' }}>
-          <h2 className="section-title">🧡 Related Products</h2>
+          <h2 className="section-title">↩️ Related Products</h2>
           <div className="products-grid">
             {relatedProducts.map((relatedProduct) => (
               <ProductCard key={relatedProduct.id} product={relatedProduct} />

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, updateCartItem, removeFromCart, selectCartItems } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getUnitLabel } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 const ProductCard = ({ product, showAddToCart = true }) => {
@@ -24,11 +24,11 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const displayQuantity = cartItem ? cartItem.quantity : 0;
 
   const categoryEmojis = {
-    fruits: '🍎',
-    vegetables: '🥕',
-    dairy: '🥛',
-    snacks: '🍪',
-    beverages: '🧃',
+    'fruits': '🍎',
+    'vegetables': '🥕',
+    'dairy': '🥛',
+    'snacks': '🍪',
+    'beverages': '🧃',
   };
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const handleAddToCart = async (e) => {
     e.stopPropagation();
     if (isAddingToCart) return;
-    
+
     setIsAddingToCart(true);
     try {
       await dispatch(addToCart({ productId: product.id, quantity: 1, product })).unwrap();
@@ -129,8 +129,13 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     }
   };
 
-  const isOnSale = product.effective_price && parseFloat(product.effective_price) < parseFloat(product.price);
-  const displayPrice = isOnSale ? product.effective_price : product.price;
+  // Check if product is on discount
+  const isOnSale = product.mrp && product.price && parseFloat(product.mrp) > parseFloat(product.price);
+  const displayPrice = product.price || 0;
+  const originalPrice = product.mrp || product.price || 0;
+  const discountPercent = isOnSale
+    ? Math.round((1 - parseFloat(displayPrice) / parseFloat(originalPrice)) * 100)
+    : 0;
 
   const renderStars = (rating) => {
     const fullStars = Math.round(rating || 0);
@@ -155,7 +160,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   };
 
   return (
-    <div 
+    <div
       className={`product-card ${isOnSale ? 'on-sale' : ''}`}
       onClick={handleCardClick}
       style={{ cursor: 'pointer' }}
@@ -182,14 +187,77 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         role="button"
         aria-label="View full size image"
       >
-        {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
+        {product.emoji || categoryEmojis[product.category?.name?.toLowerCase()] || '📦'}
       </div>
 
       <h3 className="product-name">{product.name}</h3>
 
+      {/* Product Badges */}
+      <div className="product-badges" style={{ display: 'flex', gap: '4px', marginBottom: '4px', flexWrap: 'wrap' }}>
+        {product.is_veg !== undefined && (
+          <span className="badge" style={{
+            fontSize: '10px',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            backgroundColor: product.is_veg ? '#22c55e' : '#ef4444',
+            color: 'white',
+            fontWeight: 500
+          }}>
+            {product.is_veg ? 'Veg' : 'Non-Veg'}
+          </span>
+        )}
+        {product.is_organic && (
+          <span className="badge organic" style={{
+            fontSize: '10px',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            backgroundColor: '#22c55e',
+            color: 'white',
+            fontWeight: 500
+          }}>
+            Organic
+          </span>
+        )}
+        {product.is_fresh && (
+          <span className="badge fresh" style={{
+            fontSize: '10px',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            fontWeight: 500
+          }}>
+            Fresh
+          </span>
+        )}
+      </div>
+
       <div className="product-rating">
         {renderStars(product.rating)}
       </div>
+
+      {/* Brand Name */}
+      {product.brand_name && (
+        <div className="product-brand" style={{
+          fontSize: '11px',
+          color: '#6b7280',
+          marginBottom: '4px'
+        }}>
+          {product.brand_name}
+        </div>
+      )}
+
+      {/* Unit & Pack Size */}
+      {product.unit && (
+        <div className="product-unit" style={{
+          fontSize: '11px',
+          color: '#6b7280',
+          marginBottom: '4px'
+        }}>
+          {product.pack_size && `${product.pack_size} `}
+          {getUnitLabel(product.unit)}
+        </div>
+      )}
 
       <div className="product-price-wrapper">
         {isOnSale ? (
@@ -197,13 +265,13 @@ const ProductCard = ({ product, showAddToCart = true }) => {
             <span className="product-price">
               {formatPrice(displayPrice)}
               <span className="discount-badge">
-                -{Math.round((1 - parseFloat(displayPrice) / parseFloat(product.price)) * 100)}%
+                -{discountPercent}%
               </span>
             </span>
-            <span className="product-price-original">{formatPrice(product.price)}</span>
+            <span className="product-price-original">{formatPrice(originalPrice)}</span>
           </>
         ) : (
-          <span className="product-price">{formatPrice(product.price)}</span>
+          <span className="product-price">{formatPrice(displayPrice)}</span>
         )}
       </div>
 
@@ -256,7 +324,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
             className="image-viewer-content"
             onClick={(e) => e.stopPropagation()}
           >
-            {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
+            {product.emoji || categoryEmojis[product.category?.name?.toLowerCase()] || '📦'}
           </div>
         </div>
       )}

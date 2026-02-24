@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
+import { brandsAPI } from '../api/brands';
 import { selectSortOptions } from '../store/slices/configSlice';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
@@ -13,6 +14,7 @@ const Shop = () => {
   const { logCustomActivity } = useActivityLog('page_view', { section: 'shop' });
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -26,28 +28,54 @@ const Shop = () => {
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '');
+  const [selectedUnit, setSelectedUnit] = useState(searchParams.get('unit') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || '');
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
   const [inStock, setInStock] = useState(searchParams.get('in_stock') === 'true');
+  const [isVeg, setIsVeg] = useState(searchParams.get('is_veg') === 'true');
+  const [isOrganic, setIsOrganic] = useState(searchParams.get('is_organic') === 'true');
+  const [isFresh, setIsFresh] = useState(searchParams.get('is_fresh') === 'true');
 
   const placeholderItems = ['Apples', 'Bananas', 'Milk', 'Chips', 'Tomatoes'];
 
-  // Fetch categories only once
+  const unitOptions = [
+    { value: 'kg', label: 'Kilogram (kg)' },
+    { value: 'g', label: 'Gram (g)' },
+    { value: 'mg', label: 'Milligram (mg)' },
+    { value: 'ltr', label: 'Liter (L)' },
+    { value: 'ml', label: 'Milliliter (ml)' },
+    { value: 'piece', label: 'Piece (pcs)' },
+    { value: 'pack', label: 'Pack' },
+    { value: 'dozen', label: 'Dozen' },
+    { value: 'bunch', label: 'Bunch' },
+    { value: 'bottle', label: 'Bottle' },
+    { value: 'can', label: 'Can' },
+    { value: 'box', label: 'Box' },
+    { value: 'jar', label: 'Jar' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  // Fetch categories and brands only once
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchFiltersData = async () => {
       try {
-        const categoriesRes = await categoriesAPI.getAll();
+        const [categoriesRes, brandsRes] = await Promise.all([
+          categoriesAPI.getAll(),
+          brandsAPI.getAll(),
+        ]);
         setCategories(categoriesRes.data.results || categoriesRes.data);
+        setBrands(brandsRes.data.results || brandsRes.data);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching filters:', error);
       } finally {
         setCategoriesLoaded(true);
       }
     };
-    
+
     if (!categoriesLoaded) {
-      fetchCategories();
+      fetchFiltersData();
     }
   }, [categoriesLoaded]);
 
@@ -59,10 +87,15 @@ const Shop = () => {
       const params = {
         search: searchQuery,
         category: selectedCategory === 'All' ? '' : selectedCategory,
+        brand: selectedBrand,
+        unit: selectedUnit,
         ordering: sortBy,
         min_price: minPrice,
         max_price: maxPrice,
         in_stock: inStock ? 'true' : undefined,
+        is_veg: isVeg ? 'true' : undefined,
+        is_organic: isOrganic ? 'true' : undefined,
+        is_fresh: isFresh ? 'true' : undefined,
         page: page,
         page_size: 10,
       };
@@ -94,6 +127,9 @@ const Shop = () => {
       if (selectedCategory) {
         logCustomActivity('filter_apply', { type: 'category', value: selectedCategory });
       }
+      if (selectedBrand) {
+        logCustomActivity('filter_apply', { type: 'brand', value: selectedBrand });
+      }
       if (sortBy) {
         logCustomActivity('filter_apply', { type: 'sort', value: sortBy });
       }
@@ -105,7 +141,7 @@ const Shop = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock, logCustomActivity]);
+  }, [searchQuery, selectedCategory, selectedBrand, selectedUnit, sortBy, minPrice, maxPrice, inStock, isVeg, isOrganic, isFresh, logCustomActivity]);
 
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
@@ -128,26 +164,36 @@ const Shop = () => {
     const params = {};
     if (searchQuery) params.search = searchQuery;
     if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory;
+    if (selectedBrand) params.brand = selectedBrand;
+    if (selectedUnit) params.unit = selectedUnit;
     if (sortBy) params.sort = sortBy;
     if (minPrice) params.min_price = minPrice;
     if (maxPrice) params.max_price = maxPrice;
     if (inStock) params.in_stock = 'true';
+    if (isVeg) params.is_veg = 'true';
+    if (isOrganic) params.is_organic = 'true';
+    if (isFresh) params.is_fresh = 'true';
 
     setSearchParams(params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock]);
+  }, [searchQuery, selectedCategory, selectedBrand, selectedUnit, sortBy, minPrice, maxPrice, inStock, isVeg, isOrganic, isFresh]);
 
   const clearFilters = () => {
     setSearchInput('');
     setSearchQuery('');
     setSelectedCategory('');
+    setSelectedBrand('');
+    setSelectedUnit('');
     setSortBy('');
     setMinPrice('');
     setMaxPrice('');
     setInStock(false);
+    setIsVeg(false);
+    setIsOrganic(false);
+    setIsFresh(false);
   };
 
-  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy || minPrice || maxPrice || inStock;
+  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || selectedBrand || selectedUnit || sortBy || minPrice || maxPrice || inStock || isVeg || isOrganic || isFresh;
 
   if (loading && products.length === 0) return <PageLoader />;
 
@@ -231,6 +277,43 @@ const Shop = () => {
           </div>
 
           <div className="sidebar-section">
+            <h3 className="sidebar-title">Brands</h3>
+            <div className="category-filters">
+              <button
+                onClick={() => setSelectedBrand('')}
+                className={`category-filter-btn ${!selectedBrand ? 'active' : ''}`}
+              >
+                All Brands
+              </button>
+              {brands.map((brand) => (
+                <button
+                  key={brand.id || brand.name}
+                  onClick={() => setSelectedBrand(brand.name)}
+                  className={`category-filter-btn ${selectedBrand === brand.name ? 'active' : ''}`}
+                >
+                  {brand.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Unit Type</h3>
+            <select
+              value={selectedUnit}
+              onChange={(e) => setSelectedUnit(e.target.value)}
+              className="sort-select"
+            >
+              <option value="">All Units</option>
+              {unitOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sidebar-section">
             <h3 className="sidebar-title">Price Range</h3>
             <div className="price-filters">
               <input
@@ -273,6 +356,36 @@ const Shop = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Product Type</h3>
+            <div className="checkbox-filters">
+              <label className="checkbox-filter">
+                <input
+                  type="checkbox"
+                  checked={isVeg}
+                  onChange={(e) => setIsVeg(e.target.checked)}
+                />
+                <span>Vegetarian Only</span>
+              </label>
+              <label className="checkbox-filter">
+                <input
+                  type="checkbox"
+                  checked={isOrganic}
+                  onChange={(e) => setIsOrganic(e.target.checked)}
+                />
+                <span>Organic Only</span>
+              </label>
+              <label className="checkbox-filter">
+                <input
+                  type="checkbox"
+                  checked={isFresh}
+                  onChange={(e) => setIsFresh(e.target.checked)}
+                />
+                <span>Fresh Only</span>
+              </label>
+            </div>
           </div>
 
           <div className="sidebar-section">

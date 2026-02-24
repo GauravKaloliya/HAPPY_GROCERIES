@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { updateCartItem, removeFromCart } from '../store/slices/cartSlice';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getUnitLabel } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 const CartItem = ({ item }) => {
@@ -9,14 +9,16 @@ const CartItem = ({ item }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const product = item.product || {};
-  const price = parseFloat(product.price || item.price || 0);
-  const effectivePrice = parseFloat(product.effective_price || price);
-  const isOnSale = effectivePrice < price;
-  const displayPrice = isOnSale ? effectivePrice : price;
+  const displayPrice = parseFloat(product.price || item.price || 0);
+  const mrp = parseFloat(product.mrp || displayPrice);
+  const isOnSale = mrp > displayPrice;
+  const discountPercent = isOnSale
+    ? Math.round((1 - displayPrice / mrp) * 100)
+    : 0;
 
   const handleUpdateQuantity = async (newQuantity) => {
     if (isUpdating) return;
-    
+
     if (newQuantity <= 0) {
       await handleRemove();
       return;
@@ -25,7 +27,7 @@ const CartItem = ({ item }) => {
       toast.error('Maximum stock reached!');
       return;
     }
-    
+
     setIsUpdating(true);
     try {
       await dispatch(updateCartItem({ itemId: item.id, quantity: newQuantity })).unwrap();
@@ -38,7 +40,7 @@ const CartItem = ({ item }) => {
 
   const handleRemove = async () => {
     if (isRemoving) return;
-    
+
     setIsRemoving(true);
     try {
       await dispatch(removeFromCart(item.id)).unwrap();
@@ -50,32 +52,45 @@ const CartItem = ({ item }) => {
   };
 
   const categoryEmojis = {
-    fruits: '🍎',
-    vegetables: '🥬',
-    dairy: '🥛',
-    snacks: '🍪',
-    beverages: '🧃',
+    'fruits': '🍎',
+    'vegetables': '🥬',
+    'dairy': '🥛',
+    'snacks': '🍪',
+    'beverages': '🧃',
   };
 
   return (
     <div className="cart-item">
       <div className="cart-item-image">
-        {product.emoji || categoryEmojis[product.category] || '📦'}
+        {product.emoji || categoryEmojis[product.category?.name?.toLowerCase()] || '📦'}
       </div>
 
       <div className="cart-item-details">
         <h3>{product.name || 'Product'}</h3>
+
+        {/* Unit & Pack Size */}
+        {product.unit && (
+          <div className="cart-item-unit" style={{
+            fontSize: '0.8rem',
+            color: '#6b7280',
+            marginBottom: '4px'
+          }}>
+            {product.pack_size && `${product.pack_size} `}
+            {getUnitLabel(product.unit)}
+          </div>
+        )}
+
         <div className="cart-item-price">
           {isOnSale ? (
             <>
-              <span className="original-price">{formatPrice(price)}</span>
+              <span className="original-price">{formatPrice(mrp)}</span>
               {formatPrice(displayPrice)}
               <span className="item-discount-badge">
-                -{Math.round((1 - displayPrice / price) * 100)}%
+                -{discountPercent}%
               </span>
             </>
           ) : (
-            formatPrice(price)
+            formatPrice(displayPrice)
           )}
         </div>
 
