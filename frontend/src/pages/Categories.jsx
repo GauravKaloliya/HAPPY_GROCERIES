@@ -161,7 +161,7 @@ const Categories = () => {
             ))}
           </div>
           {hasMoreProducts && (
-            <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
               <button
                 className="btn-primary"
                 onClick={handleViewMore}

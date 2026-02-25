@@ -9,9 +9,13 @@ import useActivityLog from '../hooks/useActivityLog';
 
 const Offers = () => {
   const [coupons, setCoupons] = useState([]);
+  const [displayedCoupons, setDisplayedCoupons] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const COUPONS_LIMIT = 6;
   const cartTotal = useSelector(selectCartSubtotal);
 
   useActivityLog('page_view', { section: 'offers' });
@@ -20,11 +24,14 @@ const Offers = () => {
     const fetchData = async () => {
       try {
         const [couponsRes, categoriesRes] = await Promise.all([
-          couponsAPI.getAll({ limit: 6 }),
+          couponsAPI.getAll({ limit: COUPONS_LIMIT }),
           categoriesAPI.getAll(),
         ]);
-        setCoupons(couponsRes.data.results || couponsRes.data);
+        const allCoupons = couponsRes.data.results || couponsRes.data;
+        setCoupons(allCoupons);
+        setDisplayedCoupons(allCoupons);
         setCategories(categoriesRes.data.results || categoriesRes.data);
+        setHasMore(allCoupons.length >= COUPONS_LIMIT);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load offers');
@@ -36,12 +43,41 @@ const Offers = () => {
     fetchData();
   }, []);
 
+  const handleViewMore = async () => {
+    if (isFetchingMore) return;
+    setIsFetchingMore(true);
+    try {
+      const currentLength = displayedCoupons.length;
+      const params = { limit: COUPONS_LIMIT, offset: currentLength };
+      const couponsRes = await couponsAPI.getAll(params);
+      const newCoupons = couponsRes.data.results || couponsRes.data;
+
+      if (newCoupons.length > 0) {
+        setDisplayedCoupons(prev => [...prev, ...newCoupons]);
+        setHasMore(newCoupons.length >= COUPONS_LIMIT);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error fetching more coupons:', error);
+      toast.error('Failed to load more coupons');
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
+
   const handleCopyCode = (code) => {
     navigator.clipboard.writeText(code).then(() => {
       toast.success(`Coupon ${code} copied to clipboard! 📋`);
     }).catch(() => {
       toast.error('Failed to copy code');
     });
+  };
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    setDisplayedCoupons(coupons);
+    setHasMore(coupons.length >= COUPONS_LIMIT);
   };
 
   const getEligibilityStatus = (coupon) => {
@@ -64,11 +100,15 @@ const Offers = () => {
     return Math.max(0, diffDays);
   };
 
-  const filteredCoupons = activeCategory === 'all' 
-    ? coupons 
-    : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
+  const filteredCoupons = activeCategory === 'all'
+    ? displayedCoupons
+    : displayedCoupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
 
-  const displayedCoupons = filteredCoupons.filter(c => c.is_active);
+  const couponsList = filteredCoupons.filter(c => c.is_active);
+  const totalFilteredCount = activeCategory === 'all'
+    ? coupons.length
+    : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage').length;
+  const showViewMore = hasMore && couponsList.length < totalFilteredCount;
 
   if (loading) return <PageLoader />;
 
@@ -92,7 +132,7 @@ const Offers = () => {
       {/* Category Filter */}
       <div className="offers-category-filter">
         <button
-          onClick={() => setActiveCategory('all')}
+          onClick={() => handleCategoryChange('all')}
           className={`offers-category-button ${activeCategory === 'all' ? 'active' : ''}`}
         >
           All Coupons
@@ -100,7 +140,7 @@ const Offers = () => {
         {categories.map((cat) => (
           <button
             key={cat.id || cat.name}
-            onClick={() => setActiveCategory(cat.name)}
+            onClick={() => handleCategoryChange(cat.name)}
             className={`offers-category-button ${activeCategory === cat.name ? 'active' : ''}`}
           >
             {cat.name}
@@ -109,15 +149,16 @@ const Offers = () => {
       </div>
 
       {/* Coupons Grid */}
-      {coupons.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">🎫</div>
-          <h3>No coupons available</h3>
-          <p>Check back later for exciting offers!</p>
-        </div>
+      {couponsList.length === 0 ? (
+      <div className="empty-state">
+      <div className="empty-state-icon">🎫</div>
+      <h3>No coupons available</h3>
+      <p>Check back later for exciting offers!</p>
+      </div>
       ) : (
-        <div className="coupons-list">
-          {displayedCoupons.map((coupon) => {
+      <>
+      <div className="coupons-list">
+        {couponsList.map((coupon) => {
               const eligibility = getEligibilityStatus(coupon);
               const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
               const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
@@ -191,6 +232,19 @@ const Offers = () => {
               );
             })}
           </div>
+
+          {showViewMore && (
+            <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
+              <button
+                className="btn-primary"
+                onClick={handleViewMore}
+                disabled={isFetchingMore}
+              >
+                {isFetchingMore ? 'Loading...' : 'View More'}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* How to Use */}
