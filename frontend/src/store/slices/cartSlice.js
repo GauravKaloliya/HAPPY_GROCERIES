@@ -219,12 +219,16 @@ const cartSlice = createSlice({
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload.items) {
-          state.items = action.payload.items;
-        } else {
-          const existingItem = state.items.find(item => item.id === action.payload.id);
-          if (existingItem) {
-            existingItem.quantity = action.payload.quantity;
+        // For authenticated users, the API returns the full cart
+        // For guest users, action.payload.items contains the items
+        if (action.payload && action.payload.items) {
+          // Full cart response from API or guest cart
+          state.items = action.payload.items || [];
+        } else if (action.payload && action.payload.id) {
+          // Single item response - check if it already exists
+          const existingIndex = state.items.findIndex(item => item.id === action.payload.id || item.product?.id === action.payload.product?.id);
+          if (existingIndex >= 0) {
+            state.items[existingIndex] = action.payload;
           } else {
             state.items.push(action.payload);
           }
