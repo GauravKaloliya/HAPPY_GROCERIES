@@ -113,7 +113,7 @@ class LoginView(APIView):
         
         # Check if user exists
         try:
-            user = User.objects.get(phone=phone)
+            user_obj = User.objects.get(phone=phone)
         except User.DoesNotExist:
             return Response(
                 {'error': 'Phone number not registered. Please check your number or sign up.'},
@@ -121,7 +121,7 @@ class LoginView(APIView):
             )
         
         # Check if account is locked
-        if user.locked_until and user.locked_until > timezone.now():
+        if user_obj.locked_until and user_obj.locked_until > timezone.now():
             return Response(
                 {'error': 'Account is temporarily locked. Please try again later.'},
                 status=status.HTTP_423_LOCKED
@@ -132,13 +132,13 @@ class LoginView(APIView):
         
         if user is None:
             # Increment failed login attempts
-            user.failed_login_attempts += 1
+            user_obj.failed_login_attempts += 1
             
             # Lock account after 5 failed attempts
-            if user.failed_login_attempts >= 5:
-                user.locked_until = timezone.now() + timedelta(minutes=15)
+            if user_obj.failed_login_attempts >= 5:
+                user_obj.locked_until = timezone.now() + timedelta(minutes=15)
             
-            user.save()
+            user_obj.save()
             
             return Response(
                 {'error': 'Incorrect password. Please try again.'},
