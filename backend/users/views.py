@@ -11,7 +11,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
 
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
@@ -316,7 +316,7 @@ class UserStatsView(APIView):
         # Import models here to avoid circular imports
         from orders.models import Order
         from wishlist.models import Wishlist
-        from coupons.models import CouponUsage
+        from coupons.models import Coupon
         
         # Count orders (not deleted)
         orders_count = Order.objects.filter(
@@ -330,10 +330,17 @@ class UserStatsView(APIView):
             is_deleted=False
         ).count()
         
-        # Count coupons used by user (not deleted)
-        coupons_count = CouponUsage.objects.filter(
-            user=user,
+        # Count available active coupons
+        now = timezone.now()
+        coupons_count = Coupon.objects.filter(
+            is_active=True,
             is_deleted=False
+        ).filter(
+            Q(valid_from__isnull=True) | Q(valid_from__lte=now)
+        ).filter(
+            Q(valid_until__isnull=True) | Q(valid_until__gte=now)
+        ).exclude(
+            Q(usage_limit__isnull=False) & Q(usage_count__gte=F('usage_limit'))
         ).count()
         
         return Response({

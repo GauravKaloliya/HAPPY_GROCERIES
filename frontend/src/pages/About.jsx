@@ -42,7 +42,7 @@ const About = () => {
         <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Our Team 👥</h3>
         <div className="team-section" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '1.5rem',
           marginBottom: '2rem'
         }}>
