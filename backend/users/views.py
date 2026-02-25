@@ -11,6 +11,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Count, Q
 
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
@@ -303,3 +304,40 @@ class ChangePasswordView(APIView):
         user.save()
         
         return Response({'message': 'Password changed successfully'})
+
+
+class UserStatsView(APIView):
+    """Get user stats for profile dashboard."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        
+        # Import models here to avoid circular imports
+        from orders.models import Order
+        from wishlist.models import Wishlist
+        from coupons.models import CouponUsage
+        
+        # Count orders (not deleted)
+        orders_count = Order.objects.filter(
+            user=user,
+            is_deleted=False
+        ).count()
+        
+        # Count wishlist items (not deleted)
+        wishlist_count = Wishlist.objects.filter(
+            user=user,
+            is_deleted=False
+        ).count()
+        
+        # Count coupons used by user (not deleted)
+        coupons_count = CouponUsage.objects.filter(
+            user=user,
+            is_deleted=False
+        ).count()
+        
+        return Response({
+            'orders': orders_count,
+            'wishlist': wishlist_count,
+            'coupons': coupons_count
+        })

@@ -194,7 +194,7 @@ const ProductReviews = ({ productId }) => {
                 </button>
               ) : (
                 <div style={{ color: '#888', fontSize: '0.9rem' }}>
-                  Purchase to review
+                  Share your experience with this product
                 </div>
               )}
             </div>
