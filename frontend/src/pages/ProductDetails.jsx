@@ -294,7 +294,7 @@ const ProductDetails = () => {
                   <button 
                     className="qty-btn" 
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={product.stock <= 0 || isInCart}
+                    disabled={product.stock <= 0}
                   >−</button>
                   <input 
                     type="number" 
@@ -303,19 +303,19 @@ const ProductDetails = () => {
                     min="1" 
                     max={Math.min(99, product.stock)} 
                     onChange={(e) => setQuantity(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.min(99, product.stock)))}
-                    disabled={product.stock <= 0 || isInCart}
+                    disabled={product.stock <= 0}
                   />
                   <button 
                     className="qty-btn" 
                     onClick={() => setQuantity(Math.min(Math.min(99, product.stock), quantity + 1))}
-                    disabled={product.stock <= 0 || isInCart}
+                    disabled={product.stock <= 0}
                   >+</button>
                 </div>
 
                 {isInCart ? (
                   <Link 
                     to="/cart" 
-                    className="btn-add-cart"
+                    className="btn-primary"
                     style={{ minWidth: '200px', textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     View Cart 🛒
