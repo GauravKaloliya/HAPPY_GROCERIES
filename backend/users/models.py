@@ -7,6 +7,7 @@ class User(AbstractUser):
     
     phone = models.CharField(max_length=10, unique=True, db_index=True)
     email = models.EmailField(blank=True, null=True)
+    address = models.TextField(blank=True, default='')
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     is_verified = models.BooleanField(default=False)
     failed_login_attempts = models.IntegerField(default=0)
