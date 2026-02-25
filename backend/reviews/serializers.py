@@ -36,6 +36,8 @@ class ProductReviewSerializer(serializers.ModelSerializer):
 class CreateReviewSerializer(serializers.ModelSerializer):
     """Serializer for creating reviews."""
     
+    title = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    
     class Meta:
         model = ProductReview
         fields = ['rating', 'title', 'comment']
@@ -44,6 +46,12 @@ class CreateReviewSerializer(serializers.ModelSerializer):
         if not 1 <= value <= 5:
             raise serializers.ValidationError('Rating must be between 1 and 5.')
         return value
+    
+    def validate_title(self, value):
+        # Title is optional - return None if empty
+        if not value or not value.strip():
+            return None
+        return value.strip()
 
 
 class ReviewSummarySerializer(serializers.Serializer):
