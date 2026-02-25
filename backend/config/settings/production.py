@@ -52,7 +52,13 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Static and media files
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
+
+# Frontend dist directory for SPA routing
+frontend_dist_dir = BASE_DIR / 'frontend' / 'dist'
+if frontend_dist_dir.exists():
+    TEMPLATES[0]['DIRS'].append(frontend_dist_dir)
 
 # Logging for production
 LOGGING['handlers']['file']['level'] = 'WARNING'
