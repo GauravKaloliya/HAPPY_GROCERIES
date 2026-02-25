@@ -10,7 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'phone', 'email', 'first_name', 'last_name',
-            'avatar', 'is_verified', 'first_order', 'created_at'
+            'address', 'avatar', 'is_verified', 'first_order', 'created_at'
         ]
         read_only_fields = ['id', 'created_at', 'is_verified']
 

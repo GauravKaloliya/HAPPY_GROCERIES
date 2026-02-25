@@ -7,6 +7,14 @@ import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
+const PASSWORD_RULES = [
+  { test: (p) => p.length >= 8, label: 'At least 8 characters' },
+  { test: (p) => /[A-Z]/.test(p), label: 'One uppercase letter' },
+  { test: (p) => /[a-z]/.test(p), label: 'One lowercase letter' },
+  { test: (p) => /\d/.test(p), label: 'One number' },
+  { test: (p) => /[!@#$%^&*(),.?":{}|<>]/.test(p), label: 'One special character' },
+];
+
 const Settings = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
@@ -37,6 +45,7 @@ const Settings = () => {
   const [formErrors, setFormErrors] = useState({});
   const [validationStatus, setValidationStatus] = useState({
     email: { checking: false, available: null },
+    phone: { checking: false, available: null },
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -105,12 +114,20 @@ const Settings = () => {
   };
 
   const handleProfileChange = (field, value) => {
-    setProfileForm({ ...profileForm, [field]: value });
+    if (field === 'phone') {
+      const numericValue = value.replace(/\D/g, '').slice(0, 10);
+      setProfileForm({ ...profileForm, phone: numericValue });
+    } else {
+      setProfileForm({ ...profileForm, [field]: value });
+    }
     if (formErrors[field]) {
       setFormErrors({ ...formErrors, [field]: '' });
     }
     if (field === 'email') {
       setValidationStatus(prev => ({ ...prev, email: { checking: false, available: null } }));
+    }
+    if (field === 'phone') {
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available: null } }));
     }
   };
 
@@ -135,20 +152,53 @@ const Settings = () => {
     }
   };
 
+  const handlePhoneBlur = async () => {
+    const phone = profileForm.phone;
+    if (!phone || phone === initialProfileRef.current.phone) return;
+    if (!/^\d{10}$/.test(phone)) return;
+    
+    setValidationStatus(prev => ({ ...prev, phone: { checking: true, available: null } }));
+    try {
+      const response = await authAPI.checkPhone(phone);
+      const available = response.data.available;
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available } }));
+      if (!available) {
+        setFormErrors(prev => ({ ...prev, phone: response.data.message }));
+      }
+    } catch {
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available: null } }));
+    }
+  };
+
   const validateProfileForm = () => {
     const errors = {};
     if (!profileForm.first_name.trim()) {
       errors.first_name = 'First name is required';
     } else if (profileForm.first_name.trim().length < 2) {
       errors.first_name = 'First name must be at least 2 characters';
+    } else if (profileForm.first_name.trim().length > 150) {
+      errors.first_name = 'First name must be less than 150 characters';
     } else if (!/^[a-zA-Z\s'-]+$/.test(profileForm.first_name.trim())) {
       errors.first_name = 'First name can only contain letters, spaces, hyphens and apostrophes';
     }
     if (profileForm.last_name && !/^[a-zA-Z\s'-]+$/.test(profileForm.last_name.trim())) {
       errors.last_name = 'Last name can only contain letters, spaces, hyphens and apostrophes';
     }
-    if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email)) {
-      errors.email = 'Enter a valid email address';
+    if (profileForm.last_name && profileForm.last_name.length > 150) {
+      errors.last_name = 'Last name must be less than 150 characters';
+    }
+    if (profileForm.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email)) {
+        errors.email = 'Enter a valid email address';
+      } else if (profileForm.email.length > 254) {
+        errors.email = 'Email must be less than 254 characters';
+      }
+    }
+    if (profileForm.phone && !/^\d{10}$/.test(profileForm.phone)) {
+      errors.phone = 'Phone number must be 10 digits';
+    }
+    if (profileForm.address && profileForm.address.length > 500) {
+      errors.address = 'Address must be less than 500 characters';
     }
     return errors;
   };
@@ -183,23 +233,9 @@ const Settings = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
-      return;
-    }
-
-    if (!/[A-Z]/.test(passwordForm.newPassword)) {
-      toast.error('Password must contain at least one uppercase letter');
-      return;
-    }
-
-    if (!/[a-z]/.test(passwordForm.newPassword)) {
-      toast.error('Password must contain at least one lowercase letter');
-      return;
-    }
-
-    if (!/\d/.test(passwordForm.newPassword)) {
-      toast.error('Password must contain at least one number');
+    const failedRules = PASSWORD_RULES.filter(rule => !rule.test(passwordForm.newPassword));
+    if (failedRules.length > 0) {
+      toast.error(`Password must have: ${failedRules.map(r => r.label).join(', ')}`);
       return;
     }
 
@@ -339,6 +375,7 @@ const Settings = () => {
                         value={profileForm.first_name}
                         onChange={(e) => handleProfileChange('first_name', e.target.value)}
                         placeholder="Enter your first name"
+                        maxLength="150"
                         style={{ ...getFieldBorderStyle('first_name'), borderColor: formErrors.first_name ? '#ff4444' : undefined }}
                       />
                       {formErrors.first_name && <span className="field-error">{formErrors.first_name}</span>}
@@ -351,6 +388,7 @@ const Settings = () => {
                         value={profileForm.last_name}
                         onChange={(e) => handleProfileChange('last_name', e.target.value)}
                         placeholder="Enter your last name"
+                        maxLength="150"
                         style={{ ...getFieldBorderStyle('last_name'), borderColor: formErrors.last_name ? '#ff4444' : undefined }}
                       />
                       {formErrors.last_name && <span className="field-error">{formErrors.last_name}</span>}
@@ -367,6 +405,7 @@ const Settings = () => {
                         onChange={(e) => handleProfileChange('email', e.target.value)}
                         onBlur={handleEmailBlur}
                         placeholder="Enter your email"
+                        maxLength="254"
                         style={{ 
                           ...getFieldBorderStyle('email'), 
                           borderColor: formErrors.email ? '#ff4444' : undefined,
@@ -384,18 +423,33 @@ const Settings = () => {
 
                   <div className="form-group">
                     <label htmlFor="phone">Phone Number</label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      value={profileForm.phone}
-                      disabled
-                      style={{ background: 'var(--bg-light)', opacity: 0.7, cursor: 'not-allowed' }}
-                    />
-                    <small style={{ color: '#888', marginTop: '0.25rem', display: 'block' }}>Phone number cannot be changed</small>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="tel"
+                        id="phone"
+                        inputMode="numeric"
+                        value={profileForm.phone}
+                        onChange={(e) => handleProfileChange('phone', e.target.value)}
+                        onBlur={handlePhoneBlur}
+                        placeholder="Enter 10-digit phone number"
+                        maxLength="10"
+                        style={{ 
+                          ...getFieldBorderStyle('phone'),
+                          borderColor: formErrors.phone ? '#ff4444' : undefined,
+                          paddingRight: validationStatus.phone.available !== null ? '2.5rem' : undefined
+                        }}
+                      />
+                      {getValidationIcon('phone') && (
+                        <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                          {getValidationIcon('phone')}
+                        </span>
+                      )}
+                    </div>
+                    {formErrors.phone && <span className="field-error">{formErrors.phone}</span>}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="address">Address</label>
+                    <label htmlFor="address">Address / Location</label>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <input
                         type="text"
@@ -403,7 +457,8 @@ const Settings = () => {
                         value={profileForm.address}
                         onChange={(e) => handleProfileChange('address', e.target.value)}
                         placeholder="Enter your address"
-                        style={{ flex: 1, ...getFieldBorderStyle('address') }}
+                        maxLength="500"
+                        style={{ flex: 1, ...getFieldBorderStyle('address'), borderColor: formErrors.address ? '#ff4444' : undefined }}
                       />
                       <button
                         type="button"
@@ -414,6 +469,7 @@ const Settings = () => {
                         📍
                       </button>
                     </div>
+                    {formErrors.address && <span className="field-error">{formErrors.address}</span>}
                   </div>
 
                   <button
@@ -469,6 +525,25 @@ const Settings = () => {
                         {passwordVisibility.newPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
+                    {passwordForm.newPassword && (
+                      <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        {PASSWORD_RULES.map((rule, i) => (
+                          <span
+                            key={i}
+                            style={{
+                              fontSize: '0.75rem',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '99px',
+                              background: rule.test(passwordForm.newPassword) ? 'var(--primary-green, #22c55e)' : '#f1f5f9',
+                              color: rule.test(passwordForm.newPassword) ? 'white' : '#64748b',
+                              transition: 'background 0.2s',
+                            }}
+                          >
+                            {rule.test(passwordForm.newPassword) ? '✓' : '○'} {rule.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="form-group">
