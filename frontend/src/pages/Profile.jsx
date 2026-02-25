@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProfile, updateProfile, selectUser, selectAuthLoading } from '../store/slices/authSlice';
 import { authAPI } from '../api/auth';
-import { ordersAPI } from '../api/orders';
-import { wishlistAPI } from '../api/wishlist';
-import { couponsAPI } from '../api/coupons';
 import { formatDate } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
@@ -72,15 +69,11 @@ const Profile = () => {
       if (!user) return;
       setCountsLoading(true);
       try {
-        const [ordersRes, wishlistRes, couponsRes] = await Promise.all([
-          ordersAPI.getAll().catch(() => ({ data: { results: [], count: 0 } })),
-          wishlistAPI.getAll().catch(() => ({ data: { results: [], count: 0 } })),
-          couponsAPI.getAll().catch(() => ({ data: { results: [], count: 0 } })),
-        ]);
+        const statsRes = await authAPI.getStats().catch(() => ({ data: { orders: 0, wishlist: 0, coupons: 0 } }));
         setCounts({
-          orders: ordersRes.data.count || ordersRes.data.results?.length || ordersRes.data.length || 0,
-          wishlist: wishlistRes.data.count || wishlistRes.data.results?.length || wishlistRes.data.length || 0,
-          coupons: couponsRes.data.count || couponsRes.data.results?.length || couponsRes.data.length || 0,
+          orders: statsRes.data.orders || 0,
+          wishlist: statsRes.data.wishlist || 0,
+          coupons: statsRes.data.coupons || 0,
         });
       } catch {
         setCounts({ orders: 0, wishlist: 0, coupons: 0 });
@@ -165,6 +158,11 @@ const Profile = () => {
     } else if (!/^[a-zA-Z\s'-]+$/.test(formData.name.trim())) {
       errors.name = 'Name can only contain letters, spaces, hyphens and apostrophes';
     }
+    if (!formData.address.trim()) {
+      errors.address = 'Address is required';
+    } else if (formData.address.length > 500) {
+      errors.address = 'Address must be less than 500 characters';
+    }
     if (formData.email) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) {
         errors.email = 'Enter a valid email address';
@@ -174,9 +172,6 @@ const Profile = () => {
     }
     if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
       errors.phone = 'Phone number must be 10 digits';
-    }
-    if (formData.address && formData.address.length > 500) {
-      errors.address = 'Address must be less than 500 characters';
     }
     return errors;
   };
@@ -275,7 +270,7 @@ const Profile = () => {
 
           <div className="profile-details">
             <div className="detail-item">
-              <span className="detail-label">Full Name</span>
+              <span className="detail-label">Full Name *</span>
               {editing ? (
                 <div>
                   <input
@@ -286,6 +281,7 @@ const Profile = () => {
                     className={`profile-edit-input ${formErrors.name ? 'input-error' : ''}`}
                     placeholder="Enter your full name"
                     maxLength="100"
+                    required
                   />
                   {formErrors.name && <span className="field-error">{formErrors.name}</span>}
                 </div>
@@ -347,7 +343,7 @@ const Profile = () => {
               )}
             </div>
             <div className="detail-item">
-              <span className="detail-label">Address</span>
+              <span className="detail-label">Address *</span>
               {editing ? (
                 <div>
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -360,6 +356,7 @@ const Profile = () => {
                       placeholder="Enter your address"
                       maxLength="500"
                       style={{ flex: 1 }}
+                      required
                     />
                     <button
                       type="button"

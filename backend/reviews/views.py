@@ -54,20 +54,6 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         # Check if product exists
         product = get_object_or_404(Product, id=product_id, is_deleted=False)
         
-        # Check if user has purchased this product
-        has_purchased = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status__in=['delivered', 'confirmed'],
-            product=product,
-            order__is_deleted=False
-        ).exists()
-        
-        if not has_purchased:
-            return Response(
-                {'error': 'You can only review products you have purchased.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         # Check if user already reviewed this product from any order
         existing_review = ProductReview.objects.filter(
             user=request.user,
@@ -81,7 +67,7 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Get the order that contained this product
+        # Get the order that contained this product if available
         order_item = OrderItem.objects.filter(
             order__user=request.user,
             order__status__in=['delivered', 'confirmed'],
@@ -89,20 +75,14 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
             order__is_deleted=False
         ).select_related('order').first()
         
-        if not order_item:
-            return Response(
-                {'error': 'No completed order found for this product.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
         review = ProductReview.objects.create(
             user=request.user,
             product=product,
-            order=order_item.order,
-            is_verified_purchase=True,
+            order=order_item.order if order_item else None,
+            is_verified_purchase=order_item is not None,
             **serializer.validated_data
         )
         
@@ -219,14 +199,6 @@ def product_review_summary(request, product_id):
     user_review = None
     
     if request.user.is_authenticated:
-        # Check if user has purchased
-        has_purchased = OrderItem.objects.filter(
-            order__user=request.user,
-            order__status__in=['delivered', 'confirmed'],
-            product=product,
-            order__is_deleted=False
-        ).exists()
-        
         # Check if user already reviewed
         has_reviewed = ProductReview.objects.filter(
             user=request.user,
@@ -234,7 +206,8 @@ def product_review_summary(request, product_id):
             is_deleted=False
         ).exists()
         
-        can_review = has_purchased and not has_reviewed
+        # Allow any authenticated user to review (not just purchasers)
+        can_review = not has_reviewed
         
         # Get user's review if exists
         user_review_obj = ProductReview.objects.filter(

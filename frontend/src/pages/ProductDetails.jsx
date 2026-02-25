@@ -37,7 +37,8 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
+  const [showCounter, setShowCounter] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -113,10 +114,11 @@ const ProductDetails = () => {
     
     setIsAddingToCart(true);
     try {
-      await dispatch(addToCart({ productId: product.id, quantity, product })).unwrap();
-      toast.success(`Added ${quantity} ${product.name} to cart! 🛒`);
-      logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity });
-      setQuantity(1);
+      await dispatch(addToCart({ productId: product.id, quantity: quantity > 0 ? quantity : 1, product })).unwrap();
+      toast.success(`Added ${quantity > 0 ? quantity : 1} ${product.name} to cart! 🛒`);
+      logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity: quantity > 0 ? quantity : 1 });
+      setShowCounter(true);
+      setQuantity(quantity > 0 ? quantity : 1);
     } catch (err) {
       toast.error(err || 'Failed to add to cart');
     } finally {
@@ -290,36 +292,38 @@ const ProductDetails = () => {
               </div>
 
               <div className="product-details-actions">
-                <div className="quantity-controls" aria-label="Quantity selector">
-                  <button 
-                    className="qty-btn" 
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={product.stock <= 0}
-                  >−</button>
-                  <input 
-                    type="number" 
-                    className="qty-input" 
-                    value={quantity} 
-                    min="1" 
-                    max={Math.min(99, product.stock)} 
-                    onChange={(e) => setQuantity(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.min(99, product.stock)))}
-                    disabled={product.stock <= 0}
-                  />
-                  <button 
-                    className="qty-btn" 
-                    onClick={() => setQuantity(Math.min(Math.min(99, product.stock), quantity + 1))}
-                    disabled={product.stock <= 0}
-                  >+</button>
-                </div>
+                {showCounter ? (
+                  <>
+                    <div className="quantity-controls" aria-label="Quantity selector">
+                      <button 
+                        className="qty-btn" 
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        disabled={product.stock <= 0}
+                      >−</button>
+                      <input 
+                        type="number" 
+                        className="qty-input" 
+                        value={quantity} 
+                        min="1" 
+                        max={Math.min(99, product.stock)} 
+                        onChange={(e) => setQuantity(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.min(99, product.stock)))}
+                        disabled={product.stock <= 0}
+                      />
+                      <button 
+                        className="qty-btn" 
+                        onClick={() => setQuantity(Math.min(Math.min(99, product.stock), quantity + 1))}
+                        disabled={product.stock <= 0}
+                      >+</button>
+                    </div>
 
-                {isInCart ? (
-                  <Link 
-                    to="/cart" 
-                    className="btn-primary"
-                    style={{ minWidth: '200px', textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    View Cart 🛒
-                  </Link>
+                    <Link 
+                      to="/cart" 
+                      className="btn-primary"
+                      style={{ minWidth: '200px', textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      View Cart 🛒
+                    </Link>
+                  </>
                 ) : (
                   <button 
                     className="btn-add-cart" 

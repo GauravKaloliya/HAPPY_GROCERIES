@@ -37,9 +37,20 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
     
     def list(self, request, *args, **kwargs):
-        """Override list to support limit parameter."""
+        """Override list to support limit and offset parameters."""
         limit = request.query_params.get('limit')
+        offset = request.query_params.get('offset')
         queryset = self.filter_queryset(self.get_queryset())
+
+        # Get total count before slicing
+        total_count = queryset.count()
+        
+        if offset:
+            try:
+                offset = int(offset)
+                queryset = queryset[offset:]
+            except (ValueError, TypeError):
+                pass
         
         if limit:
             try:
@@ -51,7 +62,7 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response({
             'results': serializer.data,
-            'count': len(serializer.data)
+            'count': total_count
         })
     
     @action(detail=False, methods=['post'])
