@@ -8,4 +8,7 @@ export const authAPI = {
   getProfile: () => api.get('/api/auth/profile/'),
   updateProfile: (data) => api.patch('/api/auth/profile/', data),
   changePassword: (data) => api.post('/api/auth/change-password/', data),
+  checkUsername: (username) => api.get(`/api/auth/check-username/?username=${encodeURIComponent(username)}`),
+  checkEmail: (email) => api.get(`/api/auth/check-email/?email=${encodeURIComponent(email)}`),
+  checkPhone: (phone) => api.get(`/api/auth/check-phone/?phone=${encodeURIComponent(phone)}`),
 };

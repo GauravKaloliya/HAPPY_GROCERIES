@@ -9,9 +9,65 @@ import redis
 import os
 from datetime import timedelta
 from django.utils import timezone
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_username(request):
+    """Check if username is available."""
+    username = request.query_params.get('username', '').strip()
+    if not username:
+        return Response({'available': False, 'message': 'Username is required'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(username) < 3:
+        return Response({'available': False, 'message': 'Username must be at least 3 characters'}, status=status.HTTP_400_BAD_REQUEST)
+    if not username.isalnum():
+        return Response({'available': False, 'message': 'Username can only contain letters and numbers'}, status=status.HTTP_400_BAD_REQUEST)
+    exists = User.objects.filter(username=username).exists()
+    return Response({
+        'available': not exists,
+        'message': 'Username is already taken' if exists else 'Username is available'
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_email(request):
+    """Check if email is available and valid."""
+    email = request.query_params.get('email', '').strip()
+    if not email:
+        return Response({'available': False, 'message': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        validate_email(email)
+    except DjangoValidationError:
+        return Response({'available': False, 'message': 'Invalid email format'}, status=status.HTTP_400_BAD_REQUEST)
+    exists = User.objects.filter(email=email).exists()
+    return Response({
+        'available': not exists,
+        'message': 'Email is already registered' if exists else 'Email is available'
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_phone(request):
+    """Check if phone is available and valid."""
+    phone = request.query_params.get('phone', '').strip()
+    if not phone:
+        return Response({'available': False, 'message': 'Phone number is required'}, status=status.HTTP_400_BAD_REQUEST)
+    if not phone.isdigit():
+        return Response({'available': False, 'message': 'Phone number must contain only digits'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(phone) != 10:
+        return Response({'available': False, 'message': 'Phone number must be 10 digits'}, status=status.HTTP_400_BAD_REQUEST)
+    exists = User.objects.filter(phone=phone).exists()
+    return Response({
+        'available': not exists,
+        'message': 'Phone number is already registered' if exists else 'Phone number is available'
+    })
 
 
 class RegisterView(generics.CreateAPIView):

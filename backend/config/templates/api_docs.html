@@ -331,12 +331,35 @@
                         <td>Required</td>
                         <td>Update the current password.</td>
                     </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/auth/check-username/</td>
+                        <td>Public</td>
+                        <td>Check if a username is available. Query param: ?username=</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/auth/check-email/</td>
+                        <td>Public</td>
+                        <td>Check if an email is available. Query param: ?email=</td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td>/auth/check-phone/</td>
+                        <td>Public</td>
+                        <td>Check if a phone number is available. Query param: ?phone=</td>
+                    </tr>
                 </tbody>
             </table>
             <p><strong>Login example</strong></p>
             <div class="code-block">{
   "phone": "9876543210",
   "password": "your_password"
+}</div>
+            <p><strong>Validation response example</strong></p>
+            <div class="code-block">{
+  "available": true,
+  "message": "Phone number is available"
 }</div>
         </section>
 

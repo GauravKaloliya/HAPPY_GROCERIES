@@ -62,10 +62,10 @@ const Login = () => {
 
     if (typeof err === 'string') {
       const lower = err.toLowerCase();
-      if (lower.includes('not found') || lower.includes('no active account') || lower.includes('no user')) {
+      if (lower.includes('not found') || lower.includes('no active account') || lower.includes('no user') || lower.includes('not registered')) {
         return 'No account found with this phone number.';
       }
-      if (lower.includes('invalid') || lower.includes('incorrect') || lower.includes('wrong') || lower.includes('credentials')) {
+      if (lower.includes('invalid') || lower.includes('incorrect') || lower.includes('wrong') || lower.includes('credentials') || lower.includes('password')) {
         return 'Incorrect phone number or password.';
       }
       if (lower.includes('locked') || lower.includes('banned')) {
@@ -90,6 +90,19 @@ const Login = () => {
           return 'Incorrect phone number or password.';
         }
         return 'Incorrect phone number or password.';
+      }
+      if (err.error) {
+        const lower = err.error.toLowerCase();
+        if (lower.includes('not registered') || lower.includes('not found')) {
+          return 'No account found with this phone number.';
+        }
+        if (lower.includes('incorrect') || lower.includes('invalid') || lower.includes('password')) {
+          return 'Incorrect phone number or password.';
+        }
+        if (lower.includes('locked')) {
+          return 'Your account has been temporarily locked. Please try again later.';
+        }
+        return err.error;
       }
       if (err.non_field_errors) {
         return Array.isArray(err.non_field_errors) ? err.non_field_errors[0] : err.non_field_errors;
