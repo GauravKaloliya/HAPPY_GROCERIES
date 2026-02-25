@@ -33,7 +33,14 @@ export const createReview = createAsyncThunk(
       const response = await reviewsAPI.createReview(productId, reviewData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.error || 'Failed to create review');
+      const data = error.response?.data;
+      if (data?.error) return rejectWithValue(data.error);
+      if (data?.detail) return rejectWithValue(data.detail);
+      if (typeof data === 'object') {
+        const firstMsg = Object.values(data).flat()[0];
+        if (firstMsg) return rejectWithValue(String(firstMsg));
+      }
+      return rejectWithValue('Failed to create review');
     }
   }
 );

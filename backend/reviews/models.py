@@ -26,8 +26,10 @@ class ProductReview(models.Model):
     )
     order = models.ForeignKey(
         'orders.Order',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name='reviews',
+        null=True,
+        blank=True,
         help_text='The order that contained this product'
     )
     rating = models.PositiveIntegerField(
@@ -53,7 +55,7 @@ class ProductReview(models.Model):
     class Meta:
         db_table = 'product_reviews'
         ordering = ['-created_at']
-        unique_together = ['user', 'product', 'order']
+        unique_together = ['user', 'product']
         indexes = [
             models.Index(fields=['user'], name='product_reviews_user_idx'),
             models.Index(fields=['product'], name='product_reviews_product_idx'),

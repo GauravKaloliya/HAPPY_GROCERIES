@@ -424,11 +424,11 @@ const Profile = () => {
           <div className="summary-card">
             <div className="summary-icon">🎁</div>
             <div className="summary-content">
-              <h3>Coupons</h3>
+              <h3>Available Coupons</h3>
               <div className="summary-value">
                 {countsLoading ? '...' : counts.coupons}
               </div>
-              <Link to="/shop" className="summary-link">Shop Now →</Link>
+              <Link to="/offers" className="summary-link">View Offers →</Link>
             </div>
           </div>
         </div>

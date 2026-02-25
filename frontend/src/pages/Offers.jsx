@@ -27,11 +27,13 @@ const Offers = () => {
           couponsAPI.getAll({ limit: COUPONS_LIMIT }),
           categoriesAPI.getAll(),
         ]);
-        const allCoupons = couponsRes.data.results || couponsRes.data;
+        const data = couponsRes.data;
+        const allCoupons = data.results || data;
+        const total = data.count !== undefined ? data.count : allCoupons.length;
         setCoupons(allCoupons);
         setDisplayedCoupons(allCoupons);
         setCategories(categoriesRes.data.results || categoriesRes.data);
-        setHasMore(allCoupons.length >= COUPONS_LIMIT);
+        setHasMore(total > allCoupons.length || allCoupons.length >= COUPONS_LIMIT);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load offers');
@@ -50,11 +52,19 @@ const Offers = () => {
       const currentLength = displayedCoupons.length;
       const params = { limit: COUPONS_LIMIT, offset: currentLength };
       const couponsRes = await couponsAPI.getAll(params);
-      const newCoupons = couponsRes.data.results || couponsRes.data;
+      const data = couponsRes.data;
+      const newCoupons = data.results || data;
+      const total = data.count !== undefined ? data.count : null;
 
       if (newCoupons.length > 0) {
-        setDisplayedCoupons(prev => [...prev, ...newCoupons]);
-        setHasMore(newCoupons.length >= COUPONS_LIMIT);
+        const updated = [...displayedCoupons, ...newCoupons];
+        setDisplayedCoupons(updated);
+        setCoupons(updated);
+        if (total !== null) {
+          setHasMore(updated.length < total);
+        } else {
+          setHasMore(newCoupons.length >= COUPONS_LIMIT);
+        }
       } else {
         setHasMore(false);
       }
@@ -105,10 +115,7 @@ const Offers = () => {
     : displayedCoupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
 
   const couponsList = filteredCoupons.filter(c => c.is_active);
-  const totalFilteredCount = activeCategory === 'all'
-    ? coupons.length
-    : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage').length;
-  const showViewMore = hasMore && couponsList.length < totalFilteredCount;
+  const showViewMore = hasMore;
 
   if (loading) return <PageLoader />;
 

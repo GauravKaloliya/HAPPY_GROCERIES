@@ -47,9 +47,17 @@ const ProductDetails = () => {
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
   
   // Check if product is already in cart
-  const isInCart = product && cartItems.some(item => 
+  const cartItem = product && cartItems.find(item => 
     item.id === product.id || item.product?.id === product.id
   );
+
+  // Sync counter state with cart when product loads
+  useEffect(() => {
+    if (product && cartItem) {
+      setShowCounter(true);
+      setQuantity(cartItem.quantity || 1);
+    }
+  }, [product, cartItem]);
   
   // Memoize the log function to prevent infinite re-renders
   const logProductView = useCallback((productId, productName) => {
@@ -107,22 +115,32 @@ const ProductDetails = () => {
     };
 
     fetchProduct();
-  }, [id, navigate, isAuthenticated, logProductView]);
+  }, [id, navigate, isAuthenticated, logProductView, dispatch]);
 
   const handleAddToCart = async () => {
     if (isAddingToCart) return;
     
+    const addQty = quantity > 0 ? quantity : 1;
     setIsAddingToCart(true);
     try {
-      await dispatch(addToCart({ productId: product.id, quantity: quantity > 0 ? quantity : 1, product })).unwrap();
-      toast.success(`Added ${quantity > 0 ? quantity : 1} ${product.name} to cart! 🛒`);
-      logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity: quantity > 0 ? quantity : 1 });
+      await dispatch(addToCart({ productId: product.id, quantity: addQty, product })).unwrap();
+      toast.success(`Added ${addQty} ${product.name} to cart! 🛒`);
+      logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity: addQty });
       setShowCounter(true);
-      setQuantity(quantity > 0 ? quantity : 1);
+      setQuantity(addQty);
     } catch (err) {
       toast.error(err || 'Failed to add to cart');
     } finally {
       setIsAddingToCart(false);
+    }
+  };
+
+  const handleDecreaseQty = () => {
+    if (quantity <= 1) {
+      setShowCounter(false);
+      setQuantity(0);
+    } else {
+      setQuantity(quantity - 1);
     }
   };
 
@@ -297,7 +315,7 @@ const ProductDetails = () => {
                     <div className="quantity-controls" aria-label="Quantity selector">
                       <button 
                         className="qty-btn" 
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        onClick={handleDecreaseQty}
                         disabled={product.stock <= 0}
                       >−</button>
                       <input 
