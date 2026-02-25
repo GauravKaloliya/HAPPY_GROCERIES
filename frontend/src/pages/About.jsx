@@ -39,6 +39,48 @@ const About = () => {
           accessible to everyone, delivered with a smile! 🌟
         </p>
 
+        <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Our Team 👥</h3>
+        <div className="team-section" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1.5rem',
+          marginBottom: '2rem'
+        }}>
+          <div className="team-card" style={{
+            background: 'var(--bg-white)',
+            borderRadius: 'var(--border-radius)',
+            padding: '1.5rem',
+            textAlign: 'center',
+            boxShadow: 'var(--shadow)',
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👨‍💼</div>
+            <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-dark)' }}>Gaurav Kaloliya</h4>
+            <p style={{ color: 'var(--primary-pink)', fontWeight: 600, margin: 0 }}>Founder & CTO</p>
+          </div>
+          <div className="team-card" style={{
+            background: 'var(--bg-white)',
+            borderRadius: 'var(--border-radius)',
+            padding: '1.5rem',
+            textAlign: 'center',
+            boxShadow: 'var(--shadow)',
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👩‍💼</div>
+            <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-dark)' }}>Arpita Makwana</h4>
+            <p style={{ color: 'var(--primary-pink)', fontWeight: 600, margin: 0 }}>CAO</p>
+          </div>
+          <div className="team-card" style={{
+            background: 'var(--bg-white)',
+            borderRadius: 'var(--border-radius)',
+            padding: '1.5rem',
+            textAlign: 'center',
+            boxShadow: 'var(--shadow)',
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👩‍💼</div>
+            <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-dark)' }}>Nirali Joshi</h4>
+            <p style={{ color: 'var(--primary-pink)', fontWeight: 600, margin: 0 }}>CMO</p>
+          </div>
+        </div>
+
         <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Contact Us 📞</h3>
         <div className="contact-info">
           <p>📍 Porbandar, Gujarat 360575</p>

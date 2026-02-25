@@ -23,7 +23,7 @@ const Offers = () => {
     const fetchData = async () => {
       try {
         const [couponsRes, categoriesRes] = await Promise.all([
-          couponsAPI.getAll(),
+          couponsAPI.getAll({ limit: 6 }),
           categoriesAPI.getAll(),
         ]);
         setCoupons(couponsRes.data.results || couponsRes.data);

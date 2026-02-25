@@ -6,7 +6,7 @@ import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
-const PRODUCTS_PER_PAGE = 6;
+const PRODUCTS_PER_PAGE = 8;
 
 const Categories = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -47,7 +47,8 @@ const Categories = () => {
       setProducts([]);
       setCurrentPage(1);
       try {
-        const productsRes = await productsAPI.getAll(selectedCategory === 'All' ? {} : { category: selectedCategory });
+        const params = selectedCategory === 'All' ? { limit: 8 } : { category: selectedCategory, limit: 8 };
+        const productsRes = await productsAPI.getAll(params);
         setProducts(productsRes.data.results || productsRes.data);
       } catch (error) {
         console.error('Error fetching products:', error);
