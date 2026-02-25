@@ -6,8 +6,6 @@ import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
-const PRODUCTS_PER_PAGE = 8;
-
 const Categories = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -15,7 +13,6 @@ const Categories = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
-  const [currentPage, setCurrentPage] = useState(1);
 
   useActivityLog('page_view', { section: 'categories' });
 
@@ -45,7 +42,6 @@ const Categories = () => {
     const fetchProducts = async () => {
       setProductsLoading(true);
       setProducts([]);
-      setCurrentPage(1);
       try {
         const params = selectedCategory === 'All' ? { limit: 8 } : { category: selectedCategory, limit: 8 };
         const productsRes = await productsAPI.getAll(params);
@@ -94,29 +90,6 @@ const Categories = () => {
     }
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(products.length / PRODUCTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-  const endIndex = startIndex + PRODUCTS_PER_PAGE;
-  const displayedProducts = products.slice(startIndex, endIndex);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      handlePageChange(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      handlePageChange(currentPage - 1);
-    }
-  };
-
   if (categoriesLoading) return <PageLoader />;
 
   return (
@@ -153,49 +126,12 @@ const Categories = () => {
           <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
           <p>Loading products...</p>
         </div>
-      ) : displayedProducts.length > 0 ? (
-        <>
-          <div className="products-grid">
-            {displayedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-          
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="pagination">
-              <button
-                className="pagination-btn"
-                onClick={handlePrevPage}
-                disabled={currentPage === 1}
-              >
-                ← Previous
-              </button>
-              <div className="pagination-pages">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    className={`pagination-page ${currentPage === page ? 'active' : ''}`}
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-              <button
-                className="pagination-btn"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                Next →
-              </button>
-            </div>
-          )}
-          
-          <p className="pagination-info">
-            Showing {startIndex + 1}-{Math.min(endIndex, products.length)} of {products.length} products
-          </p>
-        </>
+      ) : products.length > 0 ? (
+        <div className="products-grid">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
       ) : (
         <div className="empty-state">
           <div className="empty-state-icon">📦</div>
