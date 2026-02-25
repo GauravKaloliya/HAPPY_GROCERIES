@@ -78,21 +78,32 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
     
     def list(self, request, *args, **kwargs):
-        """Override list to support limit parameter."""
+        """Override list to support limit and offset parameters."""
         limit = request.query_params.get('limit')
+        offset = request.query_params.get('offset')
         queryset = self.filter_queryset(self.get_queryset())
-        
+        total_count = queryset.count()
+
+        if offset:
+            try:
+                offset = int(offset)
+                if offset > 0:
+                    queryset = queryset[offset:]
+            except (ValueError, TypeError):
+                pass
+
         if limit:
             try:
                 limit = int(limit)
-                queryset = queryset[:limit]
+                if limit > 0:
+                    queryset = queryset[:limit]
             except (ValueError, TypeError):
                 pass
-        
+
         serializer = self.get_serializer(queryset, many=True)
         return Response({
             'results': serializer.data,
-            'count': len(serializer.data)
+            'count': total_count
         })
     
     @action(detail=False, methods=['get'])

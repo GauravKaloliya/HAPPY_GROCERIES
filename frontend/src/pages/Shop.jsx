@@ -17,7 +17,9 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const sortOptions = useSelector(selectSortOptions);
+  const PRODUCTS_LIMIT = 6;
 
   // Filter states
   const initialSearch = searchParams.get('search') || '';
@@ -59,7 +61,8 @@ const Shop = () => {
         min_price: minPrice,
         max_price: maxPrice,
         in_stock: inStock ? 'true' : undefined,
-        limit: 6,
+        limit: PRODUCTS_LIMIT,
+        offset: 0,
       };
 
       // Remove empty params
@@ -68,9 +71,10 @@ const Shop = () => {
       });
 
       const productsRes = await productsAPI.getAll(params);
+      const results = productsRes.data.results || productsRes.data;
 
-      setAllProducts(productsRes.data.results || productsRes.data);
-      setTotalCount(productsRes.data.count || productsRes.data.length);
+      setAllProducts(results);
+      setTotalCount(productsRes.data.count ?? results.length);
 
       // Log search/filter activity
       if (searchQuery) {
@@ -90,7 +94,38 @@ const Shop = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock, logCustomActivity]);
+  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock, logCustomActivity, PRODUCTS_LIMIT]);
+
+  const handleViewMore = async () => {
+    if (isFetchingMore) return;
+    setIsFetchingMore(true);
+    try {
+      const params = {
+        search: searchQuery,
+        category: selectedCategory === 'All' ? '' : selectedCategory,
+        ordering: sortBy,
+        min_price: minPrice,
+        max_price: maxPrice,
+        in_stock: inStock ? 'true' : undefined,
+        limit: PRODUCTS_LIMIT,
+        offset: allProducts.length,
+      };
+
+      Object.keys(params).forEach(key => {
+        if (!params[key]) delete params[key];
+      });
+
+      const productsRes = await productsAPI.getAll(params);
+      const results = productsRes.data.results || productsRes.data;
+
+      setAllProducts((prev) => [...prev, ...results]);
+      setTotalCount((prev) => productsRes.data.count ?? prev);
+    } catch (error) {
+      console.error('Error fetching more products:', error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
 
   // Debounce search to reduce API calls
   useEffect(() => {
@@ -125,6 +160,7 @@ const Shop = () => {
   };
 
   const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy || minPrice || maxPrice || inStock;
+  const hasMoreProducts = allProducts.length < totalCount;
 
   if (loading && allProducts.length === 0) return <PageLoader />;
 
@@ -288,11 +324,24 @@ const Shop = () => {
           </div>
 
           {allProducts.length > 0 ? (
-            <div className="products-grid">
-              {allProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="products-grid">
+                {allProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {hasMoreProducts && (
+                <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={handleViewMore}
+                    disabled={isFetchingMore}
+                  >
+                    {isFetchingMore ? 'Loading...' : 'View More'}
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="empty-state">
               <div className="empty-state-icon">🔍</div>

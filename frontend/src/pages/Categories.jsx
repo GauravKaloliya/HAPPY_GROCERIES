@@ -13,6 +13,9 @@ const Categories = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
+  const [totalCount, setTotalCount] = useState(0);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const PRODUCTS_LIMIT = 8;
 
   useActivityLog('page_view', { section: 'categories' });
 
@@ -43,9 +46,13 @@ const Categories = () => {
       setProductsLoading(true);
       setProducts([]);
       try {
-        const params = selectedCategory === 'All' ? { limit: 8 } : { category: selectedCategory, limit: 8 };
+        const params = selectedCategory === 'All'
+          ? { limit: PRODUCTS_LIMIT, offset: 0 }
+          : { category: selectedCategory, limit: PRODUCTS_LIMIT, offset: 0 };
         const productsRes = await productsAPI.getAll(params);
-        setProducts(productsRes.data.results || productsRes.data);
+        const results = productsRes.data.results || productsRes.data;
+        setProducts(results);
+        setTotalCount(productsRes.data.count ?? results.length);
       } catch (error) {
         console.error('Error fetching products:', error);
       } finally {
@@ -53,7 +60,25 @@ const Categories = () => {
       }
     };
     fetchProducts();
-  }, [selectedCategory]);
+  }, [selectedCategory, PRODUCTS_LIMIT]);
+
+  const handleViewMore = async () => {
+    if (isFetchingMore) return;
+    setIsFetchingMore(true);
+    try {
+      const params = selectedCategory === 'All'
+        ? { limit: PRODUCTS_LIMIT, offset: products.length }
+        : { category: selectedCategory, limit: PRODUCTS_LIMIT, offset: products.length };
+      const productsRes = await productsAPI.getAll(params);
+      const results = productsRes.data.results || productsRes.data;
+      setProducts((prev) => [...prev, ...results]);
+      setTotalCount((prev) => productsRes.data.count ?? prev);
+    } catch (error) {
+      console.error('Error fetching more products:', error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
 
   const getCategoryEmoji = (name) => {
     const emojis = {
@@ -89,6 +114,8 @@ const Categories = () => {
       setSearchParams({ category: categoryName });
     }
   };
+
+  const hasMoreProducts = products.length < totalCount;
 
   if (categoriesLoading) return <PageLoader />;
 
@@ -127,11 +154,24 @@ const Categories = () => {
           <p>Loading products...</p>
         </div>
       ) : products.length > 0 ? (
-        <div className="products-grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <>
+          <div className="products-grid">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          {hasMoreProducts && (
+            <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem' }}>
+              <button
+                className="btn-primary"
+                onClick={handleViewMore}
+                disabled={isFetchingMore}
+              >
+                {isFetchingMore ? 'Loading...' : 'View More'}
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="empty-state">
           <div className="empty-state-icon">📦</div>
