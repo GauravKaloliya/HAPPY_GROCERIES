@@ -77,6 +77,24 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
 
         return queryset
     
+    def list(self, request, *args, **kwargs):
+        """Override list to support limit parameter."""
+        limit = request.query_params.get('limit')
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        if limit:
+            try:
+                limit = int(limit)
+                queryset = queryset[:limit]
+            except (ValueError, TypeError):
+                pass
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': len(serializer.data)
+        })
+    
     @action(detail=False, methods=['get'])
     def categories(self, request):
         """Get all unique categories from products."""

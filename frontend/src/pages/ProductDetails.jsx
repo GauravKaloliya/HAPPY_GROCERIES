@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { productsAPI } from '../api/products';
-import { addToCart } from '../store/slices/cartSlice';
+import { addToCart, selectCartItems } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { fetchReviewSummary, selectReviewSummary } from '../store/slices/reviewsSlice';
@@ -32,6 +32,7 @@ const ProductDetails = () => {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const reviewSummary = useSelector((state) => selectReviewSummary(state, parseInt(id, 10)));
+  const cartItems = useSelector(selectCartItems);
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -43,6 +44,11 @@ const ProductDetails = () => {
   const [showImageViewer, setShowImageViewer] = useState(false);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
+  
+  // Check if product is already in cart
+  const isInCart = product && cartItems.some(item => 
+    item.id === product.id || item.product?.id === product.id
+  );
   
   // Memoize the log function to prevent infinite re-renders
   const logProductView = useCallback((productId, productName) => {
@@ -288,7 +294,7 @@ const ProductDetails = () => {
                   <button 
                     className="qty-btn" 
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={product.stock <= 0}
+                    disabled={product.stock <= 0 || isInCart}
                   >−</button>
                   <input 
                     type="number" 
@@ -297,23 +303,33 @@ const ProductDetails = () => {
                     min="1" 
                     max={Math.min(99, product.stock)} 
                     onChange={(e) => setQuantity(Math.min(Math.max(1, parseInt(e.target.value) || 1), Math.min(99, product.stock)))}
-                    disabled={product.stock <= 0}
+                    disabled={product.stock <= 0 || isInCart}
                   />
                   <button 
                     className="qty-btn" 
                     onClick={() => setQuantity(Math.min(Math.min(99, product.stock), quantity + 1))}
-                    disabled={product.stock <= 0}
+                    disabled={product.stock <= 0 || isInCart}
                   >+</button>
                 </div>
 
-                <button 
-                  className="btn-add-cart" 
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0 || isAddingToCart}
-                  style={{ minWidth: '200px' }}
-                >
-                  {product.stock <= 0 ? 'Out of Stock' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
-                </button>
+                {isInCart ? (
+                  <Link 
+                    to="/cart" 
+                    className="btn-add-cart"
+                    style={{ minWidth: '200px', textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    View Cart 🛒
+                  </Link>
+                ) : (
+                  <button 
+                    className="btn-add-cart" 
+                    onClick={handleAddToCart}
+                    disabled={product.stock <= 0 || isAddingToCart}
+                    style={{ minWidth: '200px' }}
+                  >
+                    {product.stock <= 0 ? 'Out of Stock' : isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                  </button>
+                )}
 
                 <button 
                   className={`product-details-wishlist ${isWishlisted ? 'active' : ''}`}

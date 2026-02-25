@@ -7,14 +7,11 @@ import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
-const COUPONS_PER_PAGE = 6;
-
 const Offers = () => {
   const [coupons, setCoupons] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
   const cartTotal = useSelector(selectCartSubtotal);
 
   useActivityLog('page_view', { section: 'offers' });
@@ -23,7 +20,7 @@ const Offers = () => {
     const fetchData = async () => {
       try {
         const [couponsRes, categoriesRes] = await Promise.all([
-          couponsAPI.getAll(),
+          couponsAPI.getAll({ limit: 6 }),
           categoriesAPI.getAll(),
         ]);
         setCoupons(couponsRes.data.results || couponsRes.data);
@@ -71,28 +68,7 @@ const Offers = () => {
     ? coupons 
     : coupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredCoupons.filter(c => c.is_active).length / COUPONS_PER_PAGE);
-  const startIndex = (currentPage - 1) * COUPONS_PER_PAGE;
-  const endIndex = startIndex + COUPONS_PER_PAGE;
-  const displayedCoupons = filteredCoupons.filter(c => c.is_active).slice(startIndex, endIndex);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      handlePageChange(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      handlePageChange(currentPage - 1);
-    }
-  };
+  const displayedCoupons = filteredCoupons.filter(c => c.is_active);
 
   if (loading) return <PageLoader />;
 
@@ -140,9 +116,8 @@ const Offers = () => {
           <p>Check back later for exciting offers!</p>
         </div>
       ) : (
-        <>
-          <div className="coupons-list">
-            {displayedCoupons.map((coupon) => {
+        <div className="coupons-list">
+          {displayedCoupons.map((coupon) => {
               const eligibility = getEligibilityStatus(coupon);
               const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
               const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
@@ -216,38 +191,6 @@ const Offers = () => {
               );
             })}
           </div>
-          
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="pagination">
-              <button
-                className="pagination-btn"
-                onClick={handlePrevPage}
-                disabled={currentPage === 1}
-              >
-                ← Previous
-              </button>
-              <div className="pagination-pages">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    className={`pagination-page ${currentPage === page ? 'active' : ''}`}
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-              <button
-                className="pagination-btn"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                Next →
-              </button>
-            </div>
-          )}
-        </>
       )}
 
       {/* How to Use */}

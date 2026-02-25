@@ -13,9 +13,8 @@ Base URL: `https://api.happygroceries.shop`
 7. [Wishlist](#wishlist)
 8. [Reviews](#reviews)
 9. [Contact](#contact)
-10. [Activity Logs](#activity-logs)
-11. [Configuration](#configuration)
-12. [Health Check](#health-check)
+10. [Configuration](#configuration)
+11. [Health Check](#health-check)
 
 ---
 
@@ -145,16 +144,16 @@ POST /api/auth/change-password/
 }
 ```
 
-#### Check Username Availability
+#### Check Phone Availability
 ```
-GET /api/auth/check-username/?username=johndoe
+GET /api/auth/check-phone/?phone=9876543210
 ```
 
 **Response:**
 ```json
 {
   "available": true,
-  "message": "Username is available"
+  "message": "Phone number is available"
 }
 ```
 
@@ -168,19 +167,6 @@ GET /api/auth/check-email/?email=user@example.com
 {
   "available": true,
   "message": "Email is available"
-}
-```
-
-#### Check Phone Availability
-```
-GET /api/auth/check-phone/?phone=9876543210
-```
-
-**Response:**
-```json
-{
-  "available": true,
-  "message": "Phone number is available"
 }
 ```
 
@@ -200,14 +186,12 @@ GET /api/products/
 - `max_price` - Maximum price filter
 - `in_stock` - Filter for in-stock items (true/false)
 - `ordering` - Sort by field (name, price, rating, created_at)
-- `page` - Page number for pagination
+- `limit` - Limit number of results
 
 **Response:**
 ```json
 {
-  "count": 74,
-  "next": "https://api.happygroceries.shop/api/products/?page=2",
-  "previous": null,
+  "count": 6,
   "results": [
     {
       "id": 1,
@@ -296,11 +280,6 @@ GET /api/products/categories/
     "emoji": "🥕"
   }
 ]
-```
-
-### Get Category Details
-```
-GET /api/products/categories/{id}/
 ```
 
 ---
@@ -458,10 +437,13 @@ POST /api/orders/{id}/cancel/
 GET /api/coupons/
 ```
 
+**Query Parameters:**
+- `limit` - Limit number of results
+
 **Response:**
 ```json
 {
-  "count": 13,
+  "count": 6,
   "results": [
     {
       "id": 1,
@@ -605,33 +587,6 @@ POST /api/contact/
 
 ---
 
-## Activity Logs
-
-**Requires authentication.**
-
-### Get User Activity Logs
-```
-GET /api/activity-logs/
-```
-
-### Log Activity
-```
-POST /api/activity-logs/
-```
-
-**Request Body:**
-```json
-{
-  "action": "page_view",
-  "page": "/shop",
-  "details": {
-    "section": "products"
-  }
-}
-```
-
----
-
 ## Configuration
 
 ### Get Site Configuration
@@ -737,25 +692,6 @@ All endpoints may return the following error responses:
 ## Rate Limiting
 
 API requests are rate-limited to 100 requests per 60 seconds per IP address. If you exceed the limit, you will receive a 429 Too Many Requests response.
-
----
-
-## Pagination
-
-List endpoints support pagination with the following parameters:
-
-- `page` - Page number (default: 1)
-- `page_size` - Items per page (default: 20, max: 100)
-
-Pagination response format:
-```json
-{
-  "count": 100,
-  "next": "https://api.happygroceries.shop/api/products/?page=2",
-  "previous": null,
-  "results": [...]
-}
-```
 
 ---
 
