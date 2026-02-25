@@ -11,6 +11,14 @@ import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
 
+const PASSWORD_RULES = [
+  { test: (p) => p.length >= 8, label: 'At least 8 characters' },
+  { test: (p) => /[A-Z]/.test(p), label: 'One uppercase letter' },
+  { test: (p) => /[a-z]/.test(p), label: 'One lowercase letter' },
+  { test: (p) => /\d/.test(p), label: 'One number' },
+  { test: (p) => /[!@#$%^&*(),.?":{}|<>]/.test(p), label: 'One special character' },
+];
+
 const Profile = () => {
   const dispatch = useDispatch();
   const user = useSelector(selectUser);
@@ -37,6 +45,7 @@ const Profile = () => {
   const [countsLoading, setCountsLoading] = useState(true);
   const [validationStatus, setValidationStatus] = useState({
     email: { checking: false, available: null },
+    phone: { checking: false, available: null },
   });
 
   useActivityLog('page_view', { section: 'profile' });
@@ -92,12 +101,20 @@ const Profile = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '').slice(0, 10);
+      setFormData({ ...formData, phone: numericValue });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
     if (formErrors[name]) {
       setFormErrors({ ...formErrors, [name]: '' });
     }
     if (name === 'email') {
       setValidationStatus(prev => ({ ...prev, email: { checking: false, available: null } }));
+    }
+    if (name === 'phone') {
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available: null } }));
     }
   };
 
@@ -119,17 +136,47 @@ const Profile = () => {
     }
   };
 
+  const handlePhoneBlur = async () => {
+    const phone = formData.phone;
+    if (!phone || phone === initialData.phone) return;
+    if (!/^\d{10}$/.test(phone)) return;
+    
+    setValidationStatus(prev => ({ ...prev, phone: { checking: true, available: null } }));
+    try {
+      const response = await authAPI.checkPhone(phone);
+      const available = response.data.available;
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available } }));
+      if (!available) {
+        setFormErrors(prev => ({ ...prev, phone: response.data.message }));
+      }
+    } catch {
+      setValidationStatus(prev => ({ ...prev, phone: { checking: false, available: null } }));
+    }
+  };
+
   const validateForm = () => {
     const errors = {};
     if (!formData.name.trim()) {
       errors.name = 'Name is required';
     } else if (formData.name.trim().length < 2) {
       errors.name = 'Name must be at least 2 characters';
+    } else if (formData.name.trim().length > 100) {
+      errors.name = 'Name must be less than 100 characters';
     } else if (!/^[a-zA-Z\s'-]+$/.test(formData.name.trim())) {
       errors.name = 'Name can only contain letters, spaces, hyphens and apostrophes';
     }
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) {
-      errors.email = 'Enter a valid email address';
+    if (formData.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(formData.email)) {
+        errors.email = 'Enter a valid email address';
+      } else if (formData.email.length > 254) {
+        errors.email = 'Email must be less than 254 characters';
+      }
+    }
+    if (formData.phone && !/^\d{10}$/.test(formData.phone)) {
+      errors.phone = 'Phone number must be 10 digits';
+    }
+    if (formData.address && formData.address.length > 500) {
+      errors.address = 'Address must be less than 500 characters';
     }
     return errors;
   };
@@ -163,7 +210,7 @@ const Profile = () => {
   const handleCancel = () => {
     setFormData(initialData);
     setFormErrors({});
-    setValidationStatus({ email: { checking: false, available: null } });
+    setValidationStatus({ email: { checking: false, available: null }, phone: { checking: false, available: null } });
     setEditing(false);
   };
 
@@ -238,6 +285,7 @@ const Profile = () => {
                     onChange={handleInputChange}
                     className={`profile-edit-input ${formErrors.name ? 'input-error' : ''}`}
                     placeholder="Enter your full name"
+                    maxLength="100"
                   />
                   {formErrors.name && <span className="field-error">{formErrors.name}</span>}
                 </div>
@@ -257,6 +305,7 @@ const Profile = () => {
                     onBlur={handleEmailBlur}
                     className={`profile-edit-input ${formErrors.email ? 'input-error' : ''}`}
                     placeholder="Enter your email"
+                    maxLength="254"
                     style={{ paddingRight: validationStatus.email.available !== null ? '2.5rem' : undefined }}
                   />
                   {getValidationIcon('email') && (
@@ -273,14 +322,26 @@ const Profile = () => {
             <div className="detail-item">
               <span className="detail-label">Phone</span>
               {editing ? (
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  className="profile-edit-input"
-                  disabled
-                  style={{ background: 'var(--bg-light)', opacity: 0.7, cursor: 'not-allowed' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="tel"
+                    name="phone"
+                    inputMode="numeric"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    onBlur={handlePhoneBlur}
+                    className={`profile-edit-input ${formErrors.phone ? 'input-error' : ''}`}
+                    placeholder="Enter 10-digit phone number"
+                    maxLength="10"
+                    style={{ paddingRight: validationStatus.phone.available !== null ? '2.5rem' : undefined }}
+                  />
+                  {getValidationIcon('phone') && (
+                    <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                      {getValidationIcon('phone')}
+                    </span>
+                  )}
+                  {formErrors.phone && <span className="field-error">{formErrors.phone}</span>}
+                </div>
               ) : (
                 <span className="detail-value">{formData.phone || 'Not set'}</span>
               )}
@@ -297,6 +358,7 @@ const Profile = () => {
                       onChange={handleInputChange}
                       className="profile-edit-input"
                       placeholder="Enter your address"
+                      maxLength="500"
                       style={{ flex: 1 }}
                     />
                     <button
@@ -308,6 +370,7 @@ const Profile = () => {
                       📍
                     </button>
                   </div>
+                  {formErrors.address && <span className="field-error">{formErrors.address}</span>}
                 </div>
               ) : (
                 <span className="detail-value">{formData.address || 'Not set'}</span>

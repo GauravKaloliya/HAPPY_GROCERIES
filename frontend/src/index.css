@@ -1323,12 +1323,6 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Nunito', sans-serif;
 }
 
-.btn-clear-all:hover {
-    background: #5a4fcf;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
-}
-
 /* Responsive Shop Layout */
 @media (max-width: 968px) {
     .shop-layout {
@@ -3719,14 +3713,7 @@ body.dark-mode .settings-toggle-row { border-bottom-color: rgba(255,255,255,0.06
   padding: 0.75rem 1.25rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
   margin-top: 1rem;
-}
-.btn-clear-all:hover {
-  opacity: 0.9;
-}
-.btn-clear-all:active {
-  opacity: 0.8;
 }
 
 /* View Cart Button */
