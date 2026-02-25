@@ -215,7 +215,22 @@ SIMPLE_JWT = {
 # Redis Configuration for token blacklisting
 REDIS_URL = os.environ.get('REDIS_URL')
 
-# CORS Settings
+# Cache Configuration - uses REDIS_URL if available, otherwise falls back to local memory
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+else:
+    # Fallback to local memory cache when Redis is not available
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
 CORS_ALLOW_CREDENTIALS = True
 # Use comma-separated string in environment variable: https://example.com,https://other.com
 CORS_ALLOWED_ORIGINS = os.environ.get(
@@ -257,17 +272,12 @@ LOGGING = {
 # Security Headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Cache Configuration - uses REDIS_URL only
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': REDIS_URL,
-    }
-}
-
-# Session Configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+# Session Configuration - use database-backed sessions when Redis is not available
+if REDIS_URL:
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 1800  # 30 minutes
 
 # Security Configuration
