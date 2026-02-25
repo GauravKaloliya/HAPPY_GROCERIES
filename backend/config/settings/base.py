@@ -14,6 +14,7 @@ import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+FRONTEND_DIST_DIR = BASE_DIR / 'frontend' / 'dist'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -71,10 +72,14 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
+TEMPLATE_DIRS = [BASE_DIR / 'backend' / 'config' / 'templates']
+if FRONTEND_DIST_DIR.exists():
+    TEMPLATE_DIRS.append(FRONTEND_DIST_DIR)
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'backend' / 'config' / 'templates'],
+        'DIRS': TEMPLATE_DIRS,
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -159,6 +164,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = []
+frontend_assets_dir = FRONTEND_DIST_DIR / 'assets'
+if frontend_assets_dir.exists():
+    STATICFILES_DIRS.append(frontend_assets_dir)
 
 # WhiteNoise for static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
