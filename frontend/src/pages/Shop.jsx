@@ -63,6 +63,7 @@ const Shop = () => {
         min_price: minPrice,
         max_price: maxPrice,
         in_stock: inStock ? 'true' : undefined,
+        limit: 6,
       };
 
       // Remove empty params
