@@ -47,6 +47,11 @@ const formatDate = (dateString) => {
 };
 
 const ProductReviews = ({ productId }) => {
+  const TITLE_MAX = 100;
+  const COMMENT_MIN = 10;
+  const COMMENT_MAX = 1000;
+  const TITLE_PATTERN = /^[a-zA-Z0-9\s.,!?'"()\-_&@#%:;]+$/;
+  const sanitizeText = (text) => text.replace(/<[^>]*>/g, '').trim();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -55,16 +60,43 @@ const ProductReviews = ({ productId }) => {
   const loading = useSelector(selectReviewsLoading);
 
   const [showWriteForm, setShowWriteForm] = useState(false);
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     dispatch(fetchProductReviews(productId));
     dispatch(fetchReviewSummary(productId));
   }, [dispatch, productId]);
+
+  const validateForm = () => {
+    const errors = {};
+    if (!rating || rating < 1 || rating > 5) {
+      errors.rating = 'Please select a rating from 1 to 5';
+    }
+    const cleanComment = sanitizeText(comment);
+    if (!cleanComment) {
+      errors.comment = 'Review comment is required';
+    } else if (cleanComment.length < COMMENT_MIN) {
+      errors.comment = `Comment must be at least ${COMMENT_MIN} characters`;
+    } else if (cleanComment.length > COMMENT_MAX) {
+      errors.comment = `Comment must be less than ${COMMENT_MAX} characters`;
+    }
+    if (title.trim()) {
+      const cleanTitle = sanitizeText(title);
+      if (cleanTitle.length > TITLE_MAX) {
+        errors.title = `Title must be less than ${TITLE_MAX} characters`;
+      } else if (!TITLE_PATTERN.test(cleanTitle)) {
+        errors.title = 'Title contains invalid characters';
+      }
+    }
+    return errors;
+  };
+
+  const isFormValid = rating >= 1 && rating <= 5 && sanitizeText(comment).length >= COMMENT_MIN;
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -74,25 +106,32 @@ const ProductReviews = ({ productId }) => {
       return;
     }
 
-    if (!comment.trim()) {
-      toast.error('Please write a comment');
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
+    setFieldErrors({});
 
     setSubmitting(true);
     try {
       await dispatch(createReview({
         productId,
-        reviewData: { rating, title, comment }
+        reviewData: {
+          rating,
+          title: sanitizeText(title),
+          comment: sanitizeText(comment),
+        }
       })).unwrap();
-      toast.success('Review submitted successfully!');
+      toast.success('Review submitted successfully! 🌟');
       setShowWriteForm(false);
-      setRating(5);
+      setRating(0);
       setTitle('');
       setComment('');
+      setFieldErrors({});
       dispatch(fetchReviewSummary(productId));
     } catch (err) {
-      toast.error(err || 'Failed to submit review');
+      toast.error(typeof err === 'string' ? err : 'Failed to submit review');
     } finally {
       setSubmitting(false);
     }
@@ -173,13 +212,15 @@ const ProductReviews = ({ productId }) => {
 
             <div style={{ textAlign: 'center' }}>
               {summary.can_review ? (
+                !showWriteForm && (
                 <button
-                  onClick={() => setShowWriteForm(!showWriteForm)}
+                  onClick={() => setShowWriteForm(true)}
                   className="btn-primary"
                   style={{ padding: '0.75rem 1.5rem' }}
                 >
-                  {showWriteForm ? 'Cancel' : 'Write a Review'}
+                  Write a Review
                 </button>
+                )
               ) : summary.user_review ? (
                 <div style={{ color: 'var(--primary-green)', fontWeight: 600 }}>
                   ✓ You reviewed this product
@@ -210,82 +251,148 @@ const ProductReviews = ({ productId }) => {
           marginBottom: '1.5rem',
           boxShadow: 'var(--shadow)',
         }}>
-          <h4 style={{ marginBottom: '1rem' }}>Write Your Review</h4>
-          <form onSubmit={handleSubmitReview}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Rating
+          <h4 style={{ marginBottom: '1.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Write Your Review</h4>
+          <form onSubmit={handleSubmitReview} noValidate>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.95rem' }}>
+                Rating <span style={{ color: '#e53e3e' }}>*</span>
               </label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
-                    onClick={() => setRating(star)}
+                    onClick={() => { setRating(star); setFieldErrors(prev => ({ ...prev, rating: '' })); }}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      borderRadius: '4px',
+                      transition: 'transform 0.1s',
+                      transform: star <= (hoverRating || rating) ? 'scale(1.15)' : 'scale(1)',
+                    }}
                     aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                   >
-                    <StarSvg filled={star <= (hoverRating || rating)} size={28} />
+                    <StarSvg filled={star <= (hoverRating || rating)} size={30} />
                   </button>
                 ))}
+                {rating > 0 && (
+                  <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#888' }}>
+                    {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][rating]}
+                  </span>
+                )}
               </div>
+              {fieldErrors.rating && (
+                <p style={{ color: '#e53e3e', fontSize: '0.82rem', marginTop: '0.3rem' }}>{fieldErrors.rating}</p>
+              )}
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Title (optional)
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.95rem' }}>
+                Title <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span>
               </label>
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setFieldErrors(prev => ({ ...prev, title: '' }));
+                }}
                 placeholder="Summarize your experience"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #ddd',
-                  borderRadius: 'var(--border-radius)',
+                  padding: '0.75rem 1rem',
+                  border: `2px solid ${fieldErrors.title ? '#e53e3e' : '#e2e8f0'}`,
+                  borderRadius: '8px',
                   fontFamily: 'inherit',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
                 }}
-                maxLength={100}
+                maxLength={TITLE_MAX}
+                autoComplete="off"
               />
-            </div>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
-                Your Review
-              </label>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your thoughts about this product..."
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  border: '2px solid #ddd',
-                  borderRadius: 'var(--border-radius)',
-                  fontFamily: 'inherit',
-                  resize: 'vertical',
-                }}
-                maxLength={1000}
-                required
-              />
-              <div style={{ textAlign: 'right', fontSize: '0.85rem', color: '#888', marginTop: '0.25rem' }}>
-                {comment.length}/1000
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+                {fieldErrors.title ? (
+                  <p style={{ color: '#e53e3e', fontSize: '0.82rem', margin: 0 }}>{fieldErrors.title}</p>
+                ) : <span />}
+                <span style={{ fontSize: '0.8rem', color: '#aaa' }}>{title.length}/{TITLE_MAX}</span>
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={submitting}
-              style={{ opacity: submitting ? 0.5 : 1 }}
-            >
-              {submitting ? 'Submitting...' : 'Submit Review'}
-            </button>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.95rem' }}>
+                Your Review <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <textarea
+                value={comment}
+                onChange={(e) => {
+                  setComment(e.target.value);
+                  setFieldErrors(prev => ({ ...prev, comment: '' }));
+                }}
+                placeholder={`Share your thoughts about this product... (minimum ${COMMENT_MIN} characters)`}
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  border: `2px solid ${fieldErrors.comment ? '#e53e3e' : '#e2e8f0'}`,
+                  borderRadius: '8px',
+                  fontFamily: 'inherit',
+                  fontSize: '0.95rem',
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                  minHeight: '100px',
+                }}
+                maxLength={COMMENT_MAX}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+                {fieldErrors.comment ? (
+                  <p style={{ color: '#e53e3e', fontSize: '0.82rem', margin: 0 }}>{fieldErrors.comment}</p>
+                ) : (
+                  <span style={{ fontSize: '0.8rem', color: '#aaa' }}>
+                    {comment.trim().length < COMMENT_MIN ? `${COMMENT_MIN - comment.trim().length} more characters needed` : ''}
+                  </span>
+                )}
+                <span style={{ fontSize: '0.8rem', color: comment.length > COMMENT_MAX * 0.9 ? '#e53e3e' : '#aaa' }}>
+                  {comment.length}/{COMMENT_MAX}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={submitting || !isFormValid}
+                style={{
+                  opacity: (submitting || !isFormValid) ? 0.5 : 1,
+                  cursor: (submitting || !isFormValid) ? 'not-allowed' : 'pointer',
+                  minWidth: '150px',
+                }}
+              >
+                {submitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setShowWriteForm(false);
+                  setRating(0);
+                  setTitle('');
+                  setComment('');
+                  setFieldErrors({});
+                }}
+                style={{ padding: '0.6rem 1.2rem' }}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
