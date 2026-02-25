@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { selectUser, selectIsAuthenticated, updateProfile, changePassword } from '../store/slices/authSlice';
 import { toggleTheme, selectIsDarkMode } from '../store/slices/themeSlice';
+import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -22,6 +23,7 @@ const Settings = () => {
     last_name: '',
     email: '',
     phone: '',
+    address: '',
   });
 
   const [profileForm, setProfileForm] = useState({
@@ -29,6 +31,12 @@ const Settings = () => {
     last_name: '',
     email: '',
     phone: '',
+    address: '',
+  });
+
+  const [formErrors, setFormErrors] = useState({});
+  const [validationStatus, setValidationStatus] = useState({
+    email: { checking: false, available: null },
   });
 
   const [passwordForm, setPasswordForm] = useState({
@@ -60,6 +68,7 @@ const Settings = () => {
         last_name: user.last_name || '',
         email: user.email || '',
         phone: user.phone || '',
+        address: user.address || '',
       };
       initialProfileRef.current = initial;
       setProfileForm(initial);
@@ -76,7 +85,8 @@ const Settings = () => {
     return (
       profileForm.first_name !== initial.first_name ||
       profileForm.last_name !== initial.last_name ||
-      profileForm.email !== initial.email
+      profileForm.email !== initial.email ||
+      profileForm.address !== initial.address
     );
   };
 
@@ -94,8 +104,64 @@ const Settings = () => {
     );
   };
 
+  const handleProfileChange = (field, value) => {
+    setProfileForm({ ...profileForm, [field]: value });
+    if (formErrors[field]) {
+      setFormErrors({ ...formErrors, [field]: '' });
+    }
+    if (field === 'email') {
+      setValidationStatus(prev => ({ ...prev, email: { checking: false, available: null } }));
+    }
+  };
+
+  const handleEmailBlur = async () => {
+    const email = profileForm.email;
+    if (!email || email === initialProfileRef.current.email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      setFormErrors(prev => ({ ...prev, email: 'Enter a valid email address' }));
+      return;
+    }
+    
+    setValidationStatus(prev => ({ ...prev, email: { checking: true, available: null } }));
+    try {
+      const response = await authAPI.checkEmail(email);
+      const available = response.data.available;
+      setValidationStatus(prev => ({ ...prev, email: { checking: false, available } }));
+      if (!available) {
+        setFormErrors(prev => ({ ...prev, email: response.data.message }));
+      }
+    } catch {
+      setValidationStatus(prev => ({ ...prev, email: { checking: false, available: null } }));
+    }
+  };
+
+  const validateProfileForm = () => {
+    const errors = {};
+    if (!profileForm.first_name.trim()) {
+      errors.first_name = 'First name is required';
+    } else if (profileForm.first_name.trim().length < 2) {
+      errors.first_name = 'First name must be at least 2 characters';
+    } else if (!/^[a-zA-Z\s'-]+$/.test(profileForm.first_name.trim())) {
+      errors.first_name = 'First name can only contain letters, spaces, hyphens and apostrophes';
+    }
+    if (profileForm.last_name && !/^[a-zA-Z\s'-]+$/.test(profileForm.last_name.trim())) {
+      errors.last_name = 'Last name can only contain letters, spaces, hyphens and apostrophes';
+    }
+    if (profileForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email)) {
+      errors.email = 'Enter a valid email address';
+    }
+    return errors;
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
+    
+    const errors = validateProfileForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -117,8 +183,23 @@ const Settings = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (passwordForm.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    if (!/[A-Z]/.test(passwordForm.newPassword)) {
+      toast.error('Password must contain at least one uppercase letter');
+      return;
+    }
+
+    if (!/[a-z]/.test(passwordForm.newPassword)) {
+      toast.error('Password must contain at least one lowercase letter');
+      return;
+    }
+
+    if (!/\d/.test(passwordForm.newPassword)) {
+      toast.error('Password must contain at least one number');
       return;
     }
 
@@ -164,6 +245,43 @@ const Settings = () => {
 
   const togglePasswordVisibility = (field) => {
     setPasswordVisibility(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          if (data.display_name) {
+            setProfileForm(prev => ({ ...prev, address: data.display_name }));
+            toast.success('Location fetched successfully! 📍');
+          }
+        } catch {
+          setProfileForm(prev => ({ ...prev, address: `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}` }));
+          toast.success('Coordinates captured! 📍');
+        }
+      },
+      () => {
+        toast.error('Unable to retrieve your location');
+      }
+    );
+  };
+
+  const getValidationIcon = (field) => {
+    const status = validationStatus[field];
+    if (status.checking) return '⏳';
+    if (status.available === true) return '✅';
+    if (status.available === false) return '❌';
+    return null;
   };
 
   const navItems = [
@@ -219,10 +337,11 @@ const Settings = () => {
                         type="text"
                         id="first_name"
                         value={profileForm.first_name}
-                        onChange={(e) => setProfileForm({ ...profileForm, first_name: e.target.value })}
+                        onChange={(e) => handleProfileChange('first_name', e.target.value)}
                         placeholder="Enter your first name"
-                        style={getFieldBorderStyle('first_name')}
+                        style={{ ...getFieldBorderStyle('first_name'), borderColor: formErrors.first_name ? '#ff4444' : undefined }}
                       />
+                      {formErrors.first_name && <span className="field-error">{formErrors.first_name}</span>}
                     </div>
                     <div className="form-group">
                       <label htmlFor="last_name">Last Name</label>
@@ -230,23 +349,37 @@ const Settings = () => {
                         type="text"
                         id="last_name"
                         value={profileForm.last_name}
-                        onChange={(e) => setProfileForm({ ...profileForm, last_name: e.target.value })}
+                        onChange={(e) => handleProfileChange('last_name', e.target.value)}
                         placeholder="Enter your last name"
-                        style={getFieldBorderStyle('last_name')}
+                        style={{ ...getFieldBorderStyle('last_name'), borderColor: formErrors.last_name ? '#ff4444' : undefined }}
                       />
+                      {formErrors.last_name && <span className="field-error">{formErrors.last_name}</span>}
                     </div>
                   </div>
 
                   <div className="form-group">
                     <label htmlFor="email">Email Address</label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={profileForm.email}
-                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                      placeholder="Enter your email"
-                      style={getFieldBorderStyle('email')}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="email"
+                        id="email"
+                        value={profileForm.email}
+                        onChange={(e) => handleProfileChange('email', e.target.value)}
+                        onBlur={handleEmailBlur}
+                        placeholder="Enter your email"
+                        style={{ 
+                          ...getFieldBorderStyle('email'), 
+                          borderColor: formErrors.email ? '#ff4444' : undefined,
+                          paddingRight: validationStatus.email.available !== null ? '2.5rem' : undefined
+                        }}
+                      />
+                      {getValidationIcon('email') && (
+                        <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                          {getValidationIcon('email')}
+                        </span>
+                      )}
+                    </div>
+                    {formErrors.email && <span className="field-error">{formErrors.email}</span>}
                   </div>
 
                   <div className="form-group">
@@ -256,9 +389,31 @@ const Settings = () => {
                       id="phone"
                       value={profileForm.phone}
                       disabled
-                      style={{ background: 'var(--bg-light)', opacity: 0.7 }}
+                      style={{ background: 'var(--bg-light)', opacity: 0.7, cursor: 'not-allowed' }}
                     />
                     <small style={{ color: '#888', marginTop: '0.25rem', display: 'block' }}>Phone number cannot be changed</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="address">Address</label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input
+                        type="text"
+                        id="address"
+                        value={profileForm.address}
+                        onChange={(e) => handleProfileChange('address', e.target.value)}
+                        placeholder="Enter your address"
+                        style={{ flex: 1, ...getFieldBorderStyle('address') }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGetLocation}
+                        className="btn-location"
+                        title="Get current location"
+                      >
+                        📍
+                      </button>
+                    </div>
                   </div>
 
                   <button
@@ -304,7 +459,7 @@ const Settings = () => {
                         id="newPassword"
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        placeholder="New password (min 6 characters)"
+                        placeholder="New password (min 8 characters)"
                       />
                       <button
                         type="button"

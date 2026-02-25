@@ -210,28 +210,37 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       {showAddToCart && product.stock > 0 && (
         <div className="product-actions">
           {inCart ? (
-            <div className="quantity-controls" onClick={(e) => e.stopPropagation()}>
-              <button 
-                className="qty-btn" 
-                onClick={handleDecrement}
-                disabled={isUpdatingQuantity}
+            <>
+              <div className="quantity-controls" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  className="qty-btn" 
+                  onClick={handleDecrement}
+                  disabled={isUpdatingQuantity}
+                >
+                  −
+                </button>
+                <input
+                  type="text"
+                  className="qty-input"
+                  value={displayQuantity}
+                  readOnly
+                />
+                <button 
+                  className="qty-btn" 
+                  onClick={handleIncrement}
+                  disabled={isUpdatingQuantity}
+                >
+                  +
+                </button>
+              </div>
+              <Link
+                to="/cart"
+                className="btn-view-cart"
+                onClick={(e) => e.stopPropagation()}
               >
-                −
-              </button>
-              <input
-                type="text"
-                className="qty-input"
-                value={displayQuantity}
-                readOnly
-              />
-              <button 
-                className="qty-btn" 
-                onClick={handleIncrement}
-                disabled={isUpdatingQuantity}
-              >
-                +
-              </button>
-            </div>
+                View Cart
+              </Link>
+            </>
           ) : (
             <button
               className="btn-add-cart"
