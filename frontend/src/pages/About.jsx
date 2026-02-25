@@ -41,8 +41,8 @@ const About = () => {
 
         <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Contact Us 📞</h3>
         <div className="contact-info">
-          <p>📍 456 Fresh Avenue, Green City, Mumbai, MH 400001</p>
-          <p>📞 +91 98765 43210</p>
+          <p>📍 Porbandar, Gujarat 360575</p>
+          <p>📞 +91 9875124142</p>
           <p>✉️ support@happygroceries.shop</p>
           <p>🕒 Mon - Sat: 8AM - 10PM | Sunday: 9AM - 8PM</p>
         </div>

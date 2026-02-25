@@ -70,7 +70,7 @@ const Home = () => {
             <span className="float-icon" style={{ '--delay': '2.5s' }}>🧃</span>
           </div>
           <h1 className="hero-title">Fresh & Happy 🛍️</h1>
-          <p className="hero-subtitle">Your favorite groceries delivered with love!</p>
+          <p className="hero-subtitle">Your favorite groceries from Happy Groceries delivered with love!</p>
           <Link to="/shop" className="btn-primary btn-hero">Shop Now</Link>
         </div>
       </section>
