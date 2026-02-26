@@ -147,14 +147,6 @@ h1, h2, h3, h4, h5, h6 {
     gap: 1rem;
 }
 
-.nav-profile-desktop {
-    display: block;
-}
-
-.nav-auth-mobile {
-    display: none;
-}
-
 .theme-toggle {
     background: transparent;
     border: none;
@@ -296,38 +288,6 @@ h1, h2, h3, h4, h5, h6 {
     border: none;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     margin: 0.5rem 0;
-}
-
-.hamburger {
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    cursor: pointer;
-    z-index: 1001;
-    background: transparent;
-    border: none;
-    padding: 0.5rem;
-}
-
-.hamburger span {
-    width: 25px;
-    height: 3px;
-    background: var(--text-dark);
-    border-radius: 3px;
-    transition: var(--transition);
-    display: block;
-}
-
-.hamburger.active span:nth-child(1) {
-    transform: rotate(45deg) translate(8px, 8px);
-}
-
-.hamburger.active span:nth-child(2) {
-    opacity: 0;
-}
-
-.hamburger.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(8px, -8px);
 }
 
 /* Hero Section */
@@ -3221,7 +3181,7 @@ body.dark-mode .settings-toggle-row { border-bottom-color: rgba(255,255,255,0.06
     margin: 2rem auto;
 }
 
-/* Responsive - Minimal base styles, mobile.css handles the rest */
+/* Responsive */
 @media (max-width: 1024px) {
     .checkout-container {
         grid-template-columns: 1fr;
