@@ -11,8 +11,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
-  const [showImageViewer, setShowImageViewer] = useState(false);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const cartItems = useSelector(selectCartItems);
@@ -33,25 +32,29 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   };
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsWishlisted(false);
+      return;
+    }
+
+    let cancelled = false;
     const fetchWishlistStatus = async () => {
       try {
         const response = await wishlistAPI.checkWishlist(product.id);
-        setIsWishlisted(response.data.is_in_wishlist);
+        if (!cancelled) {
+          setIsWishlisted(response.data.is_in_wishlist);
+        }
       } catch {
-        setIsWishlisted(false);
+        if (!cancelled) setIsWishlisted(false);
       }
     };
 
-    if (isAuthenticated) {
-      fetchWishlistStatus();
-    } else {
-      setIsWishlisted(false);
-    }
+    fetchWishlistStatus();
+    return () => { cancelled = true; };
   }, [isAuthenticated, product.id]);
 
   const handleCardClick = (e) => {
-    // Don't navigate if clicking on interactive elements
-    if (e.target.closest('button') || e.target.closest('.quantity-controls')) {
+    if (e.target.closest('button') || e.target.closest('.quantity-controls') || e.target.closest('a')) {
       return;
     }
     navigate(`/product/${product.id}`);
@@ -60,7 +63,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const handleAddToCart = async (e) => {
     e.stopPropagation();
     if (isAddingToCart) return;
-    
+
     setIsAddingToCart(true);
     try {
       await dispatch(addToCart({ productId: product.id, quantity: 1, product })).unwrap();
@@ -75,10 +78,13 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const handleWishlist = async (e) => {
     e.stopPropagation();
     if (!isAuthenticated) {
-      setShowLoginPrompt(true);
+      toast.error('Please log in to save items to your wishlist 🔒');
+      navigate('/login');
       return;
     }
 
+    if (isWishlistLoading) return;
+    setIsWishlistLoading(true);
     try {
       if (isWishlisted) {
         await wishlistAPI.removeFromWishlist(product.id);
@@ -91,12 +97,9 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       }
     } catch {
       toast.error('Failed to update wishlist');
+    } finally {
+      setIsWishlistLoading(false);
     }
-  };
-
-  const handleLoginRedirect = () => {
-    setShowLoginPrompt(false);
-    navigate('/login');
   };
 
   const handleIncrement = async (e) => {
@@ -164,7 +167,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   };
 
   return (
-    <div 
+    <div
       className={`product-card ${isOnSale ? 'on-sale' : ''}`}
       onClick={handleCardClick}
       style={{ cursor: 'pointer' }}
@@ -176,50 +179,12 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         className={`wishlist-btn ${isWishlisted ? 'active' : ''}`}
         style={{ color: isWishlisted ? '#ff4444' : 'inherit' }}
         aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+        disabled={isWishlistLoading}
       >
         {isWishlisted ? '❤️' : '🤍'}
       </button>
 
-      {/* Login Prompt Modal */}
-      {showLoginPrompt && (
-        <div
-          className="modal show"
-          onClick={() => setShowLoginPrompt(false)}
-          style={{ display: 'flex' }}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '400px' }}
-          >
-            <div className="modal-icon">🔒</div>
-            <h2>Login Required</h2>
-            <p>Please log in to add items to your wishlist.</p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem' }}>
-              <button onClick={handleLoginRedirect} className="btn-submit">
-                Log In
-              </button>
-              <button
-                onClick={() => setShowLoginPrompt(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div
-        className="product-image"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowImageViewer(true);
-        }}
-        style={{ cursor: 'pointer' }}
-        role="button"
-        aria-label="View full size image"
-      >
+      <div className="product-image">
         {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
       </div>
 
@@ -250,8 +215,8 @@ const ProductCard = ({ product, showAddToCart = true }) => {
           {inCart ? (
             <>
               <div className="quantity-controls" onClick={(e) => e.stopPropagation()}>
-                <button 
-                  className="qty-btn" 
+                <button
+                  className="qty-btn"
                   onClick={handleDecrement}
                   disabled={isUpdatingQuantity}
                 >
@@ -263,8 +228,8 @@ const ProductCard = ({ product, showAddToCart = true }) => {
                   value={displayQuantity}
                   readOnly
                 />
-                <button 
-                  className="qty-btn" 
+                <button
+                  className="qty-btn"
                   onClick={handleIncrement}
                   disabled={isUpdatingQuantity}
                 >
@@ -299,28 +264,6 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       >
         View Details →
       </Link>
-
-      {/* Image Viewer Modal */}
-      {showImageViewer && (
-        <div
-          className="image-viewer-modal show"
-          onClick={() => setShowImageViewer(false)}
-        >
-          <button
-            className="image-viewer-close"
-            onClick={() => setShowImageViewer(false)}
-            aria-label="Close image viewer"
-          >
-            ✕
-          </button>
-          <div
-            className="image-viewer-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
