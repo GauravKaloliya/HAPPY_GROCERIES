@@ -14,7 +14,8 @@ Base URL: `https://api.happygroceries.shop`
 8. [Reviews](#reviews)
 9. [Contact](#contact)
 10. [Configuration](#configuration)
-11. [Health Check](#health-check)
+11. [Activity Logs](#activity-logs)
+12. [Health Check](#health-check)
 
 ---
 
@@ -144,6 +145,21 @@ POST /api/auth/change-password/
 }
 ```
 
+#### Get User Stats
+```
+GET /api/auth/stats/
+```
+**Authentication Required:** Yes
+
+**Response:**
+```json
+{
+  "orders": 5,
+  "wishlist": 12,
+  "coupons": 8
+}
+```
+
 #### Check Phone Availability
 ```
 GET /api/auth/check-phone/?phone=9876543210
@@ -170,6 +186,19 @@ GET /api/auth/check-email/?email=user@example.com
 }
 ```
 
+#### Check Username Availability
+```
+GET /api/auth/check-username/?username=johndoe
+```
+
+**Response:**
+```json
+{
+  "available": true,
+  "message": "Username is available"
+}
+```
+
 ---
 
 ## Products
@@ -187,6 +216,7 @@ GET /api/products/
 - `in_stock` - Filter for in-stock items (true/false)
 - `ordering` - Sort by field (name, price, rating, created_at)
 - `limit` - Limit number of results
+- `offset` - Offset for pagination
 
 **Response:**
 ```json
@@ -310,14 +340,17 @@ GET /api/cart/
       "subtotal": "240.00"
     }
   ],
-  "total": "240.00",
-  "total_items": 2
+  "subtotal": "240.00",
+  "total_items": 2,
+  "tax": "19.20",
+  "delivery": "50",
+  "total": "309.20"
 }
 ```
 
 ### Add Item to Cart
 ```
-POST /api/cart/add_item/
+POST /api/cart/add/
 ```
 
 **Request Body:**
@@ -330,24 +363,32 @@ POST /api/cart/add_item/
 
 ### Update Cart Item
 ```
-PATCH /api/cart/{item_id}/
+POST /api/cart/update_item/
 ```
 
 **Request Body:**
 ```json
 {
+  "item_id": 1,
   "quantity": 3
 }
 ```
 
 ### Remove Item from Cart
 ```
-DELETE /api/cart/{item_id}/
+POST /api/cart/remove_item/
+```
+
+**Request Body:**
+```json
+{
+  "item_id": 1
+}
 ```
 
 ### Clear Cart
 ```
-DELETE /api/cart/clear/
+POST /api/cart/clear/
 ```
 
 ---
@@ -360,6 +401,10 @@ DELETE /api/cart/clear/
 ```
 GET /api/orders/
 ```
+
+**Query Parameters:**
+- `status` - Filter by status (pending, confirmed, processing, shipped, delivered, cancelled)
+- `delivery_type` - Filter by delivery type (standard, express)
 
 **Response:**
 ```json
@@ -412,20 +457,8 @@ POST /api/orders/
   "delivery_address": "123 Main Street, City",
   "delivery_instructions": "Leave at door",
   "delivery_type": "standard",
-  "coupon_code": "SAVE20",
-  "items": [
-    {
-      "product_id": 1,
-      "quantity": 2,
-      "price": "120.00"
-    }
-  ]
+  "coupon_code": "SAVE20"
 }
-```
-
-### Cancel Order
-```
-POST /api/orders/{id}/cancel/
 ```
 
 ---
@@ -439,6 +472,7 @@ GET /api/coupons/
 
 **Query Parameters:**
 - `limit` - Limit number of results
+- `offset` - Offset for pagination
 
 **Response:**
 ```json
@@ -480,9 +514,39 @@ POST /api/coupons/validate/
 ```json
 {
   "valid": true,
-  "discount": "120.00",
-  "message": "Coupon applied successfully!"
+  "message": "Coupon is valid",
+  "coupon": {...},
+  "potential_discount": "120.00"
 }
+```
+
+### Get Suggested Coupons
+```
+POST /api/coupons/suggested/
+```
+
+**Request Body:**
+```json
+{
+  "cart_total": "500.00"
+}
+```
+
+### Apply Coupon (Authenticated)
+```
+POST /api/coupons/apply/
+```
+
+**Request Body:**
+```json
+{
+  "code": "SAVE20"
+}
+```
+
+### Remove Coupon (Authenticated)
+```
+POST /api/coupons/remove/
 ```
 
 ---
@@ -496,9 +560,25 @@ POST /api/coupons/validate/
 GET /api/wishlist/
 ```
 
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "product": {
+      "id": 1,
+      "name": "Apple",
+      "price": "120.00",
+      "emoji": "🍎"
+    },
+    "created_at": "2025-01-01T00:00:00Z"
+  }
+]
+```
+
 ### Add to Wishlist
 ```
-POST /api/wishlist/
+POST /api/wishlist/add/
 ```
 
 **Request Body:**
@@ -510,12 +590,19 @@ POST /api/wishlist/
 
 ### Remove from Wishlist
 ```
-DELETE /api/wishlist/{product_id}/
+POST /api/wishlist/remove/
+```
+
+**Request Body:**
+```json
+{
+  "product_id": 1
+}
 ```
 
 ### Check if Product is in Wishlist
 ```
-GET /api/wishlist/check/{product_id}/
+GET /api/wishlist/{id}/check/
 ```
 
 **Response:**
@@ -525,47 +612,116 @@ GET /api/wishlist/check/{product_id}/
 }
 ```
 
+### Clear Wishlist
+```
+POST /api/wishlist/clear/
+```
+
 ---
 
 ## Reviews
 
-**All review endpoints require authentication.**
-
 ### List Reviews for a Product
 ```
-GET /api/reviews/?product_id=1
+GET /api/reviews/product/{product_id}/
 ```
 
-### Create Review
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "user": {
+      "id": 1,
+      "name": "John Doe"
+    },
+    "rating": 5,
+    "title": "Great product!",
+    "comment": "Fresh and delicious apples",
+    "is_verified_purchase": true,
+    "helpful_count": 3,
+    "created_at": "2025-01-01T00:00:00Z"
+  }
+]
 ```
-POST /api/reviews/
+
+### Create Review (Authenticated)
+```
+POST /api/reviews/product/{product_id}/
 ```
 
 **Request Body:**
 ```json
 {
-  "product_id": 1,
-  "order_id": 1,
   "rating": 5,
   "title": "Great product!",
   "comment": "Fresh and delicious apples"
 }
 ```
 
-### Update Review
+### Update Review (Authenticated)
 ```
 PATCH /api/reviews/{id}/
 ```
 
-### Delete Review
+**Request Body:**
+```json
+{
+  "rating": 4,
+  "comment": "Updated comment"
+}
+```
+
+### Delete Review (Authenticated)
 ```
 DELETE /api/reviews/{id}/
 ```
 
-### Mark Review as Helpful
+### Mark Review as Helpful (Authenticated)
 ```
 POST /api/reviews/{id}/helpful/
 ```
+
+**Response:**
+```json
+{
+  "message": "Review marked as helpful",
+  "helpful_count": 4
+}
+```
+
+### Get Review Summary
+```
+GET /api/reviews/product/{product_id}/summary/
+```
+
+**Response:**
+```json
+{
+  "average_rating": 4.5,
+  "total_reviews": 10,
+  "rating_breakdown": {
+    "1": 0,
+    "2": 1,
+    "3": 1,
+    "4": 3,
+    "5": 5
+  },
+  "can_review": true,
+  "user_review": null
+}
+```
+
+### Get My Reviews (Authenticated)
+```
+GET /api/reviews/my-reviews/
+```
+
+### Get Pending Reviews (Authenticated)
+```
+GET /api/reviews/pending/
+```
+Returns products the user can review (purchased but not yet reviewed).
 
 ---
 
@@ -573,7 +729,7 @@ POST /api/reviews/{id}/helpful/
 
 ### Submit Contact Message
 ```
-POST /api/contact/
+POST /api/contact/messages/submit/
 ```
 
 **Request Body:**
@@ -585,13 +741,20 @@ POST /api/contact/
 }
 ```
 
+**Response:**
+```json
+{
+  "message": "Contact message submitted successfully! We'll get back to you soon."
+}
+```
+
 ---
 
 ## Configuration
 
-### Get Site Configuration
+### Get Site Settings
 ```
-GET /api/config/
+GET /api/config/settings/
 ```
 
 **Response:**
@@ -611,6 +774,83 @@ GET /api/config/
 GET /api/config/sort-options/
 ```
 
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Price: Low to High",
+    "value": "price",
+    "is_active": true
+  }
+]
+```
+
+### Get All Configuration
+```
+GET /api/config/all/
+```
+
+**Response:**
+```json
+{
+  "settings": {...},
+  "sort_options": [...]
+}
+```
+
+---
+
+## Activity Logs
+
+**All activity log endpoints require authentication.**
+
+### List Activity Logs
+```
+GET /api/activity-logs/
+```
+
+**Query Parameters:**
+- `days` - Filter by days (e.g., 7 for last 7 days)
+- `action` - Filter by action type
+- `page` - Filter by page name
+
+### Log Activity
+```
+POST /api/activity-logs/
+```
+
+**Request Body:**
+```json
+{
+  "action": "page_view",
+  "page": "shop",
+  "details": {"section": "fruits"}
+}
+```
+
+### Get Activity Statistics
+```
+GET /api/activity-logs/statistics/
+```
+
+**Response:**
+```json
+{
+  "total_activities": 150,
+  "by_action": {
+    "page_view": 100,
+    "add_to_cart": 30,
+    "purchase": 20
+  },
+  "by_page": {
+    "shop": 50,
+    "cart": 40,
+    "checkout": 30
+  }
+}
+```
+
 ---
 
 ## Health Check
@@ -624,6 +864,8 @@ GET /health/
 ```json
 {
   "status": "healthy",
+  "database": "connected",
+  "cache": "connected",
   "timestamp": "2025-01-01T00:00:00Z"
 }
 ```
@@ -636,10 +878,10 @@ GET /api/status/
 **Response:**
 ```json
 {
-  "status": "ok",
-  "version": "1.0.0",
-  "database": "connected",
-  "redis": "connected"
+  "status": "operational",
+  "message": "Happy Groceries API is running",
+  "timestamp": "2025-01-01T00:00:00Z",
+  "version": "1.0.0"
 }
 ```
 
