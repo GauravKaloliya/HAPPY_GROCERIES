@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import ProductCard from '../components/ProductCard';
 import { productsAPI } from '../api/products';
 import { categoriesAPI } from '../api/categories';
 import { PageLoader } from '../components/LoadingSpinner';
+import { selectIsAuthenticated } from '../store/slices/authSlice';
 import useActivityLog from '../hooks/useActivityLog';
 
 const Home = () => {
@@ -11,6 +13,7 @@ const Home = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   useActivityLog('page_view', { section: 'home' });
 
@@ -75,6 +78,25 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Login Banner for unauthenticated users */}
+      {!isAuthenticated && (
+        <section style={{ background: 'var(--bg-white)', padding: '1.5rem 0', borderBottom: '2px solid var(--primary-pink)' }}>
+          <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.75rem' }}>🔒</span>
+              <div>
+                <strong style={{ color: 'var(--text-dark)', fontSize: '1rem' }}>Sign in to unlock all features</strong>
+                <p style={{ color: 'var(--text-dark)', opacity: 0.7, fontSize: '0.9rem', margin: 0 }}>Save items to your wishlist, track orders, and get personalised deals</p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Link to="/login" className="btn-login" style={{ padding: '0.5rem 1.25rem' }}>Log In</Link>
+              <Link to="/signup" className="btn-signup" style={{ padding: '0.5rem 1.25rem' }}>Sign Up Free</Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Featured Products */}
       <section className="featured-section">
         <div className="container">
@@ -93,11 +115,11 @@ const Home = () => {
           <h2 className="section-title">🎨 Shop by Category</h2>
           <div className="categories-grid">
             {categories.map((category) => (
-              <button 
+              <button
                 key={category.id || category.name}
                 onClick={() => navigate(`/categories?category=${category.name}`)}
-                className="category-card" 
-                style={{ 
+                className="category-card"
+                style={{
                   background: getCategoryColor(category.name),
                   border: 'none',
                   cursor: 'pointer',

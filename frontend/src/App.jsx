@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Outlet, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { store } from './store';
@@ -11,7 +11,6 @@ import { selectIsAuthenticated } from './store/slices/authSlice';
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
-import MobileNav from './components/MobileNav';
 import ProtectedRoute from './components/ProtectedRoute';
 import ConnectivityCheck from './components/ConnectivityCheck';
 
@@ -38,15 +37,6 @@ store.dispatch(initializeTheme());
 store.dispatch(fetchConfig());
 
 const MainLayout = () => {
-  const location = useLocation();
-  
-  useEffect(() => {
-    // Set internal navigation flag when route changes via internal navigation
-    if (location.state?.fromInternal) {
-      sessionStorage.setItem('internalNavigation', 'true');
-    }
-  }, [location]);
-  
   return (
     <div className="app-layout">
       <Header />
@@ -54,48 +44,8 @@ const MainLayout = () => {
         <Outlet />
       </main>
       <Footer />
-      <MobileNav />
     </div>
   );
-};
-
-// Wrapper component to check navigation source
-const NavigationGuard = ({ children }) => {
-  const location = useLocation();
-  
-  useEffect(() => {
-    // Mark as internal navigation on first mount
-    sessionStorage.setItem('internalNavigation', 'true');
-  }, []);
-  
-  // Check if this is a direct URL access (not from internal navigation)
-  const navEntry = performance.getEntriesByType('navigation')[0];
-  const hasNavigated = sessionStorage.getItem('internalNavigation');
-  
-  // Allow home page always
-  if (location.pathname === '/') {
-    return children;
-  }
-  
-  // Allow auth pages
-  if (location.pathname === '/login' || location.pathname === '/signup') {
-    return children;
-  }
-  
-  // Check for direct navigation (reload or direct URL entry)
-  if (navEntry && (navEntry.type === 'reload' || navEntry.type === 'navigate')) {
-    // If we don't have internal navigation flag, it might be direct access
-    // But we need to be careful - allow if user is authenticated
-    const accessToken = localStorage.getItem('accessToken');
-    if (!hasNavigated && !accessToken && navEntry.type === 'navigate') {
-      // Check referrer - if empty or external, redirect to home
-      if (!document.referrer || !document.referrer.includes(window.location.origin)) {
-        return <Navigate to="/" replace />;
-      }
-    }
-  }
-  
-  return children;
 };
 
 const AppContent = () => {
@@ -120,19 +70,19 @@ const AppContent = () => {
           {/* Routes with Header + Footer */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<NavigationGuard><Shop /></NavigationGuard>} />
-            <Route path="/product/:id" element={<NavigationGuard><ProductDetails /></NavigationGuard>} />
-            <Route path="/categories" element={<NavigationGuard><Categories /></NavigationGuard>} />
-            <Route path="/offers" element={<NavigationGuard><Offers /></NavigationGuard>} />
-            <Route path="/about" element={<NavigationGuard><About /></NavigationGuard>} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/offers" element={<Offers />} />
+            <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/cart" element={<NavigationGuard><Cart /></NavigationGuard>} />
+            <Route path="/cart" element={<Cart />} />
             <Route
               path="/checkout"
               element={
                 <ProtectedRoute>
-                  <NavigationGuard><Checkout /></NavigationGuard>
+                  <Checkout />
                 </ProtectedRoute>
               }
             />
@@ -140,7 +90,7 @@ const AppContent = () => {
               path="/wishlist"
               element={
                 <ProtectedRoute>
-                  <NavigationGuard><Wishlist /></NavigationGuard>
+                  <Wishlist />
                 </ProtectedRoute>
               }
             />
@@ -148,7 +98,7 @@ const AppContent = () => {
               path="/orders"
               element={
                 <ProtectedRoute>
-                  <NavigationGuard><Orders /></NavigationGuard>
+                  <Orders />
                 </ProtectedRoute>
               }
             />
@@ -156,7 +106,7 @@ const AppContent = () => {
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <NavigationGuard><Profile /></NavigationGuard>
+                  <Profile />
                 </ProtectedRoute>
               }
             />
@@ -164,7 +114,7 @@ const AppContent = () => {
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <NavigationGuard><Settings /></NavigationGuard>
+                  <Settings />
                 </ProtectedRoute>
               }
             />
@@ -172,7 +122,7 @@ const AppContent = () => {
               path="/my-reviews"
               element={
                 <ProtectedRoute>
-                  <NavigationGuard><MyReviews /></NavigationGuard>
+                  <MyReviews />
                 </ProtectedRoute>
               }
             />

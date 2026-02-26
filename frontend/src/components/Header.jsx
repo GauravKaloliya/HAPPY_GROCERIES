@@ -35,7 +35,6 @@ const parseXML = (xmlText) => {
 };
 
 const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [config, setConfig] = useState(null);
   const navigate = useNavigate();
@@ -65,20 +64,6 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isMenuOpen]);
-
   const handleLogout = async () => {
     try {
       await dispatch(logout()).unwrap();
@@ -88,7 +73,6 @@ const Header = () => {
       toast.error('Logout failed');
     }
     setIsProfileOpen(false);
-    setIsMenuOpen(false);
   };
 
   const handleThemeToggle = () => {
@@ -126,7 +110,7 @@ const Header = () => {
           </Link>
         </div>
 
-        <ul className={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
+        <ul className="nav-menu">
           {navItems.map((item) => (
             <li key={item.href}>
               <Link to={item.href} className={`nav-link ${isActive(item.href)}`}>
@@ -134,29 +118,7 @@ const Header = () => {
               </Link>
             </li>
           ))}
-          {isMenuOpen && isAuthenticated && (
-            <li className="nav-menu-user-section">
-              <hr className="nav-menu-divider" />
-              {userMenuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`nav-link nav-link-user ${isActive(item.href)}`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.icon} {item.label}
-                </Link>
-              ))}
-              <button className="nav-link nav-link-logout" onClick={handleLogout}>
-                🚪 Logout
-              </button>
-            </li>
-          )}
         </ul>
-
-        {isMenuOpen && (
-          <div className="nav-menu-overlay" onClick={() => setIsMenuOpen(false)} />
-        )}
 
         <div className="nav-actions">
           <button
@@ -172,7 +134,7 @@ const Header = () => {
             {cartCount > 0 && <span className="cart-counter">{cartCount}</span>}
           </Link>
 
-          <div className="nav-profile-desktop" ref={dropdownRef}>
+          <div ref={dropdownRef}>
             {isAuthenticated ? (
               <div className="user-profile">
                 <button
@@ -200,25 +162,6 @@ const Header = () => {
               </div>
             )}
           </div>
-
-          <div className="nav-auth-mobile">
-            {!isAuthenticated && (
-              <div className="auth-buttons">
-                <Link to="/login" className="btn-login">Login</Link>
-              </div>
-            )}
-          </div>
-
-          <button
-            className={`hamburger ${isMenuOpen ? 'active' : ''}`}
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-            aria-expanded={isMenuOpen}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
         </div>
       </div>
     </nav>
