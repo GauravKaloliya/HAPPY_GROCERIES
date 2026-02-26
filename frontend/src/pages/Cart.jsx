@@ -84,7 +84,7 @@ const Cart = () => {
           <div className="empty-state-icon">🛒</div>
           <h3>Your cart is empty!</h3>
           <p>Looks like you haven't added anything yet.</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-lg btn-primary" style={{ marginTop: '1rem' }}>
             Start Shopping
           </Link>
         </div>
@@ -99,7 +99,7 @@ const Cart = () => {
           <p style={{ fontWeight: 600 }}>
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </p>
-          <button onClick={handleClearCart} className="btn-remove">
+          <button onClick={handleClearCart} className="btn-sm btn-danger">
             Clear Cart
           </button>
         </div>
@@ -138,7 +138,7 @@ const Cart = () => {
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   placeholder="Enter coupon code"
                 />
-                <button onClick={handleApplyCoupon} className="btn-coupon">
+                <button onClick={handleApplyCoupon} className="btn-md btn-primary">
                   Apply
                 </button>
               </div>
@@ -176,10 +176,10 @@ const Cart = () => {
         </div>
 
         <div className="cart-actions">
-          <button onClick={() => navigate('/checkout')} className="btn-submit">
+          <button onClick={() => navigate('/checkout')} className="btn-md btn-primary">
             Proceed to Checkout
           </button>
-          <Link to="/shop" className="btn-secondary">
+          <Link to="/shop" className="btn-md btn-secondary">
             Continue Shopping
           </Link>
         </div>

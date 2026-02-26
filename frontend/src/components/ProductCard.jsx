@@ -235,7 +235,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
               </div>
               <Link
                 to="/cart"
-                className="btn-view-cart"
+                className="btn-sm btn-primary"
                 onClick={(e) => e.stopPropagation()}
               >
                 View Cart
@@ -243,7 +243,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
             </>
           ) : (
             <button
-              className="btn-add-cart"
+              className="btn-sm btn-success"
               onClick={handleAddToCart}
               disabled={isAddingToCart}
             >

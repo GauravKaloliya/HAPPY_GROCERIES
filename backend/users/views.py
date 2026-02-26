@@ -309,27 +309,27 @@ class ChangePasswordView(APIView):
 class UserStatsView(APIView):
     """Get user stats for profile dashboard."""
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         user = request.user
-        
+
         # Import models here to avoid circular imports
         from orders.models import Order
-        from wishlist.models import Wishlist
+        from wishlist.models import WishlistItem
         from coupons.models import Coupon
-        
+
         # Count orders (not deleted)
         orders_count = Order.objects.filter(
             user=user,
             is_deleted=False
         ).count()
-        
+
         # Count wishlist items (not deleted)
-        wishlist_count = Wishlist.objects.filter(
+        wishlist_count = WishlistItem.objects.filter(
             user=user,
             is_deleted=False
         ).count()
-        
+
         # Count available active coupons
         now = timezone.now()
         coupons_count = Coupon.objects.filter(
@@ -342,7 +342,7 @@ class UserStatsView(APIView):
         ).exclude(
             Q(usage_limit__isnull=False) & Q(usage_count__gte=F('usage_limit'))
         ).count()
-        
+
         return Response({
             'orders': orders_count,
             'wishlist': wishlist_count,

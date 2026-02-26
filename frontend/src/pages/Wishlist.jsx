@@ -71,7 +71,7 @@ const Wishlist = () => {
           <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🔒</div>
           <h2>Please login to view your wishlist</h2>
           <p>You need to be logged in to save your favorite items</p>
-          <button onClick={() => navigate('/login')} className="btn-primary" style={{ marginTop: '1rem' }}>
+          <button onClick={() => navigate('/login')} className="btn-lg btn-primary" style={{ marginTop: '1rem' }}>
             Login
           </button>
         </div>
@@ -86,7 +86,7 @@ const Wishlist = () => {
           <div className="empty-state-icon">💔</div>
           <h3>Your wishlist is empty</h3>
           <p>Save items you love and they'll appear here</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-lg btn-primary" style={{ marginTop: '1rem' }}>
             Explore Products
           </Link>
         </div>

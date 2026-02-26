@@ -239,10 +239,10 @@ const ProductDetails = () => {
   return (
     <div className="container">
       <div className="product-details-header">
-        <Link to="/shop" className="btn-secondary">← Back to Shop</Link>
+        <Link to="/shop" className="btn-md btn-secondary">← Back to Shop</Link>
         <div className="share-actions">
-          <button className="btn-secondary" onClick={handleShare}>🔗 Share</button>
-          <button className="btn-secondary" onClick={copyLink}>📋 Copy Link</button>
+          <button className="btn-md btn-secondary" onClick={handleShare}>🔗 Share</button>
+          <button className="btn-md btn-secondary" onClick={copyLink}>📋 Copy Link</button>
         </div>
       </div>
 
@@ -336,15 +336,15 @@ const ProductDetails = () => {
 
                     <Link 
                       to="/cart" 
-                      className="btn-primary"
-                      style={{ minWidth: '200px', textAlign: 'center', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                      className="btn-md btn-primary"
+                      style={{ minWidth: '200px' }}
                     >
                       View Cart 🛒
                     </Link>
                   </>
                 ) : (
                   <button 
-                    className="btn-add-cart" 
+                    className="btn-md btn-success" 
                     onClick={handleAddToCart}
                     disabled={product.stock <= 0 || isAddingToCart}
                     style={{ minWidth: '200px' }}

@@ -195,8 +195,8 @@ const Header = () => {
               </div>
             ) : (
               <div className="auth-buttons">
-                <Link to="/login" className="btn-login">Login</Link>
-                <Link to="/signup" className="btn-signup">Sign Up</Link>
+                <Link to="/login" className="btn-sm btn-secondary">Login</Link>
+                <Link to="/signup" className="btn-sm btn-primary">Sign Up</Link>
               </div>
             )}
           </div>
@@ -204,7 +204,7 @@ const Header = () => {
           <div className="nav-auth-mobile">
             {!isAuthenticated && (
               <div className="auth-buttons">
-                <Link to="/login" className="btn-login">Login</Link>
+                <Link to="/login" className="btn-sm btn-secondary">Login</Link>
               </div>
             )}
           </div>

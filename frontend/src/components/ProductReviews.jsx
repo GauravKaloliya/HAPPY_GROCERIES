@@ -215,8 +215,7 @@ const ProductReviews = ({ productId }) => {
                 !showWriteForm && (
                 <button
                   onClick={() => setShowWriteForm(true)}
-                  className="btn-primary"
-                  style={{ padding: '0.75rem 1.5rem' }}
+                  className="btn-md btn-primary"
                 >
                   Write a Review
                 </button>
@@ -228,8 +227,7 @@ const ProductReviews = ({ productId }) => {
               ) : !isAuthenticated ? (
                 <button
                   onClick={() => navigate('/login')}
-                  className="btn-secondary"
-                  style={{ padding: '0.6rem 1.2rem' }}
+                  className="btn-md btn-secondary"
                 >
                   Login to Review
                 </button>
@@ -368,7 +366,7 @@ const ProductReviews = ({ productId }) => {
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <button
                 type="submit"
-                className="btn-primary"
+                className="btn-md btn-primary"
                 disabled={submitting || !isFormValid}
                 style={{
                   opacity: (submitting || !isFormValid) ? 0.5 : 1,
@@ -380,7 +378,7 @@ const ProductReviews = ({ productId }) => {
               </button>
               <button
                 type="button"
-                className="btn-secondary"
+                className="btn-md btn-secondary"
                 onClick={() => {
                   setShowWriteForm(false);
                   setRating(0);
@@ -388,7 +386,6 @@ const ProductReviews = ({ productId }) => {
                   setComment('');
                   setFieldErrors({});
                 }}
-                style={{ padding: '0.6rem 1.2rem' }}
               >
                 Cancel
               </button>

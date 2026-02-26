@@ -107,7 +107,7 @@ const CartItem = ({ item }) => {
         <div className="item-total">
           {formatPrice(displayPrice * item.quantity)}
         </div>
-        <button onClick={handleRemove} className="btn-remove" disabled={isRemoving}>
+        <button onClick={handleRemove} className="btn-sm btn-danger" disabled={isRemoving}>
           {isRemoving ? 'Removing...' : 'Remove'}
         </button>
       </div>

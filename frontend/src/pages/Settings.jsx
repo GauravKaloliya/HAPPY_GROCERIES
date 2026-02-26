@@ -334,7 +334,7 @@ const Settings = () => {
           <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🔒</div>
           <h2>Please login to access settings</h2>
           <p>You need to be logged in to manage your settings</p>
-          <Link to="/login" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>Login</Link>
+          <Link to="/login" className="btn-lg btn-primary" style={{ marginTop: '1rem' }}>Login</Link>
         </div>
       </div>
     );
@@ -463,7 +463,7 @@ const Settings = () => {
                       <button
                         type="button"
                         onClick={handleGetLocation}
-                        className="btn-location"
+                        className="btn-sm btn-primary"
                         title="Get current location"
                       >
                         📍
@@ -474,7 +474,7 @@ const Settings = () => {
 
                   <button
                     type="submit"
-                    className="btn-primary"
+                    className="btn-md btn-primary"
                     disabled={loading || !isProfileChanged()}
                     style={{ opacity: isProfileChanged() ? 1 : 0.5, cursor: isProfileChanged() ? 'pointer' : 'not-allowed' }}
                   >
@@ -568,7 +568,7 @@ const Settings = () => {
 
                   <button
                     type="submit"
-                    className="btn-primary"
+                    className="btn-md btn-primary"
                     disabled={loading || !isPasswordChanged()}
                     style={{ opacity: isPasswordChanged() ? 1 : 0.5, cursor: isPasswordChanged() ? 'pointer' : 'not-allowed' }}
                   >
@@ -617,8 +617,8 @@ const Settings = () => {
                 </div>
                 <button
                   onClick={() => dispatch(toggleTheme())}
-                  className={isDarkMode ? 'btn-primary' : 'btn-secondary'}
-                  style={{ width: '100px', minWidth: 'unset', padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
+                  className={isDarkMode ? 'btn-sm btn-primary' : 'btn-sm btn-secondary'}
+                  style={{ width: '100px' }}
                 >
                   {isDarkMode ? '☀️ Light' : '🌙 Dark'}
                 </button>
@@ -644,10 +644,10 @@ const Settings = () => {
                   <h4 style={{ marginBottom: '0.2rem' }}>Clear Local Data</h4>
                   <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Remove all locally stored preferences and cart data</p>
                 </div>
-                <button 
-                  className="btn-secondary" 
+                <button
+                  className="btn-sm btn-secondary"
                   onClick={() => setShowClearDataModal(true)}
-                  style={{ width: '80px', minWidth: 'unset', padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
+                  style={{ width: '80px' }}
                 >
                   Clear
                 </button>
@@ -695,10 +695,10 @@ const Settings = () => {
               style={{ width: '100%', padding: '0.75rem', margin: '1rem 0', border: '2px solid #ddd', borderRadius: 'var(--border-radius)' }}
             />
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+              <button className="btn-md btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
               <button
                 onClick={handleDeleteAccount}
-                style={{ background: '#ff6b6b', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: 'var(--border-radius)', fontWeight: 600, cursor: 'pointer' }}
+                className="btn-md btn-danger"
               >
                 Yes, Delete My Account
               </button>
@@ -714,8 +714,8 @@ const Settings = () => {
             <h2>Clear All Data?</h2>
             <p>This will remove all your preferences, cart items, and wishlist from the browser.</p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
-              <button className="btn-secondary" onClick={() => setShowClearDataModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleClearData}>Yes, Clear Data</button>
+              <button className="btn-md btn-secondary" onClick={() => setShowClearDataModal(false)}>Cancel</button>
+              <button className="btn-md btn-primary" onClick={handleClearData}>Yes, Clear Data</button>
             </div>
           </div>
         </div>
