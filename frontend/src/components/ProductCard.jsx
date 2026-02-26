@@ -12,6 +12,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const cartItems = useSelector(selectCartItems);
@@ -73,7 +74,10 @@ const ProductCard = ({ product, showAddToCart = true }) => {
 
   const handleWishlist = async (e) => {
     e.stopPropagation();
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setShowLoginPrompt(true);
+      return;
+    }
 
     try {
       if (isWishlisted) {
@@ -88,6 +92,11 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     } catch {
       toast.error('Failed to update wishlist');
     }
+  };
+
+  const handleLoginRedirect = () => {
+    setShowLoginPrompt(false);
+    navigate('/login');
   };
 
   const handleIncrement = async (e) => {
@@ -162,14 +171,43 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     >
       {isOnSale && <span className="sale-badge">Sale</span>}
 
-      {isAuthenticated && (
-        <button
-          onClick={handleWishlist}
-          className={`wishlist-btn ${isWishlisted ? 'active' : ''}`}
-          style={{ color: isWishlisted ? '#ff4444' : 'inherit' }}
+      <button
+        onClick={handleWishlist}
+        className={`wishlist-btn ${isWishlisted ? 'active' : ''}`}
+        style={{ color: isWishlisted ? '#ff4444' : 'inherit' }}
+        aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+      >
+        {isWishlisted ? '❤️' : '🤍'}
+      </button>
+
+      {/* Login Prompt Modal */}
+      {showLoginPrompt && (
+        <div
+          className="modal show"
+          onClick={() => setShowLoginPrompt(false)}
+          style={{ display: 'flex' }}
         >
-          {isWishlisted ? '❤️' : '🤍'}
-        </button>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '400px' }}
+          >
+            <div className="modal-icon">🔒</div>
+            <h2>Login Required</h2>
+            <p>Please log in to add items to your wishlist.</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem' }}>
+              <button onClick={handleLoginRedirect} className="btn-submit">
+                Log In
+              </button>
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div

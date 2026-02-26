@@ -69,14 +69,17 @@ const Profile = () => {
       if (!user) return;
       setCountsLoading(true);
       try {
-        const statsRes = await authAPI.getStats().catch(() => ({ data: { orders: 0, wishlist: 0, coupons: 0 } }));
-        setCounts({
-          orders: statsRes.data.orders || 0,
-          wishlist: statsRes.data.wishlist || 0,
-          coupons: statsRes.data.coupons || 0,
-        });
-      } catch {
-        setCounts({ orders: 0, wishlist: 0, coupons: 0 });
+        const statsRes = await authAPI.getStats();
+        if (statsRes.data) {
+          setCounts({
+            orders: statsRes.data.orders ?? 0,
+            wishlist: statsRes.data.wishlist ?? 0,
+            coupons: statsRes.data.coupons ?? 0,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch user stats:', error);
+        // Keep previous values on error, don't reset to 0
       } finally {
         setCountsLoading(false);
       }
