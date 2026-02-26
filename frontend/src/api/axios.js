@@ -44,12 +44,14 @@ api.interceptors.response.use(
 
         const response = await axios.post(`${API_BASE_URL}/api/auth/refresh/`, {
           refresh: refreshToken,
+        }, {
+          withCredentials: true,
         });
 
-        const { access } = response.data;
-        localStorage.setItem('accessToken', access);
+        const accessToken = response.data.access_token || response.data.access;
+        localStorage.setItem('accessToken', accessToken);
 
-        originalRequest.headers.Authorization = `Bearer ${access}`;
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         localStorage.removeItem('accessToken');
