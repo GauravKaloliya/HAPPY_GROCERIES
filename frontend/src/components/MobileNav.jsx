@@ -56,20 +56,20 @@ const MobileNav = () => {
   return (
     <nav className="mobile-bottom-nav">
       <div className="mobile-bottom-nav-inner">
-        {navItems.map(({ Icon, label, path, showBadge }) => (
+        {navItems.map((item) => (
           <button
-            key={path}
-            className={`mobile-nav-item${isActive(path) ? ' active' : ''}`}
-            onClick={() => navigate(path)}
-            aria-label={label}
+            key={item.path}
+            className={`mobile-nav-item${isActive(item.path) ? ' active' : ''}`}
+            onClick={() => navigate(item.path)}
+            aria-label={item.label}
           >
             <span className="mobile-nav-icon-wrap">
-              <Icon />
-              {showBadge && cartCount > 0 && (
+              <item.Icon />
+              {item.showBadge && cartCount > 0 && (
                 <span className="mobile-nav-badge">{cartCount > 99 ? '99+' : cartCount}</span>
               )}
             </span>
-            <span className="mobile-nav-label">{label}</span>
+            <span className="mobile-nav-label">{item.label}</span>
           </button>
         ))}
       </div>

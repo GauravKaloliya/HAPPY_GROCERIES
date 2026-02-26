@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext } from 'react';
 import api from '../api/axios';
 
 const SecurityContext = createContext({
@@ -8,9 +8,7 @@ const SecurityContext = createContext({
   retryCheck: () => {},
 });
 
-export const useSecurity = () => useContext(SecurityContext);
-
-export const SecurityCheck = ({ children }) => {
+const SecurityCheck = ({ children }) => {
   const [isSecure, setIsSecure] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);

@@ -37,8 +37,6 @@ const Signup = () => {
 
   useEffect(() => {
     dispatch(clearError());
-    setFormErrors({});
-    setSubmitError('');
   }, [dispatch]);
 
   const passwordStrength = (() => {

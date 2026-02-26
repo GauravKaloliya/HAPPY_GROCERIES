@@ -24,8 +24,6 @@ const Login = () => {
 
   useEffect(() => {
     dispatch(clearError());
-    setFormErrors({});
-    setSubmitError('');
   }, [dispatch]);
 
   const handleChange = (e) => {

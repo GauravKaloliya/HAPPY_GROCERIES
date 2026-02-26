@@ -2,7 +2,7 @@
 <header>
   <brand>
     <logo>🛒</logo>
-    <name> Happy Groceries</name>
+    <name>Happy Groceries</name>
     <href>/</href>
   </brand>
   <navigation>
@@ -37,6 +37,11 @@
       <icon>📦</icon>
       <label>Orders</label>
       <href>/orders</href>
+    </menuItem>
+    <menuItem>
+      <icon>⭐</icon>
+      <label>My Reviews</label>
+      <href>/my-reviews</href>
     </menuItem>
     <menuItem>
       <icon>❤️</icon>
