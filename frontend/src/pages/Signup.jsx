@@ -392,7 +392,7 @@ const Signup = () => {
 
           <button
             type="submit"
-            className="btn-submit"
+            className="btn-md btn-primary w-full"
             disabled={loading}
           >
             {loading ? 'Creating Account...' : 'Sign Up 🚀'}

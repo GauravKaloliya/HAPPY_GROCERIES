@@ -12,10 +12,10 @@ const NotFound = () => {
           It might have been moved, deleted, or never existed in first place.
         </p>
         <div className="not-found-actions">
-          <Link to="/" className="btn-home">
+          <Link to="/" className="btn-md btn-primary">
             🏠 Go Home
           </Link>
-          <Link to="/shop" className="btn-shop">
+          <Link to="/shop" className="btn-md btn-success">
             🛒 Browse Shop
           </Link>
         </div>

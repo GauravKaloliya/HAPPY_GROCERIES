@@ -9,7 +9,7 @@ const ConnectivityError = ({ onRetry }) => {
           We're having trouble connecting to our servers. Please check your internet connection and try again.
         </p>
         <div className="connectivity-error-actions">
-          <button onClick={onRetry} className="btn-retry">
+          <button onClick={onRetry} className="btn-md btn-primary">
             🔄 Try Again
           </button>
         </div>

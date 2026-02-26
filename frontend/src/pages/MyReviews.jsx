@@ -96,7 +96,7 @@ const MyReviews = () => {
               <p style={{ color: '#888', marginBottom: '1rem' }}>
                 You haven't reviewed any products yet.
               </p>
-              <Link to="/orders" className="btn-primary">
+              <Link to="/orders" className="btn-lg btn-primary">
                 View Your Orders
               </Link>
             </div>
@@ -136,24 +136,15 @@ const MyReviews = () => {
                 <div className="review-item-actions">
                   <Link
                     to={`/product/${review.product?.id}`}
-                    className="btn-secondary"
-                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                    className="btn-sm btn-secondary"
                   >
                     View Product
                   </Link>
                   <button
                     onClick={() => handleDeleteReview(review.id)}
                     disabled={deleteLoading === review.id}
-                    style={{
-                      background: '#ff6b6b',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: 'var(--border-radius)',
-                      cursor: deleteLoading === review.id ? 'not-allowed' : 'pointer',
-                      fontWeight: 600,
-                      opacity: deleteLoading === review.id ? 0.5 : 1,
-                    }}
+                    className="btn-sm btn-danger"
+                    style={{ opacity: deleteLoading === review.id ? 0.5 : 1 }}
                   >
                     {deleteLoading === review.id ? 'Deleting...' : 'Delete Review'}
                   </button>
@@ -176,7 +167,7 @@ const MyReviews = () => {
               <p style={{ color: '#888', marginBottom: '1rem' }}>
                 You've reviewed all your purchased products!
               </p>
-              <Link to="/shop" className="btn-primary">
+              <Link to="/shop" className="btn-lg btn-primary">
                 Continue Shopping
               </Link>
             </div>
@@ -205,8 +196,7 @@ const MyReviews = () => {
                   </div>
                   <Link
                     to={`/product/${product.id}`}
-                    className="btn-primary"
-                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+                    className="btn-sm btn-primary"
                   >
                     Write Review
                   </Link>

@@ -140,7 +140,7 @@ const Offers = () => {
       <div className="offers-category-filter">
         <button
           onClick={() => handleCategoryChange('all')}
-          className={`offers-category-button ${activeCategory === 'all' ? 'active' : ''}`}
+          className={`btn-sm btn-secondary ${activeCategory === 'all' ? 'active' : ''}`}
         >
           All Coupons
         </button>
@@ -148,7 +148,7 @@ const Offers = () => {
           <button
             key={cat.id || cat.name}
             onClick={() => handleCategoryChange(cat.name)}
-            className={`offers-category-button ${activeCategory === cat.name ? 'active' : ''}`}
+            className={`btn-sm btn-secondary ${activeCategory === cat.name ? 'active' : ''}`}
           >
             {cat.name}
           </button>
@@ -229,11 +229,11 @@ const Offers = () => {
 
                   <div className="coupon-footer">
                     <button
-                      onClick={() => handleCopyCode(coupon.code)}
-                      className="btn-copy-coupon"
-                    >
-                      Copy Code
-                    </button>
+                                      onClick={() => handleCopyCode(coupon.code)}
+                                      className="btn-md btn-success w-full"
+                                    >
+                                      Copy Code
+                                    </button>
                   </div>
                 </div>
               );
@@ -243,7 +243,7 @@ const Offers = () => {
           {showViewMore && (
             <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
               <button
-                className="btn-primary"
+                className="btn-md btn-primary"
                 onClick={handleViewMore}
                 disabled={isFetchingMore}
               >

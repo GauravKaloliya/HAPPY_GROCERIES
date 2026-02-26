@@ -71,7 +71,7 @@ const Home = () => {
           </div>
           <h1 className="hero-title">Fresh & Happy 🛍️</h1>
           <p className="hero-subtitle">Your favorite groceries from Happy Groceries delivered with love!</p>
-          <Link to="/shop" className="btn-primary btn-hero">Shop Now</Link>
+          <Link to="/shop" className="btn-lg btn-primary">Shop Now</Link>
         </div>
       </section>
 

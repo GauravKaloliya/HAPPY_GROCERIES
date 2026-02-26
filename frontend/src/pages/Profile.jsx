@@ -361,7 +361,7 @@ const Profile = () => {
                     <button
                       type="button"
                       onClick={handleGetLocation}
-                      className="btn-location"
+                      className="btn-sm btn-primary"
                       title="Get current location"
                     >
                       📍
@@ -378,20 +378,20 @@ const Profile = () => {
           <div className="profile-actions">
             {editing ? (
               <>
-                <button 
-                  onClick={handleSave} 
-                  className="btn-submit" 
+                <button
+                  onClick={handleSave}
+                  className="btn-md btn-primary"
                   disabled={loading || !hasChanges()}
                   style={{ opacity: hasChanges() ? 1 : 0.5 }}
                 >
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button onClick={handleCancel} className="btn-secondary">
+                <button onClick={handleCancel} className="btn-md btn-secondary">
                   Cancel
                 </button>
               </>
             ) : (
-              <button onClick={() => setEditing(true)} className="btn-submit">
+              <button onClick={() => setEditing(true)} className="btn-md btn-primary">
                 Edit Profile
               </button>
             )}

@@ -77,7 +77,7 @@ const Checkout = () => {
           <div className="empty-state-icon">🛒</div>
           <h3>Your cart is empty</h3>
           <p>Add some items before checking out</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-lg btn-primary" style={{ marginTop: '1rem' }}>
             Go Shopping
           </Link>
         </div>
@@ -267,7 +267,7 @@ const Checkout = () => {
           <p>Thank you for your order.</p>
           <p>Order ID: <strong>{orderId}</strong></p>
           <p>We'll deliver your groceries with love! 💚</p>
-          <button onClick={() => navigate('/orders')} className="btn-close-modal">
+          <button onClick={() => navigate('/orders')} className="btn-md btn-primary">
             View Orders
           </button>
         </div>
@@ -390,7 +390,7 @@ const Checkout = () => {
 
         <button
           onClick={handlePlaceOrder}
-          className="btn-submit"
+          className="btn-md btn-primary w-full"
           disabled={loading || !isFormValid()}
           style={{
             marginTop: '1rem',

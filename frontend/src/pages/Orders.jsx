@@ -46,7 +46,7 @@ const Orders = () => {
           <div className="empty-state-icon">📦</div>
           <h3>No orders yet!</h3>
           <p>Start shopping to see your orders here</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-lg btn-primary" style={{ marginTop: '1rem' }}>
             Start Shopping
           </Link>
         </div>

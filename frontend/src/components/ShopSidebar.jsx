@@ -119,7 +119,7 @@ const ShopSidebar = ({
       </div>
 
       {hasFilters && (
-        <button onClick={onClearFilters} className="btn-clear-all">
+        <button onClick={onClearFilters} className="btn-md btn-primary w-full">
           Clear All Filters
         </button>
       )}

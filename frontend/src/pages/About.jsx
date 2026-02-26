@@ -121,7 +121,7 @@ const About = () => {
               required
             />
           </div>
-          <button type="submit" className="btn-submit" disabled={isSubmitting}>
+          <button type="submit" className="btn-md btn-primary w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Sending...' : 'Send Message'}
           </button>
         </form>
