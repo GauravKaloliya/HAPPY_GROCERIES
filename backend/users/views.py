@@ -315,7 +315,7 @@ class UserStatsView(APIView):
         
         # Import models here to avoid circular imports
         from orders.models import Order
-        from wishlist.models import Wishlist
+        from wishlist.models import WishlistItem
         from coupons.models import Coupon
         
         # Count orders (not deleted)
@@ -325,7 +325,7 @@ class UserStatsView(APIView):
         ).count()
         
         # Count wishlist items (not deleted)
-        wishlist_count = Wishlist.objects.filter(
+        wishlist_count = WishlistItem.objects.filter(
             user=user,
             is_deleted=False
         ).count()
