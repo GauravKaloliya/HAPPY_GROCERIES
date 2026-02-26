@@ -1,13 +1,11 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { activityLogsAPI } from '../api/activityLogs';
 
 const useActivityLog = (action, details = {}) => {
   const location = useLocation();
-  const user = useSelector((state) => state.auth.user);
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
   const hasLoggedRef = useRef(false);
+  const memoizedDetails = useMemo(() => details, [details]);
 
   useEffect(() => {
     // Prevent duplicate logging in StrictMode
@@ -18,7 +16,7 @@ const useActivityLog = (action, details = {}) => {
         await activityLogsAPI.logActivity({
           action,
           page: location.pathname,
-          details,
+          details: memoizedDetails,
         });
         hasLoggedRef.current = true;
       } catch (error) {
@@ -29,7 +27,7 @@ const useActivityLog = (action, details = {}) => {
     if (action) {
       logActivity();
     }
-  }, [action, location.pathname, JSON.stringify(details)]);
+  }, [action, location.pathname, memoizedDetails]);
 
   const logCustomActivity = useCallback(async (customAction, customDetails = {}) => {
     try {
