@@ -99,12 +99,6 @@ const Settings = () => {
     );
   };
 
-  const getFieldBorderStyle = (fieldName) => {
-    const initial = initialProfileRef.current;
-    const isChanged = profileForm[fieldName] !== initial[fieldName];
-    return isChanged ? { border: '2px solid var(--primary-pink)', background: 'var(--bg-white)' } : {};
-  };
-
   const isPasswordChanged = () => {
     return (
       passwordForm.currentPassword.trim() !== '' ||
@@ -138,7 +132,7 @@ const Settings = () => {
       setFormErrors(prev => ({ ...prev, email: 'Enter a valid email address' }));
       return;
     }
-    
+
     setValidationStatus(prev => ({ ...prev, email: { checking: true, available: null } }));
     try {
       const response = await authAPI.checkEmail(email);
@@ -156,7 +150,7 @@ const Settings = () => {
     const phone = profileForm.phone;
     if (!phone || phone === initialProfileRef.current.phone) return;
     if (!/^\d{10}$/.test(phone)) return;
-    
+
     setValidationStatus(prev => ({ ...prev, phone: { checking: true, available: null } }));
     try {
       const response = await authAPI.checkPhone(phone);
@@ -205,13 +199,13 @@ const Settings = () => {
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    
+
     const errors = validateProfileForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
     }
-    
+
     setLoading(true);
 
     try {
@@ -288,7 +282,7 @@ const Settings = () => {
       toast.error('Geolocation is not supported by your browser');
       return;
     }
-    
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -330,20 +324,20 @@ const Settings = () => {
   if (!isAuthenticated) {
     return (
       <div className="container">
-        <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-          <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🔒</div>
+        <div>
+          <div>🔒</div>
           <h2>Please login to access settings</h2>
           <p>You need to be logged in to manage your settings</p>
-          <Link to="/login" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>Login</Link>
+          <Link to="/login" className="btn-primary">Login</Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
-      <Link to="/profile" className="back-link">← Back to Profile</Link>
-      <h1 className="section-title" style={{ marginBottom: '1.5rem' }}>⚙️ Settings</h1>
+    <div className="container settings-page">
+      <Link to="/profile" className="btn-md btn-secondary">← Back to Profile</Link>
+      <h1 className="section-title">⚙️ Settings</h1>
 
       <div className="settings-layout">
         <aside className="settings-sidebar-nav">
@@ -376,7 +370,7 @@ const Settings = () => {
                         onChange={(e) => handleProfileChange('first_name', e.target.value)}
                         placeholder="Enter your first name"
                         maxLength="150"
-                        style={{ ...getFieldBorderStyle('first_name'), borderColor: formErrors.first_name ? '#ff4444' : undefined }}
+
                       />
                       {formErrors.first_name && <span className="field-error">{formErrors.first_name}</span>}
                     </div>
@@ -389,7 +383,7 @@ const Settings = () => {
                         onChange={(e) => handleProfileChange('last_name', e.target.value)}
                         placeholder="Enter your last name"
                         maxLength="150"
-                        style={{ ...getFieldBorderStyle('last_name'), borderColor: formErrors.last_name ? '#ff4444' : undefined }}
+
                       />
                       {formErrors.last_name && <span className="field-error">{formErrors.last_name}</span>}
                     </div>
@@ -397,7 +391,7 @@ const Settings = () => {
 
                   <div className="form-group">
                     <label htmlFor="email">Email Address</label>
-                    <div style={{ position: 'relative' }}>
+                    <div>
                       <input
                         type="email"
                         id="email"
@@ -406,14 +400,10 @@ const Settings = () => {
                         onBlur={handleEmailBlur}
                         placeholder="Enter your email"
                         maxLength="254"
-                        style={{ 
-                          ...getFieldBorderStyle('email'), 
-                          borderColor: formErrors.email ? '#ff4444' : undefined,
-                          paddingRight: validationStatus.email.available !== null ? '2.5rem' : undefined
-                        }}
+
                       />
                       {getValidationIcon('email') && (
-                        <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                        <span>
                           {getValidationIcon('email')}
                         </span>
                       )}
@@ -423,7 +413,7 @@ const Settings = () => {
 
                   <div className="form-group">
                     <label htmlFor="phone">Phone Number</label>
-                    <div style={{ position: 'relative' }}>
+                    <div>
                       <input
                         type="tel"
                         id="phone"
@@ -433,14 +423,10 @@ const Settings = () => {
                         onBlur={handlePhoneBlur}
                         placeholder="Enter 10-digit phone number"
                         maxLength="10"
-                        style={{ 
-                          ...getFieldBorderStyle('phone'),
-                          borderColor: formErrors.phone ? '#ff4444' : undefined,
-                          paddingRight: validationStatus.phone.available !== null ? '2.5rem' : undefined
-                        }}
+
                       />
                       {getValidationIcon('phone') && (
-                        <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                        <span>
                           {getValidationIcon('phone')}
                         </span>
                       )}
@@ -450,7 +436,7 @@ const Settings = () => {
 
                   <div className="form-group">
                     <label htmlFor="address">Address / Location</label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="settings-address-row">
                       <input
                         type="text"
                         id="address"
@@ -458,7 +444,7 @@ const Settings = () => {
                         onChange={(e) => handleProfileChange('address', e.target.value)}
                         placeholder="Enter your address"
                         maxLength="500"
-                        style={{ flex: 1, ...getFieldBorderStyle('address'), borderColor: formErrors.address ? '#ff4444' : undefined }}
+
                       />
                       <button
                         type="button"
@@ -476,7 +462,7 @@ const Settings = () => {
                     type="submit"
                     className="btn-primary"
                     disabled={loading || !isProfileChanged()}
-                    style={{ opacity: isProfileChanged() ? 1 : 0.5, cursor: isProfileChanged() ? 'pointer' : 'not-allowed' }}
+
                   >
                     {loading ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -526,18 +512,11 @@ const Settings = () => {
                       </button>
                     </div>
                     {passwordForm.newPassword && (
-                      <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                      <div>
                         {PASSWORD_RULES.map((rule, i) => (
                           <span
                             key={i}
-                            style={{
-                              fontSize: '0.75rem',
-                              padding: '0.15rem 0.5rem',
-                              borderRadius: '99px',
-                              background: rule.test(passwordForm.newPassword) ? 'var(--primary-green, #22c55e)' : '#f1f5f9',
-                              color: rule.test(passwordForm.newPassword) ? 'white' : '#64748b',
-                              transition: 'background 0.2s',
-                            }}
+
                           >
                             {rule.test(passwordForm.newPassword) ? '✓' : '○'} {rule.label}
                           </span>
@@ -570,7 +549,7 @@ const Settings = () => {
                     type="submit"
                     className="btn-primary"
                     disabled={loading || !isPasswordChanged()}
-                    style={{ opacity: isPasswordChanged() ? 1 : 0.5, cursor: isPasswordChanged() ? 'pointer' : 'not-allowed' }}
+
                   >
                     {loading ? 'Updating...' : 'Change Password'}
                   </button>
@@ -590,8 +569,8 @@ const Settings = () => {
               ].map((item) => (
                 <div key={item.key} className="settings-toggle-row">
                   <div>
-                    <h4 style={{ marginBottom: '0.2rem' }}>{item.label}</h4>
-                    <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>{item.description}</p>
+                    <h4>{item.label}</h4>
+                    <p>{item.description}</p>
                   </div>
                   <label className="toggle-switch">
                     <input
@@ -612,13 +591,13 @@ const Settings = () => {
 
               <div className="settings-toggle-row">
                 <div>
-                  <h4 style={{ marginBottom: '0.2rem' }}>Dark Mode</h4>
-                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Toggle dark/light theme</p>
+                  <h4>Dark Mode</h4>
+                  <p>Toggle dark/light theme</p>
                 </div>
                 <button
                   onClick={() => dispatch(toggleTheme())}
-                  className={isDarkMode ? 'btn-primary' : 'btn-secondary'}
-                  style={{ width: '100px', minWidth: 'unset', padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
+                  className="btn-primary"
+
                 >
                   {isDarkMode ? '☀️ Light' : '🌙 Dark'}
                 </button>
@@ -630,10 +609,10 @@ const Settings = () => {
             <div className="settings-card">
               <h3 className="settings-card-title">🔒 Privacy & Security</h3>
 
-              <div className="settings-toggle-row" style={{ alignItems: 'flex-start' }}>
+              <div className="settings-toggle-row">
                 <div>
-                  <h4 style={{ marginBottom: '0.2rem' }}>Data Handling</h4>
-                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>
+                  <h4>Data Handling</h4>
+                  <p>
                     Your data is stored securely. We do not share your personal information with third parties.
                   </p>
                 </div>
@@ -641,36 +620,26 @@ const Settings = () => {
 
               <div className="settings-toggle-row">
                 <div>
-                  <h4 style={{ marginBottom: '0.2rem' }}>Clear Local Data</h4>
-                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Remove all locally stored preferences and cart data</p>
+                  <h4>Clear Local Data</h4>
+                  <p>Remove all locally stored preferences and cart data</p>
                 </div>
-                <button 
-                  className="btn-secondary" 
+                <button
+                  className="btn-primary"
                   onClick={() => setShowClearDataModal(true)}
-                  style={{ width: '80px', minWidth: 'unset', padding: '0.5rem 0.8rem', fontSize: '0.85rem' }}
+
                 >
                   Clear
                 </button>
               </div>
 
-              <div className="settings-toggle-row" style={{ borderBottom: 'none' }}>
+              <div className="settings-toggle-row">
                 <div>
-                  <h4 style={{ marginBottom: '0.2rem', color: '#ff4444' }}>Delete Account</h4>
-                  <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>Permanently delete your account and all associated data</p>
+                  <h4>Delete Account</h4>
+                  <p>Permanently delete your account and all associated data</p>
                 </div>
                 <button
                   onClick={() => setShowDeleteModal(true)}
-                  style={{
-                    background: '#ff6b6b',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.6rem 1.2rem',
-                    borderRadius: 'var(--border-radius)',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    width: 'auto',
-                    minWidth: 'unset',
-                  }}
+
                 >
                   Delete
                 </button>
@@ -686,19 +655,19 @@ const Settings = () => {
             <div className="modal-icon">⚠️</div>
             <h2>Are you sure?</h2>
             <p>This action cannot be undone. All your data will be permanently deleted.</p>
-            <p style={{ marginTop: '1rem' }}><strong>Please enter your password to confirm:</strong></p>
+            <p><strong>Please enter your password to confirm:</strong></p>
             <input
               type="password"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               placeholder="Enter your password"
-              style={{ width: '100%', padding: '0.75rem', margin: '1rem 0', border: '2px solid #ddd', borderRadius: 'var(--border-radius)' }}
+
             />
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button className="btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+            <div>
+              <button className="btn-primary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
               <button
                 onClick={handleDeleteAccount}
-                style={{ background: '#ff6b6b', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: 'var(--border-radius)', fontWeight: 600, cursor: 'pointer' }}
+
               >
                 Yes, Delete My Account
               </button>
@@ -713,8 +682,8 @@ const Settings = () => {
             <div className="modal-icon">🧹</div>
             <h2>Clear All Data?</h2>
             <p>This will remove all your preferences, cart items, and wishlist from the browser.</p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
-              <button className="btn-secondary" onClick={() => setShowClearDataModal(false)}>Cancel</button>
+            <div>
+              <button className="btn-primary" onClick={() => setShowClearDataModal(false)}>Cancel</button>
               <button className="btn-primary" onClick={handleClearData}>Yes, Clear Data</button>
             </div>
           </div>

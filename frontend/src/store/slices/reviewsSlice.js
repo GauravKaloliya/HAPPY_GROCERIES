@@ -140,12 +140,12 @@ const reviewsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Fetch review summary
       .addCase(fetchReviewSummary.fulfilled, (state, action) => {
         state.reviewSummaries[action.payload.productId] = action.payload.summary;
       })
-      
+
       // Create review
       .addCase(createReview.pending, (state) => {
         state.loading = true;
@@ -153,7 +153,12 @@ const reviewsSlice = createSlice({
       })
       .addCase(createReview.fulfilled, (state, action) => {
         state.loading = false;
-        const productId = action.payload.product;
+        const productId = typeof action.payload.product === 'object'
+          ? action.payload.product?.id
+          : action.payload.product;
+        if (!productId) {
+          return;
+        }
         if (!state.productReviews[productId]) {
           state.productReviews[productId] = [];
         }
@@ -163,10 +168,12 @@ const reviewsSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Update review
       .addCase(updateReview.fulfilled, (state, action) => {
-        const productId = action.payload.product;
+        const productId = typeof action.payload.product === 'object'
+          ? action.payload.product?.id
+          : action.payload.product;
         if (state.productReviews[productId]) {
           const index = state.productReviews[productId].findIndex(
             r => r.id === action.payload.id
@@ -181,7 +188,7 @@ const reviewsSlice = createSlice({
           state.myReviews[myIndex] = action.payload;
         }
       })
-      
+
       // Delete review
       .addCase(deleteReview.fulfilled, (state, action) => {
         // Remove from all product reviews
@@ -193,7 +200,7 @@ const reviewsSlice = createSlice({
         // Remove from myReviews
         state.myReviews = state.myReviews.filter(r => r.id !== action.payload);
       })
-      
+
       // Mark helpful
       .addCase(markReviewHelpful.fulfilled, (state, action) => {
         const { reviewId } = action.payload;
@@ -205,12 +212,12 @@ const reviewsSlice = createSlice({
           }
         });
       })
-      
+
       // Fetch my reviews
       .addCase(fetchMyReviews.fulfilled, (state, action) => {
         state.myReviews = action.payload;
       })
-      
+
       // Fetch pending reviews
       .addCase(fetchPendingReviews.fulfilled, (state, action) => {
         state.pendingReviews = action.payload;
@@ -219,9 +226,9 @@ const reviewsSlice = createSlice({
 });
 
 // Selectors
-export const selectProductReviews = (state, productId) => 
+export const selectProductReviews = (state, productId) =>
   state.reviews.productReviews[productId] || [];
-export const selectReviewSummary = (state, productId) => 
+export const selectReviewSummary = (state, productId) =>
   state.reviews.reviewSummaries[productId] || null;
 export const selectMyReviews = (state) => state.reviews.myReviews;
 export const selectPendingReviews = (state) => state.reviews.pendingReviews;

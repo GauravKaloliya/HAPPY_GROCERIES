@@ -1,6 +1,9 @@
 from django.http import JsonResponse
 from django.db import connection
+from django.db.utils import DatabaseError
 from django.core.cache import cache
+from django.core.cache.backends.base import InvalidCacheBackendError
+from redis.exceptions import RedisError
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 
@@ -24,7 +27,7 @@ def health_check(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             cursor.fetchone()
-    except Exception as e:
+    except DatabaseError as e:
         health_status['status'] = 'unhealthy'
         health_status['database'] = 'disconnected'
         health_status['database_error'] = str(e)
@@ -33,7 +36,7 @@ def health_check(request):
         # Check cache connection (Redis)
         cache.set('health_check', 'ok', 10)
         cache.get('health_check')
-    except Exception as e:
+    except (RedisError, InvalidCacheBackendError, ValueError, TypeError) as e:
         health_status['status'] = 'unhealthy'
         health_status['cache'] = 'disconnected'
         health_status['cache_error'] = str(e)

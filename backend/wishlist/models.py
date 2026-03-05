@@ -26,6 +26,7 @@ class WishlistItem(models.Model):
         db_table = 'wishlist_items'
         unique_together = ['user', 'product']
         ordering = ['-created_at']
+        managed = False
         indexes = [
             models.Index(fields=['user'], name='wishlist_items_user_idx'),
             models.Index(fields=['product'], name='wishlist_items_product_idx'),

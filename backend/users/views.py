@@ -3,16 +3,16 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-import redis
-import os
 from datetime import timedelta
 from django.utils import timezone
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Count, Q, F
+from django.db.models import Q, F
 
+from config.error_handling import BadRequestError, UnauthorizedError, ServiceUnavailableError
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 
@@ -116,17 +116,11 @@ class LoginView(APIView):
         try:
             user_obj = User.objects.get(phone=phone)
         except User.DoesNotExist:
-            return Response(
-                {'error': 'Phone number not registered. Please check your number or sign up.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            raise UnauthorizedError('Phone number / password is incorrect.')
         
         # Check if account is locked
         if user_obj.locked_until and user_obj.locked_until > timezone.now():
-            return Response(
-                {'error': 'Account is temporarily locked. Please try again later.'},
-                status=status.HTTP_423_LOCKED
-            )
+            raise ServiceUnavailableError('Account is temporarily locked. Please try again later.')
         
         # Authenticate user
         user = authenticate(username=phone, password=password)
@@ -141,10 +135,7 @@ class LoginView(APIView):
             
             user_obj.save()
             
-            return Response(
-                {'error': 'Incorrect password. Please try again.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            raise UnauthorizedError('Phone number / password is incorrect.')
         
         # Reset failed login attempts on successful login
         user.failed_login_attempts = 0
@@ -178,38 +169,19 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
+        refresh_token = request.COOKIES.get('refresh_token')
+        if not refresh_token:
+            raise UnauthorizedError('No refresh token cookie provided')
+
         try:
-            refresh_token = request.COOKIES.get('refresh_token')
-            
-            if refresh_token:
-                # Blacklist the refresh token
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-                
-                # Try to blacklist access token in Redis if available
-                try:
-                    redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-                    r = redis.from_url(redis_url)
-                    access_token = request.auth
-                    if access_token:
-                        # Set expiry matching the access token lifetime (15 min in production)
-                        r.setex(
-                            f'blacklist:{access_token}',
-                            900,  # 15 minutes
-                            '1'
-                        )
-                except Exception:
-                    pass  # Redis might not be available
-            
-            response = Response({'message': 'Successfully logged out'})
-            response.delete_cookie('refresh_token')
-            return response
-            
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError as e:
+            raise BadRequestError(str(e)) from e
+
+        response = Response({'message': 'Successfully logged out'})
+        response.delete_cookie('refresh_token')
+        return response
 
 
 class RefreshTokenView(APIView):
@@ -217,28 +189,12 @@ class RefreshTokenView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        refresh_token = request.COOKIES.get('refresh_token')
+        refresh_token = request.data.get('refresh')
         
         if not refresh_token:
-            return Response(
-                {'error': 'No refresh token provided'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            raise UnauthorizedError('No refresh token provided')
         
         try:
-            # Check if token is blacklisted
-            try:
-                redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-                r = redis.from_url(redis_url)
-                token_obj = RefreshToken(refresh_token)
-                if r.get(f'blacklist:{token_obj.access_token}'):
-                    return Response(
-                        {'error': 'Token has been revoked'},
-                        status=status.HTTP_401_UNAUTHORIZED
-                    )
-            except Exception:
-                pass  # Redis might not be available
-            
             # Rotate the token
             refresh = RefreshToken(refresh_token)
             new_access_token = str(refresh.access_token)
@@ -260,11 +216,8 @@ class RefreshTokenView(APIView):
             
             return response
             
-        except Exception as e:
-            return Response(
-                {'error': 'Invalid or expired refresh token'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        except TokenError:
+            raise UnauthorizedError('Invalid or expired refresh token')
 
 
 class ProfileView(APIView):
@@ -295,10 +248,7 @@ class ChangePasswordView(APIView):
         new_password = request.data.get('new_password')
         
         if not user.check_password(old_password):
-            return Response(
-                {'error': 'Current password is incorrect'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise BadRequestError('Current password is incorrect')
         
         user.set_password(new_password)
         user.save()

@@ -13,25 +13,29 @@ from .health_views import health_check, api_status
 urlpatterns = [
     path('', api_documentation, name='api-docs'),
     path('health/', health_check, name='health-check'),
-    path('api/status/', api_status, name='api-status'),
+    path('status/', api_status, name='api-status'),
     path('admin/', admin.site.urls),
-    path('api/auth/', include('users.urls')),
-    path('api/products/', include('products.urls')),
-    path('api/cart/', include('cart.urls')),
-    path('api/orders/', include('orders.urls')),
-    path('api/coupons/', include('coupons.urls')),
-    path('api/wishlist/', include('wishlist.urls')),
-    path('api/activity-logs/', include('activity_logs.urls')),
-    path('api/contact/', include('contact.urls')),
-    path('api/config/', include('site_config.urls')),
-    path('api/reviews/', include('reviews.urls')),
+    path('auth/', include('users.urls')),
+    path('products/', include('products.urls')),
+    path('combos/', include('product_combos.urls')),
+    path('cart/', include('cart.urls')),
+    path('orders/', include('orders.urls')),
+    path('coupons/', include('coupons.urls')),
+    path('wishlist/', include('wishlist.urls')),
+    path('activity-logs/', include('activity_logs.urls')),
+    path('contact/', include('contact.urls')),
+    path('config/', include('site_config.urls')),
+    path('reviews/', include('reviews.urls')),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if getattr(settings, 'FRONTEND_DIST_DIR', None) and settings.FRONTEND_DIST_DIR.exists():
-    # Match any path that doesn't start with api/, admin/, static/, or media/
+    # Match any path that doesn't start with known backend prefixes.
     urlpatterns += [
-        re_path(r'^(?!api/|admin/|static/|media/).*$', TemplateView.as_view(template_name='index.html'))
+        re_path(
+            r'^(?!auth/|products/|combos/|cart/|orders/|coupons/|wishlist/|activity-logs/|contact/|config/|reviews/|health/|status/|admin/|static/|media/).*$',
+            TemplateView.as_view(template_name='index.html')
+        )
     ]

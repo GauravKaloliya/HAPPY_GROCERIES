@@ -27,6 +27,7 @@ class User(AbstractUser):
         db_table = 'users'
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+        managed = False
     
     def __str__(self):
         return f"{self.phone} - {self.name}" if hasattr(self, 'name') else self.phone

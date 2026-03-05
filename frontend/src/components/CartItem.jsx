@@ -13,10 +13,13 @@ const CartItem = ({ item }) => {
   const effectivePrice = parseFloat(product.effective_price || price);
   const isOnSale = effectivePrice < price;
   const displayPrice = isOnSale ? effectivePrice : price;
+  const categoryName = product.category?.name || product.category || '';
+  const brandName = product.brand?.name || product.brand_name || '';
+  const defaultVariantLabel = product.default_variant?.variant_name || '';
 
   const handleUpdateQuantity = async (newQuantity) => {
     if (isUpdating) return;
-    
+
     if (newQuantity <= 0) {
       await handleRemove();
       return;
@@ -25,7 +28,7 @@ const CartItem = ({ item }) => {
       toast.error('Maximum stock reached!');
       return;
     }
-    
+
     setIsUpdating(true);
     try {
       await dispatch(updateCartItem({ itemId: item.id, quantity: newQuantity })).unwrap();
@@ -38,7 +41,7 @@ const CartItem = ({ item }) => {
 
   const handleRemove = async () => {
     if (isRemoving) return;
-    
+
     setIsRemoving(true);
     try {
       await dispatch(removeFromCart(item.id)).unwrap();
@@ -60,11 +63,16 @@ const CartItem = ({ item }) => {
   return (
     <div className="cart-item">
       <div className="cart-item-image">
-        {product.emoji || categoryEmojis[product.category] || '📦'}
+        {product.emoji || categoryEmojis[categoryName?.toLowerCase?.()] || '📦'}
       </div>
 
       <div className="cart-item-details">
         <h3>{product.name || 'Product'}</h3>
+        {(brandName || defaultVariantLabel) && (
+          <p className="cart-item-meta">
+            {[brandName, defaultVariantLabel].filter(Boolean).join(' • ')}
+          </p>
+        )}
         <div className="cart-item-price">
           {isOnSale ? (
             <>
@@ -79,7 +87,7 @@ const CartItem = ({ item }) => {
           )}
         </div>
 
-        <div className="quantity-controls" style={{ marginTop: '0.5rem' }}>
+        <div className="quantity-controls cart-item-qty-controls">
           <button
             className="qty-btn"
             onClick={() => handleUpdateQuantity(item.quantity - 1)}

@@ -34,54 +34,31 @@ const About = () => {
       <section className="about-section">
         <h2>Our Story 📖</h2>
         <p>
-          Happy Groceries started with a simple mission: to make grocery shopping 
-          a delightful experience. We believe that fresh, quality food should be 
+          Happy Groceries started with a simple mission: to make grocery shopping
+          a delightful experience. We believe that fresh, quality food should be
           accessible to everyone, delivered with a smile! 🌟
         </p>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Our Team 👥</h3>
-        <div className="team-section" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '1.5rem',
-          marginBottom: '2rem'
-        }}>
-          <div className="team-card" style={{
-            background: 'var(--bg-white)',
-            borderRadius: 'var(--border-radius)',
-            padding: '1.5rem',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow)',
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👨‍💼</div>
-            <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-dark)' }}>Gaurav Kaloliya</h4>
-            <p style={{ color: 'var(--primary-pink)', fontWeight: 600, margin: 0 }}>Founder & CTO</p>
+        <h3>Our Team 👥</h3>
+        <div className="team-section">
+          <div className="team-card">
+            <div className="team-card-avatar">👨</div>
+            <h4>Gaurav Kaloliya</h4>
+            <p>Founder & CTO</p>
           </div>
-          <div className="team-card" style={{
-            background: 'var(--bg-white)',
-            borderRadius: 'var(--border-radius)',
-            padding: '1.5rem',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow)',
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👩‍💼</div>
-            <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-dark)' }}>Arpita Makwana</h4>
-            <p style={{ color: 'var(--primary-pink)', fontWeight: 600, margin: 0 }}>CAO</p>
+          <div className="team-card">
+            <div className="team-card-avatar">👩‍💻</div>
+            <h4>Arpita Makwana</h4>
+            <p>CAO</p>
           </div>
-          <div className="team-card" style={{
-            background: 'var(--bg-white)',
-            borderRadius: 'var(--border-radius)',
-            padding: '1.5rem',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow)',
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👩‍💼</div>
-            <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-dark)' }}>Nirali Joshi</h4>
-            <p style={{ color: 'var(--primary-pink)', fontWeight: 600, margin: 0 }}>CMO</p>
+          <div className="team-card">
+            <div className="team-card-avatar">👩‍💼</div>
+            <h4>Nirali Joshi</h4>
+            <p>CMO</p>
           </div>
         </div>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Contact Us 📞</h3>
+        <h3>Contact Us 📞</h3>
         <div className="contact-info">
           <p>📍 Porbandar, Gujarat 360575</p>
           <p>📞 +91 9875124142</p>
@@ -89,7 +66,7 @@ const About = () => {
           <p>🕒 Mon - Sat: 8AM - 10PM | Sunday: 9AM - 8PM</p>
         </div>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Send us a Message 💌</h3>
+        <h3>Send us a Message 💌</h3>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Name</label>

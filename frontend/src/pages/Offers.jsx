@@ -241,7 +241,7 @@ const Offers = () => {
           </div>
 
           {showViewMore && (
-            <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem', marginBottom: '2rem' }}>
+            <div className="view-more-wrapper">
               <button
                 className="btn-primary"
                 onClick={handleViewMore}
@@ -255,58 +255,30 @@ const Offers = () => {
       )}
 
       {/* How to Use */}
-      <div style={{
-        background: 'var(--bg-white)',
-        borderRadius: 'var(--border-radius)',
-        padding: '2rem',
-        boxShadow: 'var(--shadow)',
-        marginBottom: '3rem',
-      }}>
-        <h3 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>📖 How to Use Coupons</h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '2rem',
-        }}>
+      <div className="offers-how-to">
+        <h3>📖 How to Use Coupons</h3>
+        <div className="offers-how-to-grid">
           {[
             { step: '1', title: 'Copy Code', desc: 'Click the "Copy Code" button on any coupon' },
             { step: '2', title: 'Shop Products', desc: 'Add your favorite items to the cart' },
             { step: '3', title: 'Apply at Checkout', desc: 'Paste the code in the coupon field during checkout' },
             { step: '4', title: 'Enjoy Savings!', desc: 'Watch the discount apply to your order total' },
           ].map((item) => (
-            <div key={item.step} style={{ textAlign: 'center' }}>
-              <div style={{
-                width: '50px',
-                height: '50px',
-                borderRadius: '50%',
-                background: 'var(--primary-pink)',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                margin: '0 auto 1rem',
-              }}>
+            <div key={item.step} className="offers-how-step">
+              <div className="offers-how-step-number">
                 {item.step}
               </div>
-              <h4 style={{ marginBottom: '0.5rem' }}>{item.title}</h4>
-              <p style={{ color: '#666', fontSize: '0.9rem' }}>{item.desc}</p>
+              <h4>{item.title}</h4>
+              <p>{item.desc}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Terms & Conditions */}
-      <div style={{
-        background: 'var(--bg-light)',
-        borderRadius: 'var(--border-radius)',
-        padding: '1.5rem',
-        fontSize: '0.9rem',
-        color: '#666',
-      }}>
-        <h4 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Terms & Conditions</h4>
-        <ul style={{ paddingLeft: '1.5rem', margin: 0 }}>
+      <div className="offers-terms">
+        <h4>Terms & Conditions</h4>
+        <ul>
           <li>Coupons cannot be combined with other offers</li>
           <li>Each coupon can be used only once per user</li>
           <li>Coupons are valid until the expiry date mentioned</li>

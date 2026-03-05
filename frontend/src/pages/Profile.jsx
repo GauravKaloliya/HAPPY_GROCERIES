@@ -118,7 +118,7 @@ const Profile = () => {
     const email = formData.email;
     if (!email || email === initialData.email) return;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return;
-    
+
     setValidationStatus(prev => ({ ...prev, email: { checking: true, available: null } }));
     try {
       const response = await authAPI.checkEmail(email);
@@ -136,7 +136,7 @@ const Profile = () => {
     const phone = formData.phone;
     if (!phone || phone === initialData.phone) return;
     if (!/^\d{10}$/.test(phone)) return;
-    
+
     setValidationStatus(prev => ({ ...prev, phone: { checking: true, available: null } }));
     try {
       const response = await authAPI.checkPhone(phone);
@@ -190,7 +190,7 @@ const Profile = () => {
       const nameParts = formData.name.trim().split(' ').filter(Boolean);
       const firstName = nameParts.shift() || '';
       const lastName = nameParts.join(' ');
-      
+
       await dispatch(updateProfile({
         first_name: firstName,
         last_name: lastName,
@@ -217,7 +217,7 @@ const Profile = () => {
       toast.error('Geolocation is not supported by your browser');
       return;
     }
-    
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
@@ -256,7 +256,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="container">
+    <div className="container profile-page">
       <div className="profile-container">
         <div className="profile-card">
           <div className="profile-header">
@@ -295,7 +295,7 @@ const Profile = () => {
             <div className="detail-item">
               <span className="detail-label">Email</span>
               {editing ? (
-                <div style={{ position: 'relative' }}>
+                <div>
                   <input
                     type="email"
                     name="email"
@@ -305,10 +305,10 @@ const Profile = () => {
                     className={`profile-edit-input ${formErrors.email ? 'input-error' : ''}`}
                     placeholder="Enter your email"
                     maxLength="254"
-                    style={{ paddingRight: validationStatus.email.available !== null ? '2.5rem' : undefined }}
+
                   />
                   {getValidationIcon('email') && (
-                    <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <span>
                       {getValidationIcon('email')}
                     </span>
                   )}
@@ -319,9 +319,9 @@ const Profile = () => {
               )}
             </div>
             <div className="detail-item">
-              <span className="detail-label">Phone</span>
+              <span className="detail-label">Phone *</span>
               {editing ? (
-                <div style={{ position: 'relative' }}>
+                <div>
                   <input
                     type="tel"
                     name="phone"
@@ -332,10 +332,10 @@ const Profile = () => {
                     className={`profile-edit-input ${formErrors.phone ? 'input-error' : ''}`}
                     placeholder="Enter 10-digit phone number"
                     maxLength="10"
-                    style={{ paddingRight: validationStatus.phone.available !== null ? '2.5rem' : undefined }}
+
                   />
                   {getValidationIcon('phone') && (
-                    <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                    <span>
                       {getValidationIcon('phone')}
                     </span>
                   )}
@@ -346,10 +346,10 @@ const Profile = () => {
               )}
             </div>
             <div className="detail-item">
-              <span className="detail-label">Address *</span>
+              <span className="detail-label">Address</span>
               {editing ? (
                 <div>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <div className="profile-address-row">
                     <input
                       type="text"
                       name="address"
@@ -358,13 +358,12 @@ const Profile = () => {
                       className="profile-edit-input"
                       placeholder="Enter your address"
                       maxLength="500"
-                      style={{ flex: 1 }}
-                      required
+
                     />
                     <button
                       type="button"
                       onClick={handleGetLocation}
-                      className="btn-location"
+                      className="btn-location profile-location-btn"
                       title="Get current location"
                     >
                       📍
@@ -381,11 +380,11 @@ const Profile = () => {
           <div className="profile-actions">
             {editing ? (
               <>
-                <button 
-                  onClick={handleSave} 
-                  className="btn-submit" 
+                <button
+                  onClick={handleSave}
+                  className="btn-submit"
                   disabled={loading || !hasChanges()}
-                  style={{ opacity: hasChanges() ? 1 : 0.5 }}
+
                 >
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -412,7 +411,7 @@ const Profile = () => {
               <Link to="/orders" className="summary-link">View Orders →</Link>
             </div>
           </div>
-          
+
           <div className="summary-card">
             <div className="summary-icon">❤️</div>
             <div className="summary-content">
@@ -423,7 +422,7 @@ const Profile = () => {
               <Link to="/wishlist" className="summary-link">View Wishlist →</Link>
             </div>
           </div>
-          
+
           <div className="summary-card">
             <div className="summary-icon">🎁</div>
             <div className="summary-content">

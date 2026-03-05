@@ -25,6 +25,8 @@ const getInitialItems = () => {
   return accessToken ? [] : getGuestCart();
 };
 
+const getCartProductId = (item) => item?.product?.id ?? item?.id;
+
 const initialState = {
   items: getInitialItems(),
   loading: false,
@@ -57,7 +59,7 @@ export const addToCart = createAsyncThunk(
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         const items = getGuestCart();
-        const existingItemIndex = items.findIndex(item => item.id === productId || item.product?.id === productId);
+        const existingItemIndex = items.findIndex((item) => getCartProductId(item) === productId);
         let productData = product || (existingItemIndex >= 0 ? items[existingItemIndex].product : null);
 
         if (!productData) {
@@ -100,7 +102,7 @@ export const updateCartItem = createAsyncThunk(
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         const items = getGuestCart();
-        const itemIndex = items.findIndex(item => item.id === itemId || item.product?.id === itemId);
+        const itemIndex = items.findIndex((item) => getCartProductId(item) === itemId);
         if (itemIndex === -1) {
           return rejectWithValue('Cart item not found');
         }
@@ -135,7 +137,7 @@ export const removeFromCart = createAsyncThunk(
     try {
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
-        const items = getGuestCart().filter(item => item.id !== itemId && item.product?.id !== itemId);
+        const items = getGuestCart().filter((item) => getCartProductId(item) !== itemId);
         saveGuestCart(items);
         return { items };
       }
@@ -226,7 +228,13 @@ const cartSlice = createSlice({
           state.items = action.payload.items || [];
         } else if (action.payload && action.payload.id) {
           // Single item response - check if it already exists
-          const existingIndex = state.items.findIndex(item => item.id === action.payload.id || item.product?.id === action.payload.product?.id);
+          const payloadProductId = action.payload.product?.id;
+          const existingIndex = state.items.findIndex((item) => {
+            if (payloadProductId) {
+              return item.product?.id === payloadProductId;
+            }
+            return item.id === action.payload.id;
+          });
           if (existingIndex >= 0) {
             state.items[existingIndex] = action.payload;
           } else {
@@ -290,8 +298,7 @@ const cartSlice = createSlice({
 export const selectCartItems = (state) => state.cart.items || [];
 export const selectCartLoading = (state) => state.cart.loading;
 export const selectCartError = (state) => state.cart.error;
-export const selectCartCount = (state) =>
-  (state.cart.items || []).reduce((total, item) => total + (item.quantity || 0), 0);
+export const selectCartCount = (state) => (state.cart.items || []).length;
 export const selectAppliedCoupon = (state) => state.cart.appliedCoupon;
 
 export const selectCartSubtotal = (state) => {

@@ -33,6 +33,7 @@ class ContactMessage(models.Model):
         verbose_name = 'Contact Message'
         verbose_name_plural = 'Contact Messages'
         ordering = ['-created_at']
+        managed = False
         indexes = [
             models.Index(fields=['user'], name='contact_messages_user_idx'),
             models.Index(fields=['status'], name='contact_messages_status_idx'),

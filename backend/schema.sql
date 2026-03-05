@@ -3,6 +3,7 @@
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- =====================================================
 -- USERS
@@ -37,48 +38,124 @@ CREATE INDEX users_phone_idx ON users(phone);
 CREATE INDEX users_username_idx ON users(username);
 CREATE INDEX users_email_idx ON users(email);
 
+
+-- =====================================================
+-- BRANDS
+-- Dedicated table for product brands (e.g., Amul, Safal, Patanjali, Local Farm)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS brands (
+    id            SERIAL PRIMARY KEY,
+    name          VARCHAR(100) NOT NULL UNIQUE,
+    description   TEXT         NOT NULL DEFAULT '',
+    logo_url      VARCHAR(512),
+    is_active     BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted    BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at    TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS brands_name_trgm_idx     ON brands USING GIN (name gin_trgm_ops) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS brands_active_idx        ON brands (is_active, is_deleted)
+    WHERE is_active AND NOT is_deleted;
+CREATE INDEX IF NOT EXISTS brands_name_active_idx   ON brands (name)
+    WHERE is_active AND NOT is_deleted;
+
+
 -- =====================================================
 -- CATEGORIES
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS categories (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    description TEXT NOT NULL DEFAULT '',
-    emoji VARCHAR(10) NOT NULL DEFAULT '',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at TIMESTAMP WITH TIME ZONE
+    id            SERIAL PRIMARY KEY,
+    name          VARCHAR(80)  NOT NULL,
+    description   TEXT         NOT NULL DEFAULT '',
+    emoji         VARCHAR(10)  NOT NULL DEFAULT '',
+    parent_id     INTEGER      REFERENCES categories(id) ON DELETE SET NULL,
+    display_order INTEGER      NOT NULL DEFAULT 0,
+    is_visible    BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted    BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at    TIMESTAMPTZ,
+
+    CONSTRAINT categories_name_unique UNIQUE (name) DEFERRABLE INITIALLY DEFERRED
 );
 
-CREATE INDEX categories_name_idx ON categories(name);
+CREATE INDEX IF NOT EXISTS categories_name_trgm_idx      ON categories USING GIN (name gin_trgm_ops) WHERE is_deleted = false;
+CREATE INDEX IF NOT EXISTS categories_parent_id_idx      ON categories (parent_id);
+CREATE INDEX IF NOT EXISTS categories_display_order_idx  ON categories (display_order, name);
+CREATE INDEX IF NOT EXISTS categories_visible_active_idx ON categories (is_visible, is_deleted)
+    WHERE is_visible AND NOT is_deleted;
+
 
 -- =====================================================
--- PRODUCTS
+-- PRODUCTS (Master / template)
 -- =====================================================
-
 CREATE TABLE IF NOT EXISTS products (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
-    emoji VARCHAR(10) NOT NULL DEFAULT '',
-    rating DECIMAL(2, 1) NOT NULL DEFAULT 0.0 CHECK (rating >= 0 AND rating <= 5),
-    reviews_count INTEGER NOT NULL DEFAULT 0 CHECK (reviews_count >= 0),
-    stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
-    discount_percent INTEGER NOT NULL DEFAULT 0 CHECK (discount_percent >= 0 AND discount_percent <= 100),
-    description TEXT NOT NULL DEFAULT '',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    deleted_at TIMESTAMP WITH TIME ZONE
+    id                SERIAL PRIMARY KEY,
+    name              VARCHAR(150) NOT NULL,
+    brand_id          INTEGER      REFERENCES brands(id) ON DELETE SET NULL,
+    category_id       INTEGER      NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    description       TEXT         NOT NULL DEFAULT '',
+    search_keywords   TEXT[],
+    tags              TEXT[],
+    attributes        JSONB        DEFAULT '{}',
+    average_rating    DECIMAL(3,2) NOT NULL DEFAULT 0 CHECK (average_rating BETWEEN 0 AND 5),
+    review_count      INTEGER      NOT NULL DEFAULT 0 CHECK (review_count >= 0),
+    is_featured       BOOLEAN      NOT NULL DEFAULT FALSE,
+    is_new_arrival    BOOLEAN      NOT NULL DEFAULT FALSE,
+    is_active         BOOLEAN      NOT NULL DEFAULT TRUE,
+    image_url         VARCHAR(512),
+    created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted        BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at        TIMESTAMPTZ
 );
 
-CREATE INDEX products_name_idx ON products(name);
-CREATE INDEX products_category_is_active_idx ON products(category_id, is_active);
-CREATE INDEX products_is_deleted_idx ON products(is_deleted);
+CREATE INDEX IF NOT EXISTS products_category_active_idx    ON products (category_id, is_active)
+    WHERE is_deleted = false AND is_active;
+CREATE INDEX IF NOT EXISTS products_brand_active_idx       ON products (brand_id, is_active)
+    WHERE brand_id IS NOT NULL AND is_deleted = false AND is_active;
+CREATE INDEX IF NOT EXISTS products_popularity_idx         ON products ((average_rating * review_count) DESC NULLS LAST)
+    WHERE is_active AND NOT is_deleted;
+CREATE INDEX IF NOT EXISTS products_featured_new_idx       ON products (is_featured DESC, is_new_arrival DESC, created_at DESC)
+    WHERE is_active AND NOT is_deleted;
+CREATE INDEX IF NOT EXISTS products_gin_search_idx         ON products USING GIN (search_keywords, tags);
+CREATE INDEX IF NOT EXISTS products_gin_attributes_idx     ON products USING GIN (attributes);
 
+
+-- =====================================================
+-- PRODUCT VARIANTS (sellable SKUs)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS product_variants (
+    id                  BIGSERIAL PRIMARY KEY,
+    product_id          INTEGER      NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    sku                 VARCHAR(80)  NOT NULL,
+    variant_name        VARCHAR(120) NOT NULL,
+    price               DECIMAL(12,2) NOT NULL CHECK (price >= 0),
+    stock_quantity      INTEGER      NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
+    low_stock_threshold INTEGER      DEFAULT 10 CHECK (low_stock_threshold > 0),
+    weight              INTEGER,
+    unit_type           VARCHAR(30)  NOT NULL DEFAULT 'piece',
+    unit_value          DECIMAL(10,3) DEFAULT 1.000,
+    is_default          BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted          BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at          TIMESTAMPTZ,
+
+    CONSTRAINT variants_sku_unique         UNIQUE (sku),
+    CONSTRAINT variants_product_sku_unique UNIQUE (product_id, sku)
+);
+
+CREATE INDEX IF NOT EXISTS variants_product_id_idx      ON product_variants (product_id);
+CREATE INDEX IF NOT EXISTS variants_sku_idx             ON product_variants (sku);
+CREATE INDEX IF NOT EXISTS variants_in_stock_idx        ON product_variants (product_id, stock_quantity)
+    WHERE stock_quantity > 0 AND NOT is_deleted;
+CREATE INDEX IF NOT EXISTS variants_low_stock_alert_idx ON product_variants (stock_quantity)
+    WHERE stock_quantity > 0 AND stock_quantity <= 20 AND NOT is_deleted;
+CREATE INDEX IF NOT EXISTS variants_default_idx         ON product_variants (product_id)
+    WHERE is_default AND NOT is_deleted;
 -- =====================================================
 -- CARTS
 -- =====================================================
@@ -155,7 +232,7 @@ CREATE INDEX orders_user_created_idx ON orders(user_id, created_at DESC);
 CREATE TABLE IF NOT EXISTS order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-    product_id INTEGER REFERENCES products(id) ON DELETE PROTECT DEFERRABLE INITIALLY DEFERRED,
+    product_id INTEGER REFERENCES products(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
     product_name VARCHAR(100) NOT NULL,
     product_price DECIMAL(10, 2) NOT NULL CHECK (product_price >= 0),
     product_emoji VARCHAR(10) NOT NULL DEFAULT '',
@@ -366,6 +443,7 @@ CREATE TRIGGER update_coupons_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+
 -- =====================================================
 -- ACTIVITY LOGS
 -- =====================================================
@@ -505,3 +583,99 @@ CREATE TABLE IF NOT EXISTS token_blacklist_outstandingtoken (
 
 CREATE INDEX token_blacklist_outstandingtoken_jti_idx ON token_blacklist_outstandingtoken(jti);
 CREATE INDEX token_blacklist_outstandingtoken_user_idx ON token_blacklist_outstandingtoken(user_id);
+
+-- =====================================================
+-- PRODUCT COMBOS / BUNDLES
+-- Predefined combos (2–3 items) created by app/admin
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS product_combos (
+    id                  BIGSERIAL PRIMARY KEY,
+    name                VARCHAR(150) NOT NULL,
+    description         TEXT         NOT NULL DEFAULT '',
+    image_url           VARCHAR(512),
+    price               DECIMAL(12,2) NOT NULL CHECK (price >= 0),
+    is_active           BOOLEAN      NOT NULL DEFAULT TRUE,
+    is_featured         BOOLEAN      NOT NULL DEFAULT FALSE,
+    stock_status        VARCHAR(20)  NOT NULL DEFAULT 'available'
+        CHECK (stock_status IN ('available', 'low', 'out_of_stock')),
+    display_order       INTEGER      NOT NULL DEFAULT 0,
+    created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted          BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at          TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS combos_active_featured_idx ON product_combos (is_active, is_featured, display_order)
+    WHERE is_deleted = false AND is_active;
+CREATE INDEX IF NOT EXISTS combos_price_idx ON product_combos (price)
+    WHERE is_deleted = false AND is_active;
+
+DROP TRIGGER IF EXISTS update_product_combos_updated_at ON product_combos;
+CREATE TRIGGER update_product_combos_updated_at
+    BEFORE UPDATE ON product_combos
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- PRODUCT COMBO ITEMS
+-- References specific variants
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS product_combo_items (
+    id              BIGSERIAL PRIMARY KEY,
+    combo_id        BIGINT       NOT NULL REFERENCES product_combos(id) ON DELETE CASCADE,
+    product_id      INTEGER      NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+    variant_id      BIGINT       NOT NULL REFERENCES product_variants(id) ON DELETE RESTRICT,
+    quantity        INTEGER      NOT NULL DEFAULT 1 CHECK (quantity >= 1),
+    override_price  DECIMAL(12,2) CHECK (override_price IS NULL OR override_price >= 0),
+    display_order   INTEGER      NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    is_deleted      BOOLEAN      NOT NULL DEFAULT FALSE,
+    deleted_at      TIMESTAMPTZ,
+    CONSTRAINT combo_items_unique UNIQUE (combo_id, variant_id)
+);
+
+CREATE INDEX IF NOT EXISTS combo_items_combo_idx ON product_combo_items (combo_id);
+CREATE INDEX IF NOT EXISTS combo_items_variant_idx ON product_combo_items (variant_id);
+CREATE INDEX IF NOT EXISTS combo_items_product_idx ON product_combo_items (product_id);
+
+-- Validate product/variant relation and max 3 items per combo.
+CREATE OR REPLACE FUNCTION validate_product_combo_item()
+RETURNS TRIGGER AS $$
+DECLARE
+    variant_product_id INTEGER;
+    item_count INTEGER;
+BEGIN
+    SELECT product_id INTO variant_product_id
+    FROM product_variants
+    WHERE id = NEW.variant_id;
+
+    IF variant_product_id IS NULL THEN
+        RAISE EXCEPTION 'Variant % does not exist', NEW.variant_id;
+    END IF;
+
+    IF NEW.product_id <> variant_product_id THEN
+        RAISE EXCEPTION 'variant_id % does not belong to product_id %', NEW.variant_id, NEW.product_id;
+    END IF;
+
+    SELECT COUNT(*) INTO item_count
+    FROM product_combo_items
+    WHERE combo_id = NEW.combo_id
+      AND is_deleted = false
+      AND (TG_OP = 'INSERT' OR id <> NEW.id);
+
+    IF item_count >= 3 THEN
+        RAISE EXCEPTION 'A combo cannot have more than 3 active items';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_validate_product_combo_item ON product_combo_items;
+CREATE TRIGGER trg_validate_product_combo_item
+BEFORE INSERT OR UPDATE OF combo_id, product_id, variant_id, is_deleted ON product_combo_items
+FOR EACH ROW
+WHEN (NEW.is_deleted = false)
+EXECUTE FUNCTION validate_product_combo_item();

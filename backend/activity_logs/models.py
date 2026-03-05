@@ -31,12 +31,12 @@ class ActivityLog(models.Model):
         blank=True,
         related_name='activity_logs'
     )
-    action = models.CharField(max_length=30, choices=ACTION_CHOICES, db_index=True)
-    page = models.CharField(max_length=30, db_index=True)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES, db_index=True)
+    page = models.CharField(max_length=255, db_index=True)
     details = models.JSONField(default=dict, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
-    session_id = models.CharField(max_length=30, blank=True, db_index=True)
+    session_id = models.CharField(max_length=255, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -44,6 +44,7 @@ class ActivityLog(models.Model):
         verbose_name = 'Activity Log'
         verbose_name_plural = 'Activity Logs'
         ordering = ['-created_at']
+        managed = False
         indexes = [
             models.Index(fields=['user', 'created_at'], name='act_logs_user_created_idx'),
             models.Index(fields=['action', 'created_at'], name='act_logs_action_created_idx'),

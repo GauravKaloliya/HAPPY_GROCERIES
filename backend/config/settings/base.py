@@ -10,7 +10,15 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from datetime import timedelta
 import dj_database_url
+
+# Parse comma-separated env values into a clean list.
+def parse_csv_env(name, default=''):
+    value = os.environ.get(name, default)
+    if not value:
+        return []
+    return [item.strip() for item in value.split(',') if item.strip()]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
@@ -44,6 +52,8 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'users',
     'products',
+    'product_combos',
+    'system_tables',
     'cart',
     'orders',
     'coupons',
@@ -59,9 +69,10 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    # 'config.security_middleware.SecurityMiddleware',
-    # 'config.security_middleware.APIKeyMiddleware',
-    # 'config.security_middleware.JWTAuthenticationMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'config.observability_middleware.ObservabilityMiddleware',
+    'config.error_middleware.GlobalErrorMiddleware',
+    'config.security_middleware.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -97,37 +108,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# Only use DATABASE_URL for database configuration
-try:
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url and database_url.startswith('postgres://'):
-        # Convert postgres:// to postgresql:// for dj-database-url
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
-    if database_url:
-        DATABASES = {
-            'default': dj_database_url.parse(
-                database_url,
-                conn_max_age=600,
-                ssl_require=True
-            )
-        }
-    else:
-        # Fallback to SQLite for development
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
-except Exception:
-    # Fallback to SQLite if DATABASE_URL is invalid
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# Only use DATABASE_URL for database configuration (strict; no fallback)
+database_url = os.environ['DATABASE_URL']
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+DATABASES = {
+    'default': dj_database_url.parse(
+        database_url,
+        conn_max_age=600,
+        ssl_require=True,
+    )
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -196,10 +188,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
+    'EXCEPTION_HANDLER': 'config.exceptions.custom_exception_handler',
 }
-
-# JWT Settings
-from datetime import timedelta
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
@@ -212,31 +202,21 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Redis Configuration for token blacklisting
-REDIS_URL = os.environ.get('REDIS_URL')
+# Redis Configuration for token blacklisting and caching (strict; required)
+REDIS_URL = os.environ['REDIS_URL']
 
-# Cache Configuration - uses REDIS_URL if available, otherwise falls back to local memory
-if REDIS_URL:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL,
-        }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
     }
-else:
-    # Fallback to local memory cache when Redis is not available
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
-        }
-    }
+}
 CORS_ALLOW_CREDENTIALS = True
 # Use comma-separated string in environment variable: https://example.com,https://other.com
-CORS_ALLOWED_ORIGINS = os.environ.get(
+CORS_ALLOWED_ORIGINS = parse_csv_env(
     'CORS_ALLOWED_ORIGINS',
     'https://happygroceries.shop,https://www.happygroceries.shop,http://localhost:5173,http://localhost:3000'
-).split(',')
+)
 CORS_ALLOW_ALL_ORIGINS = False
 
 # Custom User Model
@@ -249,15 +229,29 @@ RATELIMIT_USE_CACHE = 'default'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'request_id': {
+            '()': 'config.logging_utils.RequestIdFilter',
+        },
+    },
+    'formatters': {
+        'json': {
+            '()': 'config.logging_utils.JsonFormatter',
+        },
+    },
     'handlers': {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'django.log',
+            'formatter': 'json',
+            'filters': ['request_id'],
         },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
+            'formatter': 'json',
+            'filters': ['request_id'],
         },
     },
     'loggers': {
@@ -266,23 +260,31 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'observability': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'api_errors': {
+            'handlers': ['file', 'console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
     },
 }
 
 # Security Headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Session Configuration - use database-backed sessions when Redis is not available
-if REDIS_URL:
-    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-    SESSION_CACHE_ALIAS = 'default'
-else:
-    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+# Session Configuration (strict; Redis-backed only)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
 SESSION_COOKIE_AGE = 1800  # 30 minutes
 
 # Security Configuration
 RATE_LIMIT_REQUESTS = 100  # requests per window
 RATE_LIMIT_WINDOW = 60     # seconds
+AUTH_RATE_LIMIT_REQUESTS = 25
 BLOCK_DURATION = 300       # seconds (5 minutes)
 MAX_REQUEST_SIZE = 10 * 1024 * 1024  # 10MB
 TRUSTED_HOSTS = []
@@ -295,6 +297,9 @@ API_KEYS = [
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_RESOURCE_POLICY = 'same-site'
 
 # SSL Settings (for production)
 SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'

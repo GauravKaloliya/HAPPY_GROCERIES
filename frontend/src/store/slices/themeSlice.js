@@ -5,7 +5,7 @@ const getInitialTheme = () => {
   if (stored !== null) {
     return stored === 'true';
   }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return false;
 };
 
 const initialState = {
@@ -35,8 +35,13 @@ const themeSlice = createSlice({
       }
     },
     initializeTheme: (state) => {
-      if (state.isDarkMode) {
+      const storedTheme = getInitialTheme();
+      state.isDarkMode = storedTheme;
+      localStorage.setItem('darkMode', storedTheme.toString());
+      if (storedTheme) {
         document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
       }
     },
   },

@@ -84,7 +84,7 @@ const Cart = () => {
           <div className="empty-state-icon">🛒</div>
           <h3>Your cart is empty!</h3>
           <p>Looks like you haven't added anything yet.</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-primary">
             Start Shopping
           </Link>
         </div>
@@ -96,7 +96,7 @@ const Cart = () => {
     <div className="cart-container">
       <div className="cart-items">
         <div className="cart-header-row">
-          <p style={{ fontWeight: 600 }}>
+          <p>
             {items.length} {items.length === 1 ? 'item' : 'items'}
           </p>
           <button onClick={handleClearCart} className="btn-remove">
@@ -108,22 +108,22 @@ const Cart = () => {
           <CartItem key={item.id} item={item} />
         ))}
 
-        <Link to="/shop" style={{ color: 'var(--primary-pink)', textDecoration: 'none', fontWeight: 600, marginTop: '1rem', display: 'inline-block' }}>
+        <Link to="/shop" className="back-link continue-shopping-link">
           ← Continue Shopping
         </Link>
       </div>
 
       <div className="cart-summary">
-        <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Order Summary</h2>
+        <h2>Order Summary</h2>
 
         <div className="coupon-section">
           {appliedCoupon ? (
             <div className="applied-coupon-info">
               <div className="applied-coupon-row">
                 <span>Coupon: <strong>{appliedCoupon.code}</strong></span>
-                <button 
+                <button
                   onClick={handleRemoveCoupon}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-dark)', cursor: 'pointer', fontWeight: 600 }}
+                  className="coupon-remove-btn"
                 >
                   ✕
                 </button>

@@ -2,11 +2,11 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 
 from .models import WishlistItem
-from .serializers import WishlistItemSerializer, WishlistItemCreateSerializer
+from config.error_handling import BadRequestError, ConflictError, NotFoundError
+from .serializers import WishlistItemSerializer
 from products.models import Product
 
 
@@ -30,18 +30,12 @@ class WishlistViewSet(viewsets.ModelViewSet):
         product_id = request.data.get('product_id')
         
         if not product_id:
-            return Response(
-                {'error': 'product_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise BadRequestError('product_id is required')
         
         try:
             product = Product.objects.get(id=product_id, is_deleted=False)
         except Product.DoesNotExist:
-            return Response(
-                {'error': 'Product not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            raise NotFoundError('Product not found')
         
         wishlist_item, created = WishlistItem.objects.get_or_create(
             user=request.user,
@@ -56,11 +50,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
         if created:
             serializer = self.get_serializer(wishlist_item)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(
-                {'error': 'Product already in wishlist'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        raise ConflictError('Product already in wishlist')
     
     @action(detail=True, methods=['get'], url_path='check')
     def check_item(self, request, pk=None):
@@ -81,10 +71,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
         product_id = request.data.get('product_id')
         
         if not product_id:
-            return Response(
-                {'error': 'product_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise BadRequestError('product_id is required')
         
         try:
             wishlist_item = WishlistItem.objects.get(
@@ -98,10 +85,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_200_OK
             )
         except WishlistItem.DoesNotExist:
-            return Response(
-                {'error': 'Product not in wishlist'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            raise NotFoundError('Product not in wishlist')
     
     @action(detail=False, methods=['post'])
     def clear(self, request):

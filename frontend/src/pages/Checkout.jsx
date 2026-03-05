@@ -77,7 +77,7 @@ const Checkout = () => {
           <div className="empty-state-icon">🛒</div>
           <h3>Your cart is empty</h3>
           <p>Add some items before checking out</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-primary">
             Go Shopping
           </Link>
         </div>
@@ -109,11 +109,11 @@ const Checkout = () => {
           );
           const data = await response.json();
           const address = data.display_name || `${latitude}, ${longitude}`;
-          
+
           // Improved city detection - prioritize city/district over county/subdistrict
           const addr = data.address || {};
           let city = '';
-          
+
           // Try to find the actual city, avoiding subdistricts/talukas and countries
           if (addr.city) {
             city = addr.city;
@@ -126,7 +126,7 @@ const Checkout = () => {
           } else if (addr.village) {
             city = addr.village;
           }
-          
+
           // If still no city, try to extract from display_name
           if (!city && address) {
             const parts = address.split(',').map(p => p.trim());
@@ -152,12 +152,12 @@ const Checkout = () => {
               }
             }
           }
-          
+
           // If still showing "India" as city, don't set it
           if (city.toLowerCase() === 'india') {
             city = '';
           }
-          
+
           setDeliveryInfo(prev => ({
             ...prev,
             address,
@@ -281,7 +281,7 @@ const Checkout = () => {
     <div className="container">
     <div className="checkout-container">
       <div className="checkout-form">
-        <h2 style={{ marginBottom: '1.5rem' }}>Delivery Information</h2>
+        <h2>Delivery Information</h2>
 
         <div className="form-group">
           <label>Full Name</label>
@@ -309,25 +309,13 @@ const Checkout = () => {
         </div>
 
         <div className="form-group">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <label style={{ margin: 0 }}>Delivery Address</label>
+          <div className="checkout-location-header">
+            <label>Delivery Address</label>
             <button
               type="button"
               onClick={handleGetLocation}
               disabled={fetchingLocation}
-              style={{
-                background: 'var(--primary-pink)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.3rem 0.75rem',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                cursor: fetchingLocation ? 'wait' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-              }}
+              className="btn-location checkout-location-btn"
             >
               {fetchingLocation ? '⏳ Fetching...' : '📍 Use My Location'}
             </button>
@@ -392,23 +380,30 @@ const Checkout = () => {
           onClick={handlePlaceOrder}
           className="btn-submit"
           disabled={loading || !isFormValid()}
-          style={{
-            marginTop: '1rem',
-            opacity: isFormValid() ? 1 : 0.5,
-            cursor: isFormValid() ? 'pointer' : 'not-allowed',
-          }}
+
         >
           {loading ? 'Placing Order...' : 'Place Order'}
         </button>
       </div>
 
       <div className="order-summary">
-        <h2 style={{ marginBottom: '1.5rem' }}>Order Summary</h2>
+        <h2>Order Summary</h2>
 
-        <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem' }}>
+        <div>
           {items.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-              <span>{item.product.name} x {item.quantity}</span>
+            <div key={item.id} className="checkout-order-item">
+              <div className="checkout-order-item-main">
+                <span>{item.product.name} x {item.quantity}</span>
+                <small className="checkout-order-item-meta">
+                  {[
+                    item.product?.default_variant?.variant_name,
+                    item.product?.default_variant?.sku && `SKU: ${item.product.default_variant.sku}`,
+                    item.product?.default_variant?.unit_type && item.product?.default_variant?.unit_value
+                      ? `${item.product.default_variant.unit_value} ${item.product.default_variant.unit_type}`
+                      : item.product?.default_variant?.unit_type || null,
+                  ].filter(Boolean).join(' • ') || 'Default variant'}
+                </small>
+              </div>
               <span>{formatPrice((item.product.effective_price || item.product.price) * item.quantity)}</span>
             </div>
           ))}
