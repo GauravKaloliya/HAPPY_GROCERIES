@@ -24,8 +24,6 @@ const Login = () => {
 
   useEffect(() => {
     dispatch(clearError());
-    setFormErrors({});
-    setSubmitError('');
   }, [dispatch]);
 
   const handleChange = (e) => {
@@ -58,12 +56,12 @@ const Login = () => {
   };
 
   const parseErrorMessage = (err) => {
-    if (!err) return 'Invalid phone number or password.';
+    if (!err) return 'Phone number / password is incorrect.';
 
     if (typeof err === 'string') {
       const lower = err.toLowerCase();
       if (lower.includes('not registered') || lower.includes('not found')) {
-        return 'Invalid phone number or password.';
+        return 'Phone number / password is incorrect.';
       }
       if (lower.includes('locked') || lower.includes('banned')) {
         return 'Your account has been temporarily locked. Please try again later.';
@@ -74,29 +72,29 @@ const Login = () => {
       if (lower.includes('network') || lower.includes('connection')) {
         return 'Network error. Please check your connection.';
       }
-      return 'Invalid phone number or password.';
+      return 'Phone number / password is incorrect.';
     }
 
     if (typeof err === 'object') {
       if (err.error) {
         const lower = err.error.toLowerCase();
         if (lower.includes('not registered') || lower.includes('not found') || lower.includes('incorrect') || lower.includes('invalid') || lower.includes('password')) {
-          return 'Invalid phone number or password.';
+          return 'Phone number / password is incorrect.';
         }
         if (lower.includes('locked')) {
           return 'Your account has been temporarily locked. Please try again later.';
         }
-        return 'Invalid phone number or password.';
+        return 'Phone number / password is incorrect.';
       }
       if (err.detail) {
-        return 'Invalid phone number or password.';
+        return 'Phone number / password is incorrect.';
       }
       if (err.non_field_errors) {
-        return 'Invalid phone number or password.';
+        return 'Phone number / password is incorrect.';
       }
     }
 
-    return 'Invalid phone number or password.';
+    return 'Phone number / password is incorrect.';
   };
 
   const handleSubmit = async (e) => {
@@ -177,7 +175,7 @@ const Login = () => {
           </div>
 
           {submitError && (
-            <div className="error-message show" style={{ marginBottom: '1rem' }}>
+            <div className="error-message show">
               {submitError}
             </div>
           )}
@@ -195,7 +193,7 @@ const Login = () => {
           Don&apos;t have an account? <Link to="/signup" onClick={handleSignupClick}>Sign up</Link>
         </p>
 
-        <p className="auth-link" style={{ marginTop: '0.5rem' }}>
+        <p className="auth-link">
           <Link to="/">← Back to home</Link>
         </p>
       </div>

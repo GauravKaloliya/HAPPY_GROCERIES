@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Coupon, CouponUsage
+from .models import Coupon
 
 
 class CouponSerializer(serializers.ModelSerializer):
@@ -15,9 +15,9 @@ class CouponSerializer(serializers.ModelSerializer):
             'min_order_value', 'max_discount', 'applicable_categories',
             'first_order_only', 'usage_limit', 'usage_count',
             'is_active', 'valid_from', 'valid_until', 'is_valid',
-            'days_until_expiry', 'created_at'
+            'days_until_expiry', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'usage_count', 'created_at']
+        read_only_fields = ['id', 'usage_count', 'created_at', 'updated_at']
 
 
 class CouponValidationSerializer(serializers.Serializer):

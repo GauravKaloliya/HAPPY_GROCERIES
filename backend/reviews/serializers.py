@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProductReview, ReviewHelpful
+from .models import ProductReview
 
 
 class ProductReviewSerializer(serializers.ModelSerializer):
@@ -36,7 +36,7 @@ class ProductReviewSerializer(serializers.ModelSerializer):
 class CreateReviewSerializer(serializers.ModelSerializer):
     """Serializer for creating reviews."""
     
-    title = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    title = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
         model = ProductReview
@@ -48,9 +48,9 @@ class CreateReviewSerializer(serializers.ModelSerializer):
         return value
     
     def validate_title(self, value):
-        # Title is optional - return None if empty
+        # Title is optional but DB column is NOT NULL with default ''
         if not value or not value.strip():
-            return None
+            return ''
         return value.strip()
 
 

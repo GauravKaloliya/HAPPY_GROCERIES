@@ -39,7 +39,7 @@ export const login = createAsyncThunk(
       if (contentType && contentType.includes('text/html')) {
         return rejectWithValue('Server error. Please try again later.');
       }
-      
+
       // Return the full error response for better error handling
       const errorData = error.response?.data;
       if (errorData) {

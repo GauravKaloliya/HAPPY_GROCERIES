@@ -3,12 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.utils import timezone
-from django.db.models import Prefetch, Q, F
-from datetime import timedelta
+from django.db import DatabaseError
+from django.db.models import Q, F
 
 from .models import Coupon, CouponUsage
+from config.error_handling import BadRequestError, NotFoundError, ServiceUnavailableError
 from .serializers import (
-    CouponSerializer, CouponValidationSerializer, ValidateCouponResponseSerializer
+    CouponSerializer, CouponValidationSerializer
 )
 
 
@@ -19,51 +20,63 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CouponSerializer
     
     def get_queryset(self):
-        queryset = Coupon.objects.filter(is_active=True, is_deleted=False)
-        
-        # Filter valid coupons only
-        now = timezone.now()
-        queryset = queryset.filter(
-            Q(valid_from__isnull=True) | Q(valid_from__lte=now)
-        ).filter(
-            Q(valid_until__isnull=True) | Q(valid_until__gte=now)
-        )
-        
-        # Don't show expired usage limit
-        queryset = queryset.exclude(
-            Q(usage_limit__isnull=False) & Q(usage_count__gte=F('usage_limit'))
-        )
-        
-        return queryset
+        try:
+            queryset = Coupon.objects.filter(is_active=True, is_deleted=False)
+
+            # Filter valid coupons only
+            now = timezone.now()
+            queryset = queryset.filter(
+                Q(valid_from__isnull=True) | Q(valid_from__lte=now)
+            ).filter(
+                Q(valid_until__isnull=True) | Q(valid_until__gte=now)
+            )
+
+            # Don't show expired usage limit
+            queryset = queryset.exclude(
+                Q(usage_limit__isnull=False) & Q(usage_count__gte=F('usage_limit'))
+            )
+
+            return queryset
+        except DatabaseError as exc:
+            raise ServiceUnavailableError(
+                'Coupon functionality is unavailable because required schema objects are missing',
+                code='schema_mismatch',
+            ) from exc
     
     def list(self, request, *args, **kwargs):
         """Override list to support limit and offset parameters."""
-        limit = request.query_params.get('limit')
-        offset = request.query_params.get('offset')
-        queryset = self.filter_queryset(self.get_queryset())
+        try:
+            limit = request.query_params.get('limit')
+            offset = request.query_params.get('offset')
+            queryset = self.filter_queryset(self.get_queryset())
 
-        # Get total count before slicing
-        total_count = queryset.count()
-        
-        if offset:
-            try:
-                offset = int(offset)
-                queryset = queryset[offset:]
-            except (ValueError, TypeError):
-                pass
-        
-        if limit:
-            try:
-                limit = int(limit)
-                queryset = queryset[:limit]
-            except (ValueError, TypeError):
-                pass
-        
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({
-            'results': serializer.data,
-            'count': total_count
-        })
+            # Get total count before slicing
+            total_count = queryset.count()
+
+            if offset:
+                try:
+                    offset = int(offset)
+                    queryset = queryset[offset:]
+                except (ValueError, TypeError):
+                    pass
+
+            if limit:
+                try:
+                    limit = int(limit)
+                    queryset = queryset[:limit]
+                except (ValueError, TypeError):
+                    pass
+
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'results': serializer.data,
+                'count': total_count
+            })
+        except DatabaseError as exc:
+            raise ServiceUnavailableError(
+                'Coupon functionality is unavailable because required schema objects are missing',
+                code='schema_mismatch',
+            ) from exc
     
     @action(detail=False, methods=['post'])
     def validate(self, request):
@@ -184,21 +197,15 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
         code = request.data.get('code', '').upper()
         
         if not code:
-            return Response({
-                'error': 'Coupon code is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise BadRequestError('Coupon code is required')
         
         try:
             coupon = Coupon.objects.get(code=code, is_deleted=False)
         except Coupon.DoesNotExist:
-            return Response({
-                'error': 'Invalid coupon code'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise NotFoundError('Invalid coupon code')
         
         if not coupon.is_valid():
-            return Response({
-                'error': 'This coupon is no longer valid'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            raise BadRequestError('This coupon is no longer valid')
         
         return Response({
             'message': 'Coupon applied successfully',

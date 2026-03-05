@@ -1,17 +1,17 @@
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count
 from django.shortcuts import get_object_or_404
 
+from config.error_handling import BadRequestError, ForbiddenError
 from .models import ProductReview, ReviewHelpful
 from .serializers import (
     ProductReviewSerializer,
-    CreateReviewSerializer,
-    ReviewSummarySerializer
+    CreateReviewSerializer
 )
-from orders.models import Order, OrderItem
+from orders.models import OrderItem
 from products.models import Product
 
 
@@ -53,27 +53,33 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         """Create a review for a product."""
         # Check if product exists
         product = get_object_or_404(Product, id=product_id, is_deleted=False)
-        
-        # Check if user already reviewed this product from any order
-        existing_review = ProductReview.objects.filter(
-            user=request.user,
-            product=product,
-            is_deleted=False
-        ).first()
-        
-        if existing_review:
-            return Response(
-                {'error': 'You have already reviewed this product.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Get the order that contained this product if available
-        order_item = OrderItem.objects.filter(
+
+        # Find candidate order items containing this product.
+        candidate_order_items = OrderItem.objects.filter(
             order__user=request.user,
             order__status__in=['delivered', 'confirmed'],
             product=product,
             order__is_deleted=False
-        ).select_related('order').first()
+        ).select_related('order').order_by('-order__created_at')
+
+        if not candidate_order_items.exists():
+            raise BadRequestError('You can review only products present in your orders.')
+
+        # Use the latest order for which the user has not yet created a review.
+        order_item = None
+        for item in candidate_order_items:
+            already_reviewed = ProductReview.objects.filter(
+                user=request.user,
+                product=product,
+                order=item.order,
+                is_deleted=False,
+            ).exists()
+            if not already_reviewed:
+                order_item = item
+                break
+
+        if not order_item:
+            raise BadRequestError('You have already reviewed this product for all eligible orders.')
         
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -81,8 +87,8 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         review = ProductReview.objects.create(
             user=request.user,
             product=product,
-            order=order_item.order if order_item else None,
-            is_verified_purchase=order_item is not None,
+            order=order_item.order,
+            is_verified_purchase=True,
             **serializer.validated_data
         )
         
@@ -99,10 +105,7 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         review = self.get_object()
         
         if review.user != request.user:
-            return Response(
-                {'error': 'You can only update your own reviews.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise ForbiddenError('You can only update your own reviews.')
         
         serializer = CreateReviewSerializer(review, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -120,10 +123,7 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
         review = self.get_object()
         
         if review.user != request.user:
-            return Response(
-                {'error': 'You can only delete your own reviews.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            raise ForbiddenError('You can only delete your own reviews.')
         
         review.soft_delete()
         
@@ -143,9 +143,9 @@ class ProductReviewViewSet(viewsets.ModelViewSet):
             count=Count('id')
         )
         
-        product.rating = stats['avg_rating'] or 0
-        product.reviews_count = stats['count'] or 0
-        product.save(update_fields=['rating', 'reviews_count'])
+        product.average_rating = stats['avg_rating'] or 0
+        product.review_count = stats['count'] or 0
+        product.save(update_fields=['average_rating', 'review_count'])
     
     @action(detail=True, methods=['post'])
     def helpful(self, request, pk=None):
@@ -199,15 +199,24 @@ def product_review_summary(request, product_id):
     user_review = None
     
     if request.user.is_authenticated:
-        # Check if user already reviewed
-        has_reviewed = ProductReview.objects.filter(
-            user=request.user,
+        purchased_order_items = OrderItem.objects.filter(
+            order__user=request.user,
+            order__status__in=['delivered', 'confirmed'],
             product=product,
-            is_deleted=False
-        ).exists()
-        
-        # Allow any authenticated user to review (not just purchasers)
-        can_review = not has_reviewed
+            order__is_deleted=False,
+        ).select_related('order')
+        # User can review if at least one purchased order for this product
+        # still has no review by this user.
+        for item in purchased_order_items:
+            has_review_for_order = ProductReview.objects.filter(
+                user=request.user,
+                product=product,
+                order=item.order,
+                is_deleted=False,
+            ).exists()
+            if not has_review_for_order:
+                can_review = True
+                break
         
         # Get user's review if exists
         user_review_obj = ProductReview.objects.filter(

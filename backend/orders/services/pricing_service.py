@@ -45,7 +45,8 @@ class PricingService:
             if applicable_categories:
                 category_total = sum(
                     item.total for item in cart_items
-                    if item.product.category.name in applicable_categories
+                    if getattr(item, 'product', None)
+                    and item.product.category.name in applicable_categories
                 )
                 discount_amount = category_total * (Decimal(str(coupon.value)) / Decimal('100'))
         

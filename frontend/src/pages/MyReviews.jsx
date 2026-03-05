@@ -21,7 +21,7 @@ const MyReviews = () => {
   const loading = useSelector(selectReviewsLoading);
   const [activeTab, setActiveTab] = useState('my-reviews');
   const [deleteLoading, setDeleteLoading] = useState(null);
-  
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -30,7 +30,7 @@ const MyReviews = () => {
     dispatch(fetchMyReviews());
     dispatch(fetchPendingReviews());
   }, [dispatch, isAuthenticated, navigate]);
-  
+
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm('Are you sure you want to delete this review?')) {
       return;
@@ -45,9 +45,20 @@ const MyReviews = () => {
       setDeleteLoading(null);
     }
   };
-  
+
   const renderStars = (rating) => '⭐'.repeat(rating);
-  
+
+  const getReviewProduct = (review) => (
+    review && typeof review.product === 'object' ? review.product : null
+  );
+
+  const getReviewProductId = (review) => {
+    const productObj = getReviewProduct(review);
+    if (productObj?.id) return productObj.id;
+    if (typeof review?.product === 'number' || typeof review?.product === 'string') return review.product;
+    return null;
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -55,15 +66,15 @@ const MyReviews = () => {
       day: 'numeric',
     });
   };
-  
+
   if (!isAuthenticated) {
     return null;
   }
-  
+
   return (
-    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
+    <div className="container">
       <h1 className="section-title">⭐ My Reviews</h1>
-      
+
       {/* Tabs */}
       <div className="reviews-tabs">
         <button
@@ -79,23 +90,16 @@ const MyReviews = () => {
           Pending Reviews ({pendingReviews.length})
         </button>
       </div>
-      
+
       {loading && !myReviews.length && !pendingReviews.length ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>Loading...</div>
+        <div className="reviews-loading">Loading...</div>
       ) : activeTab === 'my-reviews' ? (
         <div className="my-reviews-list">
           {myReviews.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '3rem',
-              background: 'var(--bg-white)',
-              borderRadius: 'var(--border-radius)',
-            }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📝</div>
+            <div className="reviews-empty-state">
+              <div className="reviews-empty-icon">📝</div>
               <h3>No reviews yet</h3>
-              <p style={{ color: '#888', marginBottom: '1rem' }}>
-                You haven't reviewed any products yet.
-              </p>
+              <p>You haven't reviewed any products yet.</p>
               <Link to="/orders" className="btn-primary">
                 View Your Orders
               </Link>
@@ -103,61 +107,64 @@ const MyReviews = () => {
           ) : (
             myReviews.map((review) => (
               <div key={review.id} className="my-review-card">
+                {(() => {
+                  const productObj = getReviewProduct(review);
+                  const productId = getReviewProductId(review);
+                  return (
+                    <>
                 <div className="review-item-header">
                   <div className="review-product-thumb">
-                    {review.product?.emoji || '📦'}
+                    {productObj?.emoji || '📦'}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div>
                     <Link
-                      to={`/product/${review.product?.id}`}
-                      style={{
-                        fontSize: '1.2rem',
-                        fontWeight: 600,
-                        color: 'var(--text-dark)',
-                        textDecoration: 'none',
-                      }}
+                      to={productId ? `/product/${productId}` : '#'}
+                      className="review-product-link"
                     >
-                      {review.product?.name}
+                      {productObj?.name || `Product #${productId || 'N/A'}`}
                     </Link>
-                    <div style={{ marginTop: '0.5rem' }}>
+                    <div className="review-stars">
                       {renderStars(review.rating)}
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: '#888', marginTop: '0.25rem' }}>
+                    <div className="review-date">
                       Reviewed on {formatDate(review.created_at)}
+                    </div>
+                    <div className="review-item-meta-line">
+                      {[
+                        productObj?.brand?.name || productObj?.brand_name,
+                        productObj?.default_variant?.variant_name,
+                        productObj?.default_variant?.sku && `SKU: ${productObj.default_variant.sku}`,
+                        productObj?.default_variant?.unit_type && productObj?.default_variant?.unit_value
+                          ? `${productObj.default_variant.unit_value} ${productObj.default_variant.unit_type}`
+                          : productObj?.default_variant?.unit_type || null,
+                      ].filter(Boolean).join(' • ') || 'Product details'}
                     </div>
                   </div>
                 </div>
-                
+
                 {review.title && (
-                  <h4 style={{ marginBottom: '0.5rem' }}>{review.title}</h4>
+                  <h4>{review.title}</h4>
                 )}
-                <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>{review.comment}</p>
-                
+                <p>{review.comment}</p>
+
                 <div className="review-item-actions">
                   <Link
-                    to={`/product/${review.product?.id}`}
+                    to={productId ? `/product/${productId}` : '#'}
                     className="btn-secondary"
-                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                   >
                     View Product
                   </Link>
                   <button
                     onClick={() => handleDeleteReview(review.id)}
                     disabled={deleteLoading === review.id}
-                    style={{
-                      background: '#ff6b6b',
-                      color: 'white',
-                      border: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: 'var(--border-radius)',
-                      cursor: deleteLoading === review.id ? 'not-allowed' : 'pointer',
-                      fontWeight: 600,
-                      opacity: deleteLoading === review.id ? 0.5 : 1,
-                    }}
+                    className="btn-danger"
                   >
                     {deleteLoading === review.id ? 'Deleting...' : 'Delete Review'}
                   </button>
                 </div>
+                    </>
+                  );
+                })()}
               </div>
             ))
           )}
@@ -165,17 +172,10 @@ const MyReviews = () => {
       ) : (
         <div className="pending-reviews-list">
           {pendingReviews.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '3rem',
-              background: 'var(--bg-white)',
-              borderRadius: 'var(--border-radius)',
-            }}>
-              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✅</div>
+            <div className="reviews-empty-state">
+              <div className="reviews-empty-icon">✅</div>
               <h3>No pending reviews</h3>
-              <p style={{ color: '#888', marginBottom: '1rem' }}>
-                You've reviewed all your purchased products!
-              </p>
+              <p>You've reviewed all your purchased products!</p>
               <Link to="/shop" className="btn-primary">
                 Continue Shopping
               </Link>
@@ -187,26 +187,30 @@ const MyReviews = () => {
                   <div className="review-product-thumb">
                     {product.emoji || '📦'}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div>
                     <Link
                       to={`/product/${product.id}`}
-                      style={{
-                        fontSize: '1.2rem',
-                        fontWeight: 600,
-                        color: 'var(--text-dark)',
-                        textDecoration: 'none',
-                      }}
+                      className="review-product-link"
                     >
                       {product.name}
                     </Link>
-                    <div style={{ fontSize: '0.9rem', color: '#888', marginTop: '0.25rem' }}>
+                    <div className="review-category-text">
                       {product.category?.name || product.category}
+                    </div>
+                    <div className="review-item-meta-line">
+                      {[
+                        product.brand?.name || product.brand_name,
+                        product.default_variant?.variant_name,
+                        product.default_variant?.sku && `SKU: ${product.default_variant.sku}`,
+                        product.default_variant?.unit_type && product.default_variant?.unit_value
+                          ? `${product.default_variant.unit_value} ${product.default_variant.unit_type}`
+                          : product.default_variant?.unit_type || null,
+                      ].filter(Boolean).join(' • ') || 'Variant details'}
                     </div>
                   </div>
                   <Link
                     to={`/product/${product.id}`}
                     className="btn-primary"
-                    style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
                   >
                     Write Review
                   </Link>

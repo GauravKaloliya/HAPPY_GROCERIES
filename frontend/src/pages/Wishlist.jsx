@@ -39,21 +39,10 @@ const Wishlist = () => {
     }
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Fruits': 'var(--primary-pink)',
-      'Vegetables': 'var(--primary-green)',
-      'Dairy': 'var(--primary-blue)',
-      'Snacks': 'var(--primary-yellow)',
-      'Beverages': 'var(--primary-orange)',
-    };
-    return colors[category] || 'var(--primary-blue)';
-  };
-
   const renderStars = (rating) => {
     const fullStars = Math.round(rating || 0);
     return (
-      <span style={{ display: 'inline-flex', gap: '1px' }}>
+      <span>
         {[1, 2, 3, 4, 5].map((i) => (
           <svg
             key={i}
@@ -63,7 +52,7 @@ const Wishlist = () => {
             fill={i <= fullStars ? '#f59e0b' : 'none'}
             stroke="#f59e0b"
             strokeWidth="1.5"
-            style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+
           >
             <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
           </svg>
@@ -81,7 +70,7 @@ const Wishlist = () => {
           <div className="empty-state-icon">💔</div>
           <h3>Your wishlist is empty</h3>
           <p>Save items you love and they&apos;ll appear here</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-primary wishlist-explore-btn">
             Explore Products
           </Link>
         </div>
@@ -94,7 +83,7 @@ const Wishlist = () => {
       <div className="wishlist-container">
         <h2 className="section-title">💝 My Wishlist</h2>
 
-        <p style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <p>
           {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'}
         </p>
 
@@ -103,13 +92,15 @@ const Wishlist = () => {
             const product = item.product;
             const isOnSale = product.effective_price && parseFloat(product.effective_price) < parseFloat(product.price);
             const displayPrice = isOnSale ? product.effective_price : product.price;
+            const brandName = product.brand?.name || product.brand_name || '';
+            const variantName = product.default_variant?.variant_name || '';
 
             return (
               <div key={product.id} className="product-card">
                 <button
                   onClick={() => handleRemoveFromWishlist(product.id)}
                   className="wishlist-btn active"
-                  style={{ color: '#ff4444' }}
+                  type="button"
                   aria-label="Remove from wishlist"
                 >
                   ❤️
@@ -119,13 +110,17 @@ const Wishlist = () => {
 
                 <Link
                   to={`/product/${product.id}`}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
+                  className="product-card-link"
                 >
                   <div className="product-image">{product.emoji || '📦'}</div>
                   <h3 className="product-name">{product.name}</h3>
+                  {(brandName || variantName) && (
+                    <p className="wishlist-product-meta">
+                      {[brandName, variantName].filter(Boolean).join(' • ')}
+                    </p>
+                  )}
                   <span
                     className="product-category"
-                    style={{ background: getCategoryColor(product.category?.name || product.category) }}
                   >
                     {product.category?.name || product.category}
                   </span>
@@ -145,15 +140,15 @@ const Wishlist = () => {
                       <p className="product-price">{formatPrice(product.price)}</p>
                     )}
                   </div>
-                  <p className="product-card-cta" style={{ fontWeight: 700, color: 'var(--primary-pink)' }}>View Details →</p>
+                  <p className="product-card-cta">View Details →</p>
                 </Link>
               </div>
             );
           })}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-          <Link to="/shop" style={{ color: 'var(--primary-pink)', textDecoration: 'none', fontWeight: 600 }}>
+        <div className="wishlist-footer-link">
+          <Link to="/shop" className="btn-primary wishlist-continue-btn">
             Continue Shopping →
           </Link>
         </div>

@@ -13,10 +13,10 @@ const Shop = () => {
   const { logCustomActivity } = useActivityLog('page_view', { section: 'shop' });
   const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const sortOptions = useSelector(selectSortOptions);
   const PRODUCTS_LIMIT = 6;
@@ -26,6 +26,7 @@ const Shop = () => {
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || '');
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
@@ -45,7 +46,7 @@ const Shop = () => {
         setCategoriesLoaded(true);
       }
     };
-    
+
     if (!categoriesLoaded) {
       fetchCategories();
     }
@@ -57,6 +58,7 @@ const Shop = () => {
       const params = {
         search: searchQuery,
         category: selectedCategory === 'All' ? '' : selectedCategory,
+        brand: selectedBrand === 'All' ? '' : selectedBrand,
         ordering: sortBy,
         min_price: minPrice,
         max_price: maxPrice,
@@ -75,6 +77,12 @@ const Shop = () => {
 
       setAllProducts(results);
       setTotalCount(productsRes.data.count ?? results.length);
+      const uniqueBrands = Array.from(new Set(
+        (results || [])
+          .map((item) => item.brand_name || item.brand?.name)
+          .filter(Boolean)
+      )).sort((a, b) => a.localeCompare(b));
+      setBrands(uniqueBrands);
 
       // Log search/filter activity
       if (searchQuery) {
@@ -82,6 +90,9 @@ const Shop = () => {
       }
       if (selectedCategory) {
         logCustomActivity('filter_apply', { type: 'category', value: selectedCategory });
+      }
+      if (selectedBrand) {
+        logCustomActivity('filter_apply', { type: 'brand', value: selectedBrand });
       }
       if (sortBy) {
         logCustomActivity('filter_apply', { type: 'sort', value: sortBy });
@@ -94,7 +105,7 @@ const Shop = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock, logCustomActivity, PRODUCTS_LIMIT]);
+  }, [searchQuery, selectedCategory, selectedBrand, sortBy, minPrice, maxPrice, inStock, logCustomActivity, PRODUCTS_LIMIT]);
 
   const handleViewMore = async () => {
     if (isFetchingMore) return;
@@ -103,6 +114,7 @@ const Shop = () => {
       const params = {
         search: searchQuery,
         category: selectedCategory === 'All' ? '' : selectedCategory,
+        brand: selectedBrand === 'All' ? '' : selectedBrand,
         ordering: sortBy,
         min_price: minPrice,
         max_price: maxPrice,
@@ -140,6 +152,7 @@ const Shop = () => {
     const params = {};
     if (searchQuery) params.search = searchQuery;
     if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory;
+    if (selectedBrand && selectedBrand !== 'All') params.brand = selectedBrand;
     if (sortBy) params.sort = sortBy;
     if (minPrice) params.min_price = minPrice;
     if (maxPrice) params.max_price = maxPrice;
@@ -147,47 +160,28 @@ const Shop = () => {
 
     setSearchParams(params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock]);
+  }, [searchQuery, selectedCategory, selectedBrand, sortBy, minPrice, maxPrice, inStock]);
 
   const clearFilters = () => {
     setSearchInput('');
     setSearchQuery('');
     setSelectedCategory('');
+    setSelectedBrand('');
     setSortBy('');
     setMinPrice('');
     setMaxPrice('');
     setInStock(false);
   };
 
-  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy || minPrice || maxPrice || inStock;
+  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || (selectedBrand && selectedBrand !== 'All') || sortBy || minPrice || maxPrice || inStock;
   const hasMoreProducts = allProducts.length < totalCount;
 
   if (loading && allProducts.length === 0) return <PageLoader />;
 
   return (
     <div className="container">
-      {/* Mobile Filter Button */}
-      <button
-        className="mobile-filter-btn"
-        onClick={() => setShowMobileFilters(true)}
-      >
-        🔍 Filters & Sort
-        {hasFilters && <span className="mobile-filter-badge">{allProducts.length}</span>}
-      </button>
-
       <div className="shop-layout">
-        <aside className={`shop-sidebar ${showMobileFilters ? 'show' : ''}`}>
-          <div className="mobile-filter-header">
-            <h3 className="mobile-filter-title">Filters</h3>
-            <button
-              className="mobile-filter-close"
-              onClick={() => setShowMobileFilters(false)}
-              aria-label="Close filters"
-            >
-              ✕
-            </button>
-          </div>
-
+        <aside className="shop-sidebar">
           <div className="sidebar-section">
             <h3 className="sidebar-title">Search</h3>
             <div className="search-bar">
@@ -227,7 +221,7 @@ const Shop = () => {
             <div className="category-filters">
               <button
                 onClick={() => setSelectedCategory('')}
-                className={`category-filter-btn ${!selectedCategory ? 'active' : ''}`}
+                className={`category-filter-btn all-option ${!selectedCategory ? 'active' : ''}`}
               >
                 All Products
               </button>
@@ -238,6 +232,27 @@ const Shop = () => {
                   className={`category-filter-btn ${selectedCategory === cat.name ? 'active' : ''}`}
                 >
                   {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="sidebar-section">
+            <h3 className="sidebar-title">Brands</h3>
+            <div className="category-filters">
+              <button
+                onClick={() => setSelectedBrand('')}
+                className={`category-filter-btn all-option ${!selectedBrand ? 'active' : ''}`}
+              >
+                All Brands
+              </button>
+              {brands.map((brand) => (
+                <button
+                  key={brand}
+                  onClick={() => setSelectedBrand(brand)}
+                  className={`category-filter-btn ${selectedBrand === brand ? 'active' : ''}`}
+                >
+                  {brand}
                 </button>
               ))}
             </div>
@@ -310,14 +325,6 @@ const Shop = () => {
           )}
         </aside>
 
-        {/* Mobile Filter Overlay */}
-        {showMobileFilters && (
-          <div
-            className="mobile-filter-overlay"
-            onClick={() => setShowMobileFilters(false)}
-          />
-        )}
-
         <div className="shop-content">
           <div className="results-header">
             <p className="results-count">{totalCount} products found</p>
@@ -331,7 +338,7 @@ const Shop = () => {
                 ))}
               </div>
               {hasMoreProducts && (
-                <div className="view-more-wrapper" style={{ textAlign: 'center', marginTop: '2rem' }}>
+                <div className="view-more-wrapper">
                   <button
                     className="btn-primary"
                     onClick={handleViewMore}
@@ -347,7 +354,7 @@ const Shop = () => {
               <div className="empty-state-icon">🔍</div>
               <h3>No products found</h3>
               <p>Try adjusting your search or filters</p>
-              <button onClick={clearFilters} className="btn-primary" style={{ marginTop: '1rem' }}>
+              <button onClick={clearFilters} className="btn-primary">
                 Clear Filters
               </button>
             </div>

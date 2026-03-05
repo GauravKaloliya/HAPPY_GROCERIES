@@ -1,12 +1,13 @@
-from django.db import models
+from django.db import DatabaseError, models
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Cart, CartItem
+from config.error_handling import BadRequestError, NotFoundError, ServiceUnavailableError
 from .serializers import (
-    CartSerializer, CartItemSerializer, AddToCartSerializer, UpdateCartItemSerializer
+    CartSerializer, AddToCartSerializer, UpdateCartItemSerializer
 )
 
 
@@ -61,24 +62,25 @@ class CartViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         cart = self.get_object()
-        product_id = serializer.validated_data['product_id']
         quantity = serializer.validated_data['quantity']
+        combo_id = serializer.validated_data.get('combo_id')
+        product_id = serializer.validated_data.get('product_id')
+
+        if combo_id:
+            summary = self._add_combo_items_to_cart(cart=cart, combo_id=combo_id, quantity=quantity)
+            response_data = CartSerializer(cart).data
+            response_data['combo_applied'] = summary
+            return Response(response_data, status=status.HTTP_201_CREATED)
 
         from products.models import Product
         try:
             product = Product.objects.get(id=product_id, is_active=True, is_deleted=False)
         except Product.DoesNotExist:
-            return Response(
-                {'error': 'Product not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            raise NotFoundError('Product not found')
 
         # Check stock availability
         if product.stock < quantity:
-            return Response(
-                {'error': f'Only {product.stock} items available in stock'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise BadRequestError(f'Only {product.stock} items available in stock')
 
         cart_item = CartItem.objects.filter(cart=cart, product=product).first()
         if cart_item:
@@ -88,10 +90,7 @@ class CartViewSet(viewsets.ModelViewSet):
             else:
                 new_quantity = cart_item.quantity + quantity
                 if new_quantity > product.stock:
-                    return Response(
-                        {'error': f'Only {product.stock} items available in stock'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    raise BadRequestError(f'Only {product.stock} items available in stock')
                 cart_item.quantity = new_quantity
             cart_item.save()
         else:
@@ -102,6 +101,79 @@ class CartViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED
         )
 
+    def _add_combo_items_to_cart(self, cart, combo_id, quantity):
+        """
+        Cart schema stores products only; combo purchase in cart is represented by
+        expanding combo items to their underlying products.
+        """
+        try:
+            from product_combos.models import ProductCombo, ProductComboItem
+
+            combo = ProductCombo.objects.filter(
+                id=combo_id,
+                is_active=True,
+                is_deleted=False,
+            ).first()
+            if not combo:
+                raise NotFoundError('Combo not found')
+
+            combo_items = list(
+                ProductComboItem.objects.filter(combo=combo, is_deleted=False).select_related('product', 'variant')
+            )
+            if not combo_items:
+                raise BadRequestError('Combo has no active items')
+
+            added_items = []
+            for combo_item in combo_items:
+                total_qty = combo_item.quantity * quantity
+                variant_stock = combo_item.variant.stock_quantity or 0
+                default_variant = combo_item.product.default_variant
+                if not default_variant or default_variant.id != combo_item.variant_id:
+                    raise BadRequestError(
+                        f'Combo item "{combo_item.product.name}" uses a non-default variant and cannot be added to cart'
+                    )
+                if total_qty > variant_stock:
+                    raise BadRequestError(
+                        f'Combo item "{combo_item.product.name}" has only {variant_stock} in stock'
+                    )
+
+                cart_item = CartItem.objects.filter(cart=cart, product=combo_item.product).first()
+                if cart_item:
+                    if cart_item.is_deleted:
+                        cart_item.restore()
+                        cart_item.quantity = total_qty
+                    else:
+                        new_quantity = cart_item.quantity + total_qty
+                        if new_quantity > variant_stock:
+                            raise BadRequestError(
+                                f'Only {variant_stock} items available for "{combo_item.product.name}"'
+                            )
+                        cart_item.quantity = new_quantity
+                    cart_item.save()
+                else:
+                    CartItem.objects.create(cart=cart, product=combo_item.product, quantity=total_qty)
+
+                added_items.append(
+                    {
+                        'product_id': combo_item.product_id,
+                        'product_name': combo_item.product.name,
+                        'quantity_added': total_qty,
+                    }
+                )
+
+            return {
+                'combo_id': combo.id,
+                'combo_name': combo.name,
+                'combo_quantity': quantity,
+                'mode': 'expanded_to_products',
+                'items': added_items,
+            }
+        except DatabaseError as exc:
+            raise ServiceUnavailableError(
+                'Combo functionality is unavailable because required schema objects are missing',
+                code='schema_mismatch',
+            ) from exc
+
     @action(detail=False, methods=['post'])
     def update_item(self, request):
         """Update cart item quantity."""
@@ -111,10 +183,7 @@ class CartViewSet(viewsets.ModelViewSet):
         quantity = serializer.validated_data['quantity']
 
         if not item_id:
-            return Response(
-                {'error': 'item_id and quantity are required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise BadRequestError('item_id and quantity are required')
 
         cart = self.get_object()
         cart_item = CartItem.objects.filter(
@@ -125,19 +194,13 @@ class CartViewSet(viewsets.ModelViewSet):
         ).first()
 
         if not cart_item:
-            return Response(
-                {'error': 'Cart item not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            raise NotFoundError('Cart item not found')
 
         if quantity == 0:
             cart_item.soft_delete()
         else:
             if quantity > cart_item.product.stock:
-                return Response(
-                    {'error': f'Only {cart_item.product.stock} items available in stock'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                raise BadRequestError(f'Only {cart_item.product.stock} items available in stock')
             cart_item.quantity = quantity
             cart_item.save()
 
@@ -149,10 +212,7 @@ class CartViewSet(viewsets.ModelViewSet):
         item_id = request.data.get('item_id') or request.data.get('product_id')
 
         if not item_id:
-            return Response(
-                {'error': 'item_id is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise BadRequestError('item_id is required')
 
         cart = self.get_object()
         cart_item = CartItem.objects.filter(
@@ -163,10 +223,7 @@ class CartViewSet(viewsets.ModelViewSet):
         ).first()
 
         if not cart_item:
-            return Response(
-                {'error': 'Cart item not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            raise NotFoundError('Cart item not found')
 
         cart_item.soft_delete()
         return Response(CartSerializer(cart).data)

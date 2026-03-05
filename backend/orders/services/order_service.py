@@ -1,15 +1,29 @@
 """
 Order service for handling order creation and management.
 """
-from django.db import transaction
+from decimal import Decimal
+from django.db import DatabaseError, models, transaction
 from django.utils import timezone
 from datetime import timedelta
-import uuid
+import random
 
 from orders.models import Order, OrderItem
 from orders.services.pricing_service import PricingService
-from cart.models import Cart
 from coupons.models import Coupon, CouponUsage
+from config.error_handling import ServiceUnavailableError
+
+
+class OrderLineItem:
+    def __init__(self, product=None, quantity=1, total=Decimal('0'), unit_price=Decimal('0'), combo=None):
+        self.product = product
+        self.quantity = quantity
+        self.total = Decimal(str(total))
+        self.unit_price = Decimal(str(unit_price))
+        self.combo = combo
+
+    @property
+    def is_combo(self):
+        return self.combo is not None
 
 
 class OrderService:
@@ -29,40 +43,10 @@ class OrderService:
             if not cart_items.exists():
                 raise ValueError("Cart is empty")
         else:
-            # Get items from delivery_data
             items_data = delivery_data.get('items', [])
             if not items_data:
                 raise ValueError("No items provided")
-
-            # Import here to avoid circular imports
-            from products.models import Product
-
-            # Validate and fetch products
-            cart_items = []
-            for item_data in items_data:
-                try:
-                    product = Product.objects.get(
-                        id=item_data['product_id'],
-                        is_active=True,
-                        is_deleted=False
-                    )
-                except Product.DoesNotExist:
-                    raise ValueError("Product not found")
-
-                # Create a mock cart item object for consistency
-                class MockCartItem:
-                    def __init__(self, product, quantity, price):
-                        self.product = product
-                        self.quantity = quantity
-                        self.total = price * quantity
-
-                cart_items.append(
-                    MockCartItem(
-                        product,
-                        item_data['quantity'],
-                        item_data.get('price', product.effective_price)
-                    )
-                )
+            cart_items = cls._build_line_items(items_data)
         
         # Calculate subtotal
         subtotal = sum(item.total for item in cart_items)
@@ -134,21 +118,48 @@ class OrderService:
         
         # Create order items
         for cart_item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product=cart_item.product,
-                product_name=cart_item.product.name,
-                product_price=cart_item.product.effective_price,
-                product_emoji=cart_item.product.emoji,
-                quantity=cart_item.quantity,
-                discount_percent=cart_item.product.discount_percent,
-                subtotal=cart_item.total,
-            )
-            
-            # Reduce product stock
-            product = cart_item.product
-            product.stock = max(0, product.stock - cart_item.quantity)
-            product.save()
+            if getattr(cart_item, 'is_combo', False):
+                combo = cart_item.combo
+                combo_total_mrp = Decimal('0')
+                for combo_item in combo.items.filter(is_deleted=False).select_related('variant'):
+                    unit_price = combo_item.override_price if combo_item.override_price is not None else combo_item.variant.price
+                    combo_total_mrp += unit_price * combo_item.quantity * cart_item.quantity
+
+                    variant = combo_item.variant
+                    variant.stock_quantity = max(0, variant.stock_quantity - (combo_item.quantity * cart_item.quantity))
+                    variant.save(update_fields=['stock_quantity', 'updated_at'])
+
+                discount_percent = 0
+                if combo_total_mrp > 0 and cart_item.total < combo_total_mrp:
+                    discount_percent = int(((combo_total_mrp - cart_item.total) / combo_total_mrp) * 100)
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=None,
+                    product_name=combo.name,
+                    product_price=cart_item.unit_price,
+                    product_emoji='📦',
+                    quantity=cart_item.quantity,
+                    discount_percent=discount_percent,
+                    subtotal=cart_item.total,
+                )
+            else:
+                OrderItem.objects.create(
+                    order=order,
+                    product=cart_item.product,
+                    product_name=cart_item.product.name,
+                    product_price=cart_item.product.effective_price,
+                    product_emoji=cart_item.product.emoji,
+                    quantity=cart_item.quantity,
+                    discount_percent=cart_item.product.discount_percent,
+                    subtotal=cart_item.total,
+                )
+
+                product = cart_item.product
+                variant = product.default_variant
+                if variant:
+                    variant.stock_quantity = max(0, variant.stock_quantity - cart_item.quantity)
+                    variant.save(update_fields=['stock_quantity', 'updated_at'])
         
         # Clear cart if it was provided
         if cart:
@@ -176,13 +187,95 @@ class OrderService:
             user.save()
         
         return order
+
+    @classmethod
+    def _build_line_items(cls, items_data):
+        from product_combos.models import ProductCombo
+        from products.models import Product
+
+        line_items = []
+        for item_data in items_data:
+            quantity = int(item_data.get('quantity', 1))
+            if quantity < 1:
+                raise ValueError("Quantity must be at least 1")
+
+            combo_id = item_data.get('combo_id')
+            if combo_id is not None:
+                try:
+                    combo = ProductCombo.objects.prefetch_related('items__variant').get(
+                        id=combo_id,
+                        is_active=True,
+                        is_deleted=False,
+                    )
+                except ProductCombo.DoesNotExist:
+                    raise ValueError("Combo not found")
+                except DatabaseError as exc:
+                    raise ServiceUnavailableError(
+                        'Combo functionality is unavailable because required schema objects are missing',
+                        code='schema_mismatch',
+                    ) from exc
+
+                combo_items = [ci for ci in combo.items.all() if not ci.is_deleted]
+                if not combo_items:
+                    raise ValueError("Combo has no active items")
+
+                for combo_item in combo_items:
+                    required = combo_item.quantity * quantity
+                    stock = combo_item.variant.stock_quantity or 0
+                    if stock < required:
+                        raise ValueError(
+                            f'Combo item "{combo_item.product.name}" has only {stock} in stock'
+                        )
+
+                unit_price = Decimal(str(combo.price))
+                line_items.append(
+                    OrderLineItem(
+                        product=None,
+                        quantity=quantity,
+                        unit_price=unit_price,
+                        total=unit_price * quantity,
+                        combo=combo,
+                    )
+                )
+                continue
+
+            try:
+                product = Product.objects.get(
+                    id=item_data['product_id'],
+                    is_active=True,
+                    is_deleted=False,
+                )
+            except KeyError:
+                raise ValueError("product_id is required for non-combo items")
+            except Product.DoesNotExist:
+                raise ValueError("Product not found")
+
+            if product.stock < quantity:
+                raise ValueError(f'Only {product.stock} items available for "{product.name}"')
+
+            unit_price = Decimal(str(item_data.get('price', product.effective_price)))
+            line_items.append(
+                OrderLineItem(
+                    product=product,
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    total=unit_price * quantity,
+                )
+            )
+
+        return line_items
     
     @classmethod
     def _generate_order_id(cls):
-        """Generate a unique order ID."""
-        timestamp = timezone.now().strftime('%Y%m%d')
-        unique_id = uuid.uuid4().hex[:6].upper()
-        return f"ORD-{timestamp}-{unique_id}"
+        """
+        Generate a unique order ID matching schema constraint:
+        ^HG[0-9]{8}$
+        """
+        for _ in range(25):
+            candidate = f"HG{random.randint(0, 99999999):08d}"
+            if not Order.objects.filter(order_id=candidate).exists():
+                return candidate
+        raise ValueError("Failed to generate unique order ID")
     
     @classmethod
     def get_order_statistics(cls, user):
@@ -205,11 +298,15 @@ class OrderService:
         if order.status in ['delivered', 'cancelled']:
             raise ValueError("Cannot cancel this order")
         
-        # Restore product stock
+        # Restore stock on the actual sellable variant (new schema).
         for item in order.items.all():
             product = item.product
-            product.stock += item.quantity
-            product.save()
+            if not product:
+                continue
+            variant = product.default_variant
+            if variant:
+                variant.stock_quantity += item.quantity
+                variant.save(update_fields=['stock_quantity', 'updated_at'])
         
         order.status = 'cancelled'
         order.save()

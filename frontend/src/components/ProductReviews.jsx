@@ -21,16 +21,16 @@ const StarSvg = ({ filled, size = 16 }) => (
     fill={filled ? '#f59e0b' : 'none'}
     stroke="#f59e0b"
     strokeWidth="1.5"
-    style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+    className="review-star-icon"
   >
     <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
   </svg>
 );
 
 const renderStars = (rating, size = 16) => {
-  const fullStars = Math.round(rating);
+  const fullStars = Math.round(rating || 0);
   return (
-    <span style={{ display: 'inline-flex', gap: '2px' }}>
+    <span className="review-stars-inline">
       {[1, 2, 3, 4, 5].map((i) => (
         <StarSvg key={i} filled={i <= fullStars} size={size} />
       ))}
@@ -38,20 +38,21 @@ const renderStars = (rating, size = 16) => {
   );
 };
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+const formatDate = (dateString) => (
+  new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
-};
+  })
+);
 
 const ProductReviews = ({ productId }) => {
   const TITLE_MAX = 100;
-  const COMMENT_MIN = 10;
+  const COMMENT_MIN_WORDS = 3;
   const COMMENT_MAX = 1000;
   const TITLE_PATTERN = /^[a-zA-Z0-9\s.,!?'"()\-_&@#%:;]+$/;
   const sanitizeText = (text) => text.replace(/<[^>]*>/g, '').trim();
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -72,19 +73,24 @@ const ProductReviews = ({ productId }) => {
     dispatch(fetchReviewSummary(productId));
   }, [dispatch, productId]);
 
+  const getWordCount = (text) => sanitizeText(text).split(/\s+/).filter(Boolean).length;
+
   const validateForm = () => {
     const errors = {};
     if (!rating || rating < 1 || rating > 5) {
       errors.rating = 'Please select a rating from 1 to 5';
     }
+
     const cleanComment = sanitizeText(comment);
+    const commentWords = getWordCount(cleanComment);
     if (!cleanComment) {
       errors.comment = 'Review comment is required';
-    } else if (cleanComment.length < COMMENT_MIN) {
-      errors.comment = `Comment must be at least ${COMMENT_MIN} characters`;
+    } else if (commentWords < COMMENT_MIN_WORDS) {
+      errors.comment = `Comment must be at least ${COMMENT_MIN_WORDS} words`;
     } else if (cleanComment.length > COMMENT_MAX) {
       errors.comment = `Comment must be less than ${COMMENT_MAX} characters`;
     }
+
     if (title.trim()) {
       const cleanTitle = sanitizeText(title);
       if (cleanTitle.length > TITLE_MAX) {
@@ -96,7 +102,10 @@ const ProductReviews = ({ productId }) => {
     return errors;
   };
 
-  const isFormValid = rating >= 1 && rating <= 5 && sanitizeText(comment).length >= COMMENT_MIN;
+  const isFormValid =
+    rating >= 1 &&
+    rating <= 5 &&
+    getWordCount(comment) >= COMMENT_MIN_WORDS;
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
@@ -111,8 +120,8 @@ const ProductReviews = ({ productId }) => {
       setFieldErrors(errors);
       return;
     }
-    setFieldErrors({});
 
+    setFieldErrors({});
     setSubmitting(true);
     try {
       await dispatch(createReview({
@@ -123,12 +132,14 @@ const ProductReviews = ({ productId }) => {
           comment: sanitizeText(comment),
         }
       })).unwrap();
+
       toast.success('Review submitted successfully! 🌟');
       setShowWriteForm(false);
       setRating(0);
       setTitle('');
       setComment('');
       setFieldErrors({});
+      dispatch(fetchProductReviews(productId));
       dispatch(fetchReviewSummary(productId));
     } catch (err) {
       toast.error(typeof err === 'string' ? err : 'Failed to submit review');
@@ -150,93 +161,67 @@ const ProductReviews = ({ productId }) => {
   };
 
   if (loading && !reviews.length) {
-    return <div style={{ textAlign: 'center', padding: '2rem' }}>Loading reviews...</div>;
+    return <div className="reviews-loading-state">Loading reviews...</div>;
   }
 
   return (
-    <div className="product-reviews" style={{ marginTop: '2rem' }}>
-      <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
+    <div className="product-reviews">
+      <h3 className="reviews-title">
         Customer Reviews {summary?.total_reviews > 0 && `(${summary.total_reviews})`}
       </h3>
 
       {summary && (
-        <div className="review-summary" style={{
-          background: 'var(--bg-white)',
-          padding: '1.5rem',
-          borderRadius: 'var(--border-radius)',
-          marginBottom: '1.5rem',
-          boxShadow: 'var(--shadow)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-            <div style={{ textAlign: 'center', minWidth: '100px' }}>
-              <div style={{ fontSize: '3rem', fontWeight: '700', color: 'var(--primary-pink)', lineHeight: 1 }}>
-                {summary.average_rating.toFixed(1)}
-              </div>
-              <div style={{ marginTop: '0.4rem' }}>{renderStars(summary.average_rating, 18)}</div>
-              <div style={{ color: '#888', fontSize: '0.9rem', marginTop: '0.25rem' }}>
+        <div className="review-summary-card">
+          <div className="review-summary-grid">
+            <div className="review-summary-score">
+              <div className="review-summary-score-number">{summary.average_rating.toFixed(1)}</div>
+              <div className="review-summary-score-stars">{renderStars(summary.average_rating, 18)}</div>
+              <div className="review-summary-score-count">
                 {summary.total_reviews} {summary.total_reviews === 1 ? 'review' : 'reviews'}
               </div>
             </div>
 
-            <div style={{ flex: 1, minWidth: '200px' }}>
+            <div className="review-breakdown">
               {[5, 4, 3, 2, 1].map((star) => {
                 const count = summary.rating_breakdown[star] || 0;
-                const pct = summary.total_reviews > 0 ? (count / summary.total_reviews) * 100 : 0;
                 return (
-                  <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', width: '52px', flexShrink: 0, fontSize: '0.85rem', color: 'var(--text-dark)' }}>
+                  <div key={star} className="review-breakdown-row">
+                    <span className="review-breakdown-label">
                       {star}
                       <StarSvg filled size={13} />
                     </span>
-                    <div style={{
-                      flex: 1,
-                      height: '8px',
-                      background: '#eee',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        width: `${pct}%`,
-                        height: '100%',
-                        background: 'var(--primary-pink)',
-                        transition: 'width 0.3s',
-                      }} />
-                    </div>
-                    <span style={{ width: '28px', textAlign: 'right', fontSize: '0.82rem', color: '#888', flexShrink: 0 }}>
-                      {count}
-                    </span>
+                    <progress
+                      className="review-breakdown-progress"
+                      value={count}
+                      max={summary.total_reviews || 1}
+                    />
+                    <span className="review-breakdown-count">{count}</span>
                   </div>
                 );
               })}
             </div>
 
-            <div style={{ textAlign: 'center' }}>
+            <div className="review-summary-action">
               {summary.can_review ? (
                 !showWriteForm && (
-                <button
-                  onClick={() => setShowWriteForm(true)}
-                  className="btn-primary"
-                  style={{ padding: '0.75rem 1.5rem' }}
-                >
-                  Write a Review
-                </button>
+                  <button
+                    onClick={() => setShowWriteForm(true)}
+                    className="btn-sm btn-primary"
+                  >
+                    Write a Review
+                  </button>
                 )
               ) : summary.user_review ? (
-                <div style={{ color: 'var(--primary-green)', fontWeight: 600 }}>
-                  ✓ You reviewed this product
-                </div>
+                <div className="review-summary-done">✓ You reviewed this product</div>
               ) : !isAuthenticated ? (
                 <button
                   onClick={() => navigate('/login')}
-                  className="btn-secondary"
-                  style={{ padding: '0.6rem 1.2rem' }}
+                  className="btn-sm btn-secondary"
                 >
                   Login to Review
                 </button>
               ) : (
-                <div style={{ color: '#888', fontSize: '0.9rem' }}>
-                  Share your experience with this product
-                </div>
+                <div className="review-summary-hint">Share your experience with this product</div>
               )}
             </div>
           </div>
@@ -244,143 +229,99 @@ const ProductReviews = ({ productId }) => {
       )}
 
       {showWriteForm && (
-        <div className="write-review-form" style={{
-          background: 'var(--bg-white)',
-          padding: '1.5rem',
-          borderRadius: 'var(--border-radius)',
-          marginBottom: '1.5rem',
-          boxShadow: 'var(--shadow)',
-        }}>
-          <h4 style={{ marginBottom: '1.25rem', fontSize: '1.1rem', fontWeight: 700 }}>Write Your Review</h4>
+        <div className="write-review-form">
+          <h4 className="write-review-title">Write Your Review</h4>
           <form onSubmit={handleSubmitReview} noValidate>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.95rem' }}>
-                Rating <span style={{ color: '#e53e3e' }}>*</span>
+            <div className="review-field-block">
+              <label className="review-field-label">
+                Rating <span className="required-mark">*</span>
               </label>
-              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              <div className="review-stars-picker">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     type="button"
-                    onClick={() => { setRating(star); setFieldErrors(prev => ({ ...prev, rating: '' })); }}
+                    onClick={() => { setRating(star); setFieldErrors((prev) => ({ ...prev, rating: '' })); }}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'transform 0.1s',
-                      transform: star <= (hoverRating || rating) ? 'scale(1.15)' : 'scale(1)',
-                    }}
+                    className={`star-picker-btn ${star <= (hoverRating || rating) ? 'active' : ''}`}
                     aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                   >
                     <StarSvg filled={star <= (hoverRating || rating)} size={30} />
                   </button>
                 ))}
                 {rating > 0 && (
-                  <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem', color: '#888' }}>
+                  <span className="review-rating-label">
                     {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][rating]}
                   </span>
                 )}
               </div>
-              {fieldErrors.rating && (
-                <p style={{ color: '#e53e3e', fontSize: '0.82rem', marginTop: '0.3rem' }}>{fieldErrors.rating}</p>
-              )}
+              {fieldErrors.rating && <p className="review-error-text">{fieldErrors.rating}</p>}
             </div>
 
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.95rem' }}>
-                Title <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span>
+            <div className="review-field-block">
+              <label className="review-field-label">
+                Title <span className="optional-mark">(optional)</span>
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => {
                   setTitle(e.target.value);
-                  setFieldErrors(prev => ({ ...prev, title: '' }));
+                  setFieldErrors((prev) => ({ ...prev, title: '' }));
                 }}
                 placeholder="Summarize your experience"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: `2px solid ${fieldErrors.title ? '#e53e3e' : '#e2e8f0'}`,
-                  borderRadius: '8px',
-                  fontFamily: 'inherit',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s',
-                }}
+                className={`review-input ${fieldErrors.title ? 'has-error' : ''}`}
                 maxLength={TITLE_MAX}
                 autoComplete="off"
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-                {fieldErrors.title ? (
-                  <p style={{ color: '#e53e3e', fontSize: '0.82rem', margin: 0 }}>{fieldErrors.title}</p>
-                ) : <span />}
-                <span style={{ fontSize: '0.8rem', color: '#aaa' }}>{title.length}/{TITLE_MAX}</span>
+              <div className="review-meta-row">
+                {fieldErrors.title ? <p className="review-error-text">{fieldErrors.title}</p> : <span />}
+                <span className="review-counter">{title.length}/{TITLE_MAX}</span>
               </div>
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.95rem' }}>
-                Your Review <span style={{ color: '#e53e3e' }}>*</span>
+            <div className="review-field-block">
+              <label className="review-field-label">
+                Your Review <span className="required-mark">*</span>
               </label>
               <textarea
                 value={comment}
                 onChange={(e) => {
                   setComment(e.target.value);
-                  setFieldErrors(prev => ({ ...prev, comment: '' }));
+                  setFieldErrors((prev) => ({ ...prev, comment: '' }));
                 }}
-                placeholder={`Share your thoughts about this product... (minimum ${COMMENT_MIN} characters)`}
+                placeholder={`Share your thoughts... (minimum ${COMMENT_MIN_WORDS} words)`}
                 rows={4}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: `2px solid ${fieldErrors.comment ? '#e53e3e' : '#e2e8f0'}`,
-                  borderRadius: '8px',
-                  fontFamily: 'inherit',
-                  fontSize: '0.95rem',
-                  resize: 'vertical',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s',
-                  minHeight: '100px',
-                }}
+                className={`review-textarea ${fieldErrors.comment ? 'has-error' : ''}`}
                 maxLength={COMMENT_MAX}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
+              <div className="review-meta-row">
                 {fieldErrors.comment ? (
-                  <p style={{ color: '#e53e3e', fontSize: '0.82rem', margin: 0 }}>{fieldErrors.comment}</p>
+                  <p className="review-error-text">{fieldErrors.comment}</p>
                 ) : (
-                  <span style={{ fontSize: '0.8rem', color: '#aaa' }}>
-                    {comment.trim().length < COMMENT_MIN ? `${COMMENT_MIN - comment.trim().length} more characters needed` : ''}
+                  <span className="review-helper-text">
+                    {(() => {
+                      const words = getWordCount(comment);
+                      return words < COMMENT_MIN_WORDS ? `${COMMENT_MIN_WORDS - words} more words needed` : '';
+                    })()}
                   </span>
                 )}
-                <span style={{ fontSize: '0.8rem', color: comment.length > COMMENT_MAX * 0.9 ? '#e53e3e' : '#aaa' }}>
-                  {comment.length}/{COMMENT_MAX}
-                </span>
+                <span className="review-counter">{comment.length}/{COMMENT_MAX}</span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div className="review-form-actions">
               <button
                 type="submit"
-                className="btn-primary"
+                className="btn-sm btn-primary"
                 disabled={submitting || !isFormValid}
-                style={{
-                  opacity: (submitting || !isFormValid) ? 0.5 : 1,
-                  cursor: (submitting || !isFormValid) ? 'not-allowed' : 'pointer',
-                  minWidth: '150px',
-                }}
               >
                 {submitting ? 'Submitting...' : 'Submit Review'}
               </button>
               <button
                 type="button"
-                className="btn-secondary"
+                className="btn-sm btn-secondary"
                 onClick={() => {
                   setShowWriteForm(false);
                   setRating(0);
@@ -388,7 +329,6 @@ const ProductReviews = ({ productId }) => {
                   setComment('');
                   setFieldErrors({});
                 }}
-                style={{ padding: '0.6rem 1.2rem' }}
               >
                 Cancel
               </button>
@@ -399,69 +339,34 @@ const ProductReviews = ({ productId }) => {
 
       <div className="reviews-list">
         {reviews.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '2rem',
-            color: '#888',
-            background: 'var(--bg-white)',
-            borderRadius: 'var(--border-radius)',
-          }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📝</div>
+          <div className="reviews-empty-box">
+            <div className="reviews-empty-icon">📝</div>
             <p>No reviews yet. Be the first to review!</p>
           </div>
         ) : (
           reviews.map((review) => (
-            <div
-              key={review.id}
-              className="review-item"
-              style={{
-                background: 'var(--bg-white)',
-                padding: '1.5rem',
-                borderRadius: 'var(--border-radius)',
-                marginBottom: '1rem',
-                boxShadow: 'var(--shadow)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+            <div key={review.id} className="review-item review-item-card">
+              <div className="review-item-head">
                 <div>
-                  <div style={{ marginBottom: '0.25rem' }}>
-                    {renderStars(review.rating)}
-                  </div>
-                  {review.title && (
-                    <h4 style={{ margin: '0.5rem 0', fontSize: '1.1rem' }}>{review.title}</h4>
-                  )}
+                  <div className="review-item-stars">{renderStars(review.rating)}</div>
+                  {review.title && <h4 className="review-item-title">{review.title}</h4>}
                 </div>
-                <div style={{ textAlign: 'right', fontSize: '0.85rem', color: '#888' }}>
-                  {formatDate(review.created_at)}
-                </div>
+                <div className="review-item-date">{formatDate(review.created_at)}</div>
               </div>
 
-              <p style={{ marginBottom: '1rem', lineHeight: 1.6 }}>{review.comment}</p>
+              <p className="review-item-comment">{review.comment}</p>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: '0.9rem', color: '#888' }}>
+              <div className="review-item-footer">
+                <div className="review-item-author">
                   By {review.user_name || review.user_phone}
                   {review.is_verified_purchase && (
-                    <span style={{ color: 'var(--primary-green)', marginLeft: '0.5rem' }}>
-                      ✓ Verified Purchase
-                    </span>
+                    <span className="review-item-verified">✓ Verified Purchase</span>
                   )}
                 </div>
 
                 <button
                   onClick={() => handleHelpful(review.id)}
-                  style={{
-                    background: review.user_has_voted ? 'var(--primary-pink)' : 'transparent',
-                    color: review.user_has_voted ? 'white' : 'var(--text-dark)',
-                    border: '1px solid #ddd',
-                    padding: '0.4rem 0.75rem',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                  }}
+                  className={`review-helpful-btn ${review.user_has_voted ? 'voted' : ''}`}
                 >
                   👍 Helpful ({review.helpful_count})
                 </button>

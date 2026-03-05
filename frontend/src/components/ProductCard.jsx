@@ -7,6 +7,31 @@ import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
+const WISHLIST_CACHE_KEY = 'wishlistProductIds';
+const wishlistStatusCache = new Map();
+
+const getWishlistCache = () => {
+  try {
+    const raw = localStorage.getItem(WISHLIST_CACHE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const setWishlistCache = (ids) => {
+  localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(ids));
+};
+
+const updateWishlistCache = (productId, shouldInclude) => {
+  const current = getWishlistCache();
+  const next = shouldInclude
+    ? Array.from(new Set([...current, productId]))
+    : current.filter((id) => id !== productId);
+  setWishlistCache(next);
+};
+
 const ProductCard = ({ product, showAddToCart = true }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -18,7 +43,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
   const cartItem = cartItems.find(item =>
-    item.product?.id === product.id || item.id === product.id
+    (item.product?.id ?? item.id) === product.id
   );
   const inCart = !!cartItem;
   const displayQuantity = cartItem ? cartItem.quantity : 0;
@@ -37,15 +62,26 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       return;
     }
 
+    const cachedLocal = getWishlistCache().includes(product.id);
+    const cachedStatus = wishlistStatusCache.get(product.id);
+    setIsWishlisted(typeof cachedStatus === 'boolean' ? cachedStatus : cachedLocal);
+
+    if (typeof cachedStatus === 'boolean') {
+      return;
+    }
+
     let cancelled = false;
     const fetchWishlistStatus = async () => {
       try {
         const response = await wishlistAPI.checkWishlist(product.id);
         if (!cancelled) {
-          setIsWishlisted(response.data.is_in_wishlist);
+          const isInWishlist = !!response.data.is_in_wishlist;
+          setIsWishlisted(isInWishlist);
+          updateWishlistCache(product.id, isInWishlist);
+          wishlistStatusCache.set(product.id, isInWishlist);
         }
       } catch {
-        if (!cancelled) setIsWishlisted(false);
+        // Keep cached state if request fails.
       }
     };
 
@@ -89,10 +125,14 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       if (isWishlisted) {
         await wishlistAPI.removeFromWishlist(product.id);
         setIsWishlisted(false);
+        updateWishlistCache(product.id, false);
+        wishlistStatusCache.set(product.id, false);
         toast.success('Removed from wishlist 💔');
       } else {
         await wishlistAPI.addToWishlist(product.id);
         setIsWishlisted(true);
+        updateWishlistCache(product.id, true);
+        wishlistStatusCache.set(product.id, true);
         toast.success('Added to wishlist ❤️');
       }
     } catch {
@@ -143,11 +183,14 @@ const ProductCard = ({ product, showAddToCart = true }) => {
 
   const isOnSale = product.effective_price && parseFloat(product.effective_price) < parseFloat(product.price);
   const displayPrice = isOnSale ? product.effective_price : product.price;
+  const categoryName = product.category?.name || product.category || '';
+  const brandName = product.brand?.name || product.brand_name || '';
+  const defaultVariantLabel = product.default_variant?.variant_name || '';
 
   const renderStars = (rating) => {
     const fullStars = Math.round(rating || 0);
     return (
-      <span style={{ display: 'inline-flex', gap: '1px' }}>
+      <span className="product-stars">
         {[1, 2, 3, 4, 5].map((i) => (
           <svg
             key={i}
@@ -157,7 +200,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
             fill={i <= fullStars ? '#f59e0b' : 'none'}
             stroke="#f59e0b"
             strokeWidth="1.5"
-            style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+            className="product-star-icon"
           >
             <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
           </svg>
@@ -170,14 +213,12 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     <div
       className={`product-card ${isOnSale ? 'on-sale' : ''}`}
       onClick={handleCardClick}
-      style={{ cursor: 'pointer' }}
     >
       {isOnSale && <span className="sale-badge">Sale</span>}
 
       <button
         onClick={handleWishlist}
         className={`wishlist-btn ${isWishlisted ? 'active' : ''}`}
-        style={{ color: isWishlisted ? '#ff4444' : 'inherit' }}
         aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         disabled={isWishlistLoading}
       >
@@ -185,10 +226,16 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       </button>
 
       <div className="product-image">
-        {product.emoji || categoryEmojis[product.category?.toLowerCase?.()] || '📦'}
+        {product.emoji || categoryEmojis[categoryName?.toLowerCase?.()] || '📦'}
       </div>
 
       <h3 className="product-name">{product.name}</h3>
+      {(brandName || defaultVariantLabel) && (
+        <div className="product-meta-line">
+          {brandName && <span className="product-brand-badge">{brandName}</span>}
+          {defaultVariantLabel && <span className="product-variant-badge">{defaultVariantLabel}</span>}
+        </div>
+      )}
 
       <div className="product-rating">
         {renderStars(product.rating)}
@@ -236,13 +283,15 @@ const ProductCard = ({ product, showAddToCart = true }) => {
                   +
                 </button>
               </div>
-              <Link
-                to="/cart"
-                className="btn-view-cart"
-                onClick={(e) => e.stopPropagation()}
-              >
-                View Cart
-              </Link>
+              <div className="product-view-cart-row">
+                <Link
+                  to="/cart"
+                  className="btn-sm btn-primary view-cart-btn"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View Cart
+                </Link>
+              </div>
             </>
           ) : (
             <button
@@ -260,7 +309,6 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         to={`/product/${product.id}`}
         className="product-card-cta"
         onClick={(e) => e.stopPropagation()}
-        style={{ display: 'block', marginTop: '0.5rem', fontWeight: 700, color: 'var(--primary-pink)', textDecoration: 'none' }}
       >
         View Details →
       </Link>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, ToastBar, toast } from 'react-hot-toast';
 import { store } from './store';
 import { initializeTheme } from './store/slices/themeSlice';
 import { fetchConfig } from './store/slices/configSlice';
@@ -11,6 +11,7 @@ import { selectIsAuthenticated } from './store/slices/authSlice';
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
+import MobileTabBar from './components/MobileTabBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import ConnectivityCheck from './components/ConnectivityCheck';
 
@@ -40,10 +41,11 @@ const MainLayout = () => {
   return (
     <div className="app-layout">
       <Header />
-      <main className="app-main">
+      <main className="app-main app-shell-main">
         <Outlet />
       </main>
       <Footer />
+      <MobileTabBar />
     </div>
   );
 };
@@ -51,13 +53,6 @@ const MainLayout = () => {
 const AppContent = () => {
   const dispatch = useDispatch();
   const isAuthenticated = useSelector(selectIsAuthenticated);
-
-  useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true';
-    if (isDark) {
-      document.body.classList.add('dark-mode');
-    }
-  }, []);
 
   useEffect(() => {
     dispatch(fetchCart());
@@ -136,11 +131,12 @@ const AppContent = () => {
           position="bottom-right"
           toastOptions={{
             duration: 3000,
+            className: 'app-toast',
             style: {
               background: 'var(--primary-green)',
               color: 'var(--text-dark)',
               borderRadius: '15px',
-              padding: '16px 24px',
+              padding: '12px 14px',
               boxShadow: 'var(--shadow-hover)',
               fontWeight: 600,
             },
@@ -156,7 +152,26 @@ const AppContent = () => {
               },
             },
           }}
-        />
+        >
+          {(t) => (
+            <ToastBar toast={t}>
+              {({ icon, message }) => (
+                <div className="app-toast-inner">
+                  <span>{icon}</span>
+                  <span>{message}</span>
+                  <button
+                    type="button"
+                    className="app-toast-close"
+                    onClick={() => toast.dismiss(t.id)}
+                    aria-label="Close toast"
+                  >
+                    x
+                  </button>
+                </div>
+              )}
+            </ToastBar>
+          )}
+        </Toaster>
       </ConnectivityCheck>
     </Router>
   );

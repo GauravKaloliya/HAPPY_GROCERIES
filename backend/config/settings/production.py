@@ -2,14 +2,20 @@
 Production settings for backend project.
 """
 
+import os
+from datetime import timedelta
+
 from .base import *
-import django
 
 # Force production mode
 DEBUG = False
 
 # Get allowed hosts from environment variable
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+default_hosts = ['localhost', '127.0.0.1', '.onrender.com']
+if render_host:
+    default_hosts.append(render_host)
+ALLOWED_HOSTS = sorted(set(parse_csv_env('ALLOWED_HOSTS') + default_hosts))
 
 # Security settings for production
 SECURE_SSL_REDIRECT = True
@@ -25,11 +31,15 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 # Production CORS settings - use comma-separated string in environment variable
-CORS_ALLOWED_ORIGINS = os.environ.get(
+CORS_ALLOWED_ORIGINS = parse_csv_env(
     'CORS_ALLOWED_ORIGINS',
     'https://happygroceries.shop,https://www.happygroceries.shop,http://localhost:5173,http://localhost:3000'
-).split(',')
+)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.onrender\.com$",
+]
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = parse_csv_env('CSRF_TRUSTED_ORIGINS', 'https://*.onrender.com')
 
 # Cookie settings for cross-domain JWT
 SESSION_COOKIE_AGE = 1800  # 30 minutes

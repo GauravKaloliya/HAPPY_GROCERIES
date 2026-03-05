@@ -21,7 +21,7 @@ const initialState = {
     standard_delivery_charge: 40,
     express_delivery_charge: 50,
     free_delivery_threshold: 500,
-    site_name: 'HappyGroceries',
+    site_name: 'Happy Groceries',
     site_currency: '₹',
   },
   sortOptions: [],

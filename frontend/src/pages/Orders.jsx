@@ -46,7 +46,7 @@ const Orders = () => {
           <div className="empty-state-icon">📦</div>
           <h3>No orders yet!</h3>
           <p>Start shopping to see your orders here</p>
-          <Link to="/shop" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+          <Link to="/shop" className="btn-primary">
             Start Shopping
           </Link>
         </div>
@@ -64,7 +64,7 @@ const Orders = () => {
           <div key={order.id} className="order-card">
             <div className="order-header">
               <div>
-                <span className="order-id">Order #{order.id}</span>
+                <span className="order-id">Order #{order.order_id || order.id}</span>
                 <p className="order-date">{formatDateTime(order.created_at)}</p>
               </div>
               <span className={`order-status ${getStatusClass(order.status)}`}>
@@ -76,7 +76,21 @@ const Orders = () => {
               <div className="order-items">
                 {order.items?.map((item, index) => (
                   <div key={index} className="order-item">
-                    <span className="order-item-name">{item.product_name || 'Unknown Product'}</span>
+                    <div className="order-item-primary">
+                      <span className="order-item-emoji">{item.product_emoji || '📦'}</span>
+                      <div className="order-item-text">
+                        <span className="order-item-name">{item.product_name || 'Unknown Product'}</span>
+                        <span className="order-item-meta">
+                          {[
+                            item.variant_name,
+                            item.sku && `SKU: ${item.sku}`,
+                            item.unit_type && item.unit_value
+                              ? `${item.unit_value} ${item.unit_type}`
+                              : item.unit_type || null,
+                          ].filter(Boolean).join(' • ') || 'Variant details unavailable'}
+                        </span>
+                      </div>
+                    </div>
                     <span className="order-item-qty">x{item.quantity}</span>
                     <span className="order-item-price">{formatPrice(item.subtotal || (item.product_price * item.quantity) || 0)}</span>
                   </div>
@@ -92,8 +106,8 @@ const Orders = () => {
               </div>
             </div>
 
-            <button 
-              className={`toggle-order-btn ${expandedOrder === order.id ? 'active' : ''}`}
+            <button
+              className={`toggle-order-btn btn-primary ${expandedOrder === order.id ? 'active' : ''}`}
               onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
             >
               {expandedOrder === order.id ? 'Hide Details' : 'View Details'}

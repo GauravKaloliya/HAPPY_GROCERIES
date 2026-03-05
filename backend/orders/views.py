@@ -1,11 +1,10 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db import models
 
-from .models import Order, OrderItem
+from config.error_handling import BadRequestError
+from .models import Order
 from .serializers import OrderSerializer, CreateOrderSerializer
 from .services.order_service import OrderService
 from cart.models import Cart
@@ -26,38 +25,31 @@ class OrderViewSet(viewsets.ModelViewSet):
             user=self.request.user,
             is_deleted=False
         ).prefetch_related(
-            'items__product'
+            'items__product__variants'
         )
     
     def create(self, request):
         """Create a new order."""
         serializer = CreateOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        payload_items = serializer.validated_data.get('items') or []
+
+        cart = Cart.objects.filter(user=request.user, is_deleted=False).first()
+        cart_items = None
+        if cart:
+            cart_items = cart.items.filter(is_deleted=False)
 
         try:
-            cart = Cart.objects.filter(user=request.user, is_deleted=False).first()
-            cart_items = None
-            if cart:
-                cart_items = cart.items.filter(is_deleted=False)
-
             order = OrderService.create_order(
                 user=request.user,
-                cart=cart if cart_items and cart_items.exists() else None,
+                # Explicit request items always take precedence over cart snapshot.
+                cart=None if payload_items else (cart if cart_items and cart_items.exists() else None),
                 delivery_data=serializer.validated_data
             )
+        except ValueError as exc:
+            raise BadRequestError(str(exc)) from exc
 
-            return Response(
-                OrderSerializer(order).data,
-                status=status.HTTP_201_CREATED
-            )
-
-        except ValueError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except Exception:
-            return Response(
-                {'error': 'Failed to create order'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        return Response(
+            OrderSerializer(order).data,
+            status=status.HTTP_201_CREATED
+        )

@@ -37,8 +37,6 @@ const Signup = () => {
 
   useEffect(() => {
     dispatch(clearError());
-    setFormErrors({});
-    setSubmitError('');
   }, [dispatch]);
 
   const passwordStrength = (() => {
@@ -61,7 +59,6 @@ const Signup = () => {
       setFormErrors({ ...formErrors, [name]: '' });
     }
     if (submitError) setSubmitError('');
-    // Reset validation status when field changes
     if (name === 'phone' || name === 'email') {
       setValidationStatus(prev => ({
         ...prev,
@@ -73,7 +70,7 @@ const Signup = () => {
   const handlePhoneBlur = async () => {
     const phone = formData.phone;
     if (!phone || !/^\d{10}$/.test(phone)) return;
-    
+
     setValidationStatus(prev => ({ ...prev, phone: { checking: true, available: null } }));
     try {
       const response = await authAPI.checkPhone(phone);
@@ -90,7 +87,7 @@ const Signup = () => {
   const handleEmailBlur = async () => {
     const email = formData.email;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return;
-    
+
     setValidationStatus(prev => ({ ...prev, email: { checking: true, available: null } }));
     try {
       const response = await authAPI.checkEmail(email);
@@ -258,7 +255,7 @@ const Signup = () => {
 
           <div className="form-group">
             <label htmlFor="phone">Phone Number</label>
-            <div style={{ position: 'relative' }}>
+            <div>
               <input
                 type="text"
                 inputMode="numeric"
@@ -270,10 +267,10 @@ const Signup = () => {
                 placeholder="Enter 10-digit phone number"
                 maxLength="10"
                 autoComplete="tel"
-                style={{ paddingRight: validationStatus.phone.available !== null ? '2.5rem' : undefined }}
+
               />
               {getValidationIcon('phone') && (
-                <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                <span>
                   {getValidationIcon('phone')}
                 </span>
               )}
@@ -284,8 +281,8 @@ const Signup = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
-            <div style={{ position: 'relative' }}>
+            <label htmlFor="email">Email <span>(optional)</span></label>
+            <div>
               <input
                 type="email"
                 id="email"
@@ -295,10 +292,10 @@ const Signup = () => {
                 onBlur={handleEmailBlur}
                 placeholder="Enter your email"
                 autoComplete="email"
-                style={{ paddingRight: validationStatus.email.available !== null ? '2.5rem' : undefined }}
+
               />
               {getValidationIcon('email') && (
-                <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                <span>
                   {getValidationIcon('email')}
                 </span>
               )}
@@ -337,18 +334,11 @@ const Signup = () => {
                 <div className="password-strength">
                   <div className={`password-strength-bar ${passwordStrength}`}></div>
                 </div>
-                <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                <div>
                   {PASSWORD_RULES.map((rule, i) => (
                     <span
                       key={i}
-                      style={{
-                        fontSize: '0.75rem',
-                        padding: '0.15rem 0.5rem',
-                        borderRadius: '99px',
-                        background: rule.test(formData.password) ? 'var(--primary-green, #22c55e)' : '#f1f5f9',
-                        color: rule.test(formData.password) ? 'white' : '#64748b',
-                        transition: 'background 0.2s',
-                      }}
+
                     >
                       {rule.test(formData.password) ? '✓' : '○'} {rule.label}
                     </span>
@@ -385,7 +375,7 @@ const Signup = () => {
           </div>
 
           {submitError && (
-            <div className="error-message show" style={{ marginBottom: '1rem' }}>
+            <div className="error-message show">
               {submitError}
             </div>
           )}
@@ -403,7 +393,7 @@ const Signup = () => {
           Already have an account? <Link to="/login" onClick={handleLoginClick}>Login</Link>
         </p>
 
-        <p className="auth-link" style={{ marginTop: '0.5rem' }}>
+        <p className="auth-link">
           <Link to="/">← Back to home</Link>
         </p>
       </div>
