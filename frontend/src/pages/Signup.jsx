@@ -67,8 +67,7 @@ const Signup = () => {
     }
   };
 
-  const handlePhoneBlur = async () => {
-    const phone = formData.phone;
+  const handlePhoneAvailability = async (phone) => {
     if (!phone || !/^\d{10}$/.test(phone)) return;
 
     setValidationStatus(prev => ({ ...prev, phone: { checking: true, available: null } }));
@@ -84,8 +83,7 @@ const Signup = () => {
     }
   };
 
-  const handleEmailBlur = async () => {
-    const email = formData.email;
+  const handleEmailAvailability = async (email) => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return;
 
     setValidationStatus(prev => ({ ...prev, email: { checking: true, available: null } }));
@@ -98,6 +96,70 @@ const Signup = () => {
       }
     } catch {
       setValidationStatus(prev => ({ ...prev, email: { checking: false, available: null } }));
+    }
+  };
+
+  const validateField = (field) => {
+    const value = formData[field] || '';
+    if (field === 'name') {
+      if (!value.trim()) return 'Full name is required';
+      if (value.trim().length < 2) return 'Name must be at least 2 characters';
+      if (!/^[a-zA-Z\s'-]+$/.test(value.trim())) {
+        return 'Name can only contain letters, spaces, hyphens and apostrophes';
+      }
+    }
+
+    if (field === 'phone') {
+      if (!value) return 'Phone number is required';
+      if (!/^\d{10}$/.test(value)) return 'Enter a valid 10-digit phone number';
+    }
+
+    if (field === 'email') {
+      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+        return 'Enter a valid email address';
+      }
+    }
+
+    if (field === 'password') {
+      if (!value) return 'Password is required';
+      if (value.length < 8) return 'Password must be at least 8 characters';
+      if (!/[A-Z]/.test(value)) return 'Password must contain at least one uppercase letter';
+      if (!/[a-z]/.test(value)) return 'Password must contain at least one lowercase letter';
+      if (!/\d/.test(value)) return 'Password must contain at least one number';
+    }
+
+    if (field === 'confirmPassword') {
+      if (!value) return 'Please confirm your password';
+      if (formData.password !== value) return 'Passwords do not match';
+    }
+
+    return '';
+  };
+
+  const handleFieldBlur = async (field) => {
+    const error = validateField(field);
+    if (error) {
+      setFormErrors(prev => ({ ...prev, [field]: error }));
+      return;
+    }
+
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+
+    if (field === 'phone') {
+      await handlePhoneAvailability(formData.phone);
+    }
+
+    if (field === 'email') {
+      await handleEmailAvailability(formData.email);
+    }
+
+    if (field === 'password' && formData.confirmPassword) {
+      const confirmError = validateField('confirmPassword');
+      if (confirmError) {
+        setFormErrors(prev => ({ ...prev, confirmPassword: confirmError }));
+      }
     }
   };
 
@@ -245,6 +307,7 @@ const Signup = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
+              onBlur={() => handleFieldBlur('name')}
               placeholder="Enter your full name"
               autoComplete="name"
             />
@@ -255,7 +318,7 @@ const Signup = () => {
 
           <div className="form-group">
             <label htmlFor="phone">Phone Number</label>
-            <div>
+            <div className="input-with-icon">
               <input
                 type="text"
                 inputMode="numeric"
@@ -263,14 +326,14 @@ const Signup = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                onBlur={handlePhoneBlur}
+                onBlur={() => handleFieldBlur('phone')}
                 placeholder="Enter 10-digit phone number"
                 maxLength="10"
                 autoComplete="tel"
 
               />
               {getValidationIcon('phone') && (
-                <span>
+                <span className="validation-icon">
                   {getValidationIcon('phone')}
                 </span>
               )}
@@ -282,20 +345,20 @@ const Signup = () => {
 
           <div className="form-group">
             <label htmlFor="email">Email <span>(optional)</span></label>
-            <div>
+            <div className="input-with-icon">
               <input
                 type="email"
                 id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                onBlur={handleEmailBlur}
+                onBlur={() => handleFieldBlur('email')}
                 placeholder="Enter your email"
                 autoComplete="email"
 
               />
               {getValidationIcon('email') && (
-                <span>
+                <span className="validation-icon">
                   {getValidationIcon('email')}
                 </span>
               )}
@@ -314,6 +377,7 @@ const Signup = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
+                onBlur={() => handleFieldBlur('password')}
                 placeholder="Create a strong password"
                 autoComplete="new-password"
               />
@@ -357,6 +421,7 @@ const Signup = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                onBlur={() => handleFieldBlur('confirmPassword')}
                 placeholder="Re-enter your password"
                 autoComplete="new-password"
               />

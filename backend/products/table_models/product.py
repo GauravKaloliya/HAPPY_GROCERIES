@@ -27,6 +27,12 @@ class Product(models.Model):
     search_keywords = ArrayField(models.TextField(), null=True, blank=True, default=list)
     tags = ArrayField(models.TextField(), null=True, blank=True, default=list)
     attributes = models.JSONField(default=dict, blank=True)
+    price_db = models.DecimalField(max_digits=12, decimal_places=2, default=0, db_column='price')
+    stock_db = models.IntegerField(default=0, db_column='stock')
+    rating_db = models.DecimalField(max_digits=3, decimal_places=2, default=0, db_column='rating')
+    reviews_count_db = models.IntegerField(default=0, db_column='reviews_count')
+    emoji_db = models.CharField(max_length=10, default='', db_column='emoji')
+    discount_percent_db = models.IntegerField(default=0, db_column='discount_percent')
     average_rating = models.DecimalField(
         max_digits=3,
         decimal_places=2,
@@ -69,27 +75,34 @@ class Product(models.Model):
     def price(self):
         variant = self.default_variant
         if not variant:
-            return Decimal('0')
+            return self.price_db or Decimal('0')
         return variant.price
 
     @property
     def stock(self):
         variant = self.default_variant
         if not variant:
-            return 0
+            return int(self.stock_db or 0)
         return variant.stock_quantity
 
     @property
     def rating(self):
-        return self.average_rating
+        if self.average_rating:
+            return self.average_rating
+        return self.rating_db
 
     @property
     def reviews_count(self):
-        return self.review_count
+        if self.review_count:
+            return self.review_count
+        return self.reviews_count_db
 
     @property
     def discount_percent(self):
-        raw = (self.attributes or {}).get('discount_percent', 0)
+        if self.attributes:
+            raw = self.attributes.get('discount_percent', 0)
+        else:
+            raw = self.discount_percent_db
         try:
             value = int(raw)
         except (TypeError, ValueError):
@@ -98,7 +111,11 @@ class Product(models.Model):
 
     @property
     def emoji(self):
-        return (self.attributes or {}).get('emoji', '🛒')
+        if self.attributes and self.attributes.get('emoji'):
+            return self.attributes.get('emoji')
+        if self.emoji_db:
+            return self.emoji_db
+        return '🛒'
 
     @property
     def effective_price(self):

@@ -18,10 +18,6 @@ const getAutoApiBaseUrl = () => {
     return window.location.origin;
   }
 
-  if (hostname.endsWith('.onrender.com')) {
-    return `https://api.${hostname}`;
-  }
-
   const rootHost = hostname.replace(/^www\./, '');
   return `https://api.${rootHost}`;
 };
@@ -40,22 +36,8 @@ const api = axios.create({
   },
 });
 
-const normalizePathForBase = (url) => {
-  if (typeof url !== 'string') {
-    return url;
-  }
-  if (url.startsWith('/api/')) {
-    return url.slice(4);
-  }
-  if (url === '/api') {
-    return '/';
-  }
-  return url;
-};
-
 api.interceptors.request.use(
   (config) => {
-    config.url = normalizePathForBase(config.url);
     config.headers = config.headers || {};
     config.headers['X-Requested-With'] = 'XMLHttpRequest';
 

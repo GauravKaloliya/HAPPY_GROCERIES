@@ -507,6 +507,45 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 1rem;
 }
 
+.product-variant-select {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0.5rem 0 0.75rem;
+}
+
+.product-variant-select label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #666);
+    font-weight: 700;
+}
+
+.product-variant-select select {
+    padding: 0.3rem 0.55rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.78rem;
+    color: #1f2937;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #475569 50%),
+      linear-gradient(135deg, #475569 50%, transparent 50%),
+      linear-gradient(to right, #e2e8f0, #e2e8f0);
+    background-position: calc(100% - 12px) 50%,
+      calc(100% - 7px) 50%,
+      calc(100% - 24px) 50%;
+    background-size: 5px 5px, 5px 5px, 1px 18px;
+    background-repeat: no-repeat;
+    padding-right: 1.6rem;
+}
+
+.product-variant-select select:focus {
+    outline: 2px solid color-mix(in srgb, var(--primary-pink) 55%, white);
+    outline-offset: 2px;
+}
+
 .product-price-original {
     font-size: 1rem;
     font-weight: 400;
@@ -781,9 +820,6 @@ h1, h2, h3, h4, h5, h6 {
     max-width: 450px;
     margin: 4rem auto;
     padding: 3rem;
-    background: var(--bg-white);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-hover);
 }
 
 .auth-title {
@@ -828,6 +864,23 @@ h1, h2, h3, h4, h5, h6 {
 .form-group textarea {
     resize: vertical;
     min-height: 100px;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    padding-right: 2.5rem;
+}
+
+.validation-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    pointer-events: none;
 }
 
 .password-toggle {
@@ -1411,6 +1464,47 @@ h1, h2, h3, h4, h5, h6 {
     margin-right: 0.5rem;
 }
 
+.cart-variant-select {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0.35rem 0 0.6rem;
+}
+
+.cart-variant-select label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #666);
+    font-weight: 700;
+}
+
+.cart-variant-select select {
+    padding: 0.3rem 0.55rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.78rem;
+    color: #1f2937;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #475569 50%),
+      linear-gradient(135deg, #475569 50%, transparent 50%),
+      linear-gradient(to right, #e2e8f0, #e2e8f0);
+    background-position: calc(100% - 12px) 50%,
+      calc(100% - 7px) 50%,
+      calc(100% - 24px) 50%;
+    background-size: 5px 5px, 5px 5px, 1px 18px;
+    background-repeat: no-repeat;
+    padding-right: 1.6rem;
+    width: 150px;
+    max-width: 150px;
+}
+
+.cart-variant-select select:focus {
+    outline: 2px solid color-mix(in srgb, var(--primary-pink) 55%, white);
+    outline-offset: 2px;
+}
+
 .item-discount-badge {
     background: var(--primary-pink);
     color: white;
@@ -1496,6 +1590,37 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
+}
+
+.suggested-coupons {
+    margin: 1.25rem 0;
+}
+
+.suggested-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0.5rem 0;
+}
+
+.suggested-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.suggested-pill {
+    border: 1px dashed color-mix(in srgb, var(--primary-pink) 45%, white);
+    background: color-mix(in srgb, var(--primary-pink) 12%, white);
+    color: var(--primary-pink);
+    font-weight: 700;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.suggested-pill:hover {
+    background: color-mix(in srgb, var(--primary-pink) 20%, white);
 }
 
 .coupon-input-wrapper input {
@@ -2532,17 +2657,17 @@ body.dark-mode .settings-toggle-row { border-bottom-color: rgba(255,255,255,0.06
 }
 
 .product-details-actions.has-counter .product-details-main-actions .quantity-controls {
-    flex: 0 0 37.5%;
-    width: 37.5%;
+    flex: 0 0 55%;
+    width: 55%;
 }
 
 .product-details-actions.has-counter .product-details-main-actions .btn-md {
-    flex: 0 0 62.5%;
-    width: 62.5%;
+    flex: 0 0 45%;
+    width: 45%;
 }
 
 .product-details-view-cart {
-    margin-right: 0.5rem;
+    margin-right: 1rem;
 }
 
 .product-details-actions.has-counter .product-details-wishlist {
@@ -2550,6 +2675,7 @@ body.dark-mode .settings-toggle-row { border-bottom-color: rgba(255,255,255,0.06
     width: 20%;
     height: 48px;
     border-radius: var(--border-radius);
+    margin-left: 0.75rem;
 }
 
 .product-details-actions .btn-add-cart {
@@ -3040,6 +3166,12 @@ body.dark-mode .settings-toggle-row { border-bottom-color: rgba(255,255,255,0.06
     margin-bottom: 3rem;
 }
 
+.cart-summary .coupons-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
 .coupon-card {
     background: var(--bg-white);
     border-radius: var(--border-radius);
@@ -3200,6 +3332,14 @@ body.dark-mode .settings-toggle-row { border-bottom-color: rgba(255,255,255,0.06
 .btn-copy-coupon:hover {
     transform: scale(1.02);
     box-shadow: var(--shadow);
+}
+
+.btn-copy-coupon.disabled,
+.btn-copy-coupon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* Delivery Options */
@@ -4354,7 +4494,7 @@ body.dark-mode .settings-toggle-row { border-bottom-color: rgba(255,255,255,0.06
 /* About team section */
 .team-section {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   margin: 1rem 0 1.5rem;
 }
@@ -4969,12 +5109,13 @@ body.dark-mode select {
   border-color: var(--surface-border) !important;
 }
 
-/* Toast close control */
+/* Toast layout */
 .app-toast-inner {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
 }
+
 
 .app-toast-close {
   appearance: none;

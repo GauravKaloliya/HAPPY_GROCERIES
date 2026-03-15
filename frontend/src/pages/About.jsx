@@ -51,11 +51,6 @@ const About = () => {
             <h4>Arpita Makwana</h4>
             <p>CAO</p>
           </div>
-          <div className="team-card">
-            <div className="team-card-avatar">👩‍💼</div>
-            <h4>Nirali Joshi</h4>
-            <p>CMO</p>
-          </div>
         </div>
 
         <h3>Contact Us 📞</h3>
