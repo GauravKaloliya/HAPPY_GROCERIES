@@ -1,7 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from products.models import Product
+from products.models import Product, ProductVariant
 from .cart import Cart
 
 
@@ -10,6 +10,7 @@ class CartItem(models.Model):
 
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items')
+    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_items')
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     added_at = models.DateTimeField(auto_now_add=True)
 
@@ -18,7 +19,7 @@ class CartItem(models.Model):
 
     class Meta:
         db_table = 'cart_items'
-        unique_together = ['cart', 'product']
+        unique_together = ['cart', 'product', 'variant']
         managed = False
         indexes = [
             models.Index(fields=['cart'], name='cart_items_cart_idx'),
@@ -27,15 +28,29 @@ class CartItem(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
+        label = self.variant.variant_name if self.variant else 'Default'
+        return f"{self.product.name} ({label}) x {self.quantity}"
+
+    @property
+    def unit_price(self):
+        if self.variant and self.variant.price is not None:
+            return self.variant.price
+        return self.product.price
+
+    @property
+    def effective_unit_price(self):
+        discount = getattr(self.product, 'discount_percent', 0) or 0
+        if discount > 0:
+            return self.unit_price * (1 - (discount / 100))
+        return self.unit_price
 
     @property
     def total(self):
-        return self.product.effective_price * self.quantity
+        return self.effective_unit_price * self.quantity
 
     @property
     def original_total(self):
-        return self.product.price * self.quantity
+        return self.unit_price * self.quantity
 
     def soft_delete(self):
         self.is_deleted = True

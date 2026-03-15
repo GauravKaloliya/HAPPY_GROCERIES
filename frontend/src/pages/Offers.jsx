@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { couponsAPI } from '../api/coupons';
 import { categoriesAPI } from '../api/categories';
-import { selectCartSubtotal } from '../store/slices/cartSlice';
+import { ordersAPI } from '../api/orders';
+import { selectCartItems, selectCartSubtotal } from '../store/slices/cartSlice';
+import { selectIsAuthenticated } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
@@ -15,8 +17,11 @@ const Offers = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [hasOrders, setHasOrders] = useState(false);
   const COUPONS_LIMIT = 6;
   const cartTotal = useSelector(selectCartSubtotal);
+  const cartItems = useSelector(selectCartItems);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   useActivityLog('page_view', { section: 'offers' });
 
@@ -44,6 +49,23 @@ const Offers = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!isAuthenticated) {
+        setHasOrders(false);
+        return;
+      }
+      try {
+        const ordersRes = await ordersAPI.getAll();
+        const list = ordersRes.data?.results || ordersRes.data || [];
+        setHasOrders(Array.isArray(list) && list.length > 0);
+      } catch {
+        setHasOrders(false);
+      }
+    };
+    fetchOrders();
+  }, [isAuthenticated]);
 
   const handleViewMore = async () => {
     if (isFetchingMore) return;
@@ -76,7 +98,11 @@ const Offers = () => {
     }
   };
 
-  const handleCopyCode = (code) => {
+  const handleCopyCode = (code, coupon) => {
+    if (!isCouponApplicableToCart(coupon)) {
+      toast.error('This coupon is not applicable to your cart');
+      return;
+    }
     navigator.clipboard.writeText(code).then(() => {
       toast.success(`Coupon ${code} copied to clipboard! 📋`);
     }).catch(() => {
@@ -90,7 +116,37 @@ const Offers = () => {
     setHasMore(coupons.length >= COUPONS_LIMIT);
   };
 
+  const cartCategories = new Set(
+    (cartItems || [])
+      .map((item) => item?.product?.category?.name)
+      .filter(Boolean)
+  );
+
+  const isCouponApplicableToCart = (coupon) => {
+    if (coupon.first_order_only && !isAuthenticated) {
+      return false;
+    }
+    if (coupon.first_order_only && hasOrders) {
+      return false;
+    }
+    const applicable = coupon.applicable_categories || [];
+    if (Array.isArray(applicable) && applicable.length > 0) {
+      if (cartCategories.size === 0) return false;
+      return applicable.some((cat) => cartCategories.has(cat));
+    }
+    return true;
+  };
+
   const getEligibilityStatus = (coupon) => {
+    if (!isCouponApplicableToCart(coupon)) {
+      if (coupon.first_order_only && !isAuthenticated) {
+        return { status: 'locked', text: 'Login for First Order', icon: '🔒' };
+      }
+      if (coupon.first_order_only && hasOrders) {
+        return { status: 'locked', text: 'First Order Only', icon: '🔒' };
+      }
+      return { status: 'locked', text: 'Not for your cart', icon: '🔒' };
+    }
     if (cartTotal >= coupon.min_order_value) {
       return { status: 'applicable', text: 'Ready to Use', icon: '✅' };
     }
@@ -114,7 +170,8 @@ const Offers = () => {
     ? displayedCoupons
     : displayedCoupons.filter(c => c.applicable_categories?.includes(activeCategory) || c.coupon_type === 'percentage');
 
-  const couponsList = filteredCoupons.filter(c => c.is_active);
+  const couponsList = filteredCoupons
+    .filter(c => c.is_active);
   const showViewMore = hasMore;
 
   if (loading) return <PageLoader />;
@@ -169,6 +226,7 @@ const Offers = () => {
               const eligibility = getEligibilityStatus(coupon);
               const daysLeft = coupon.valid_until ? calculateDaysLeft(coupon.valid_until) : null;
               const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
+              const canCopy = eligibility.status === 'applicable';
 
               return (
                 <div
@@ -229,8 +287,9 @@ const Offers = () => {
 
                   <div className="coupon-footer">
                     <button
-                      onClick={() => handleCopyCode(coupon.code)}
-                      className="btn-copy-coupon"
+                      onClick={() => handleCopyCode(coupon.code, coupon)}
+                      className={`btn-copy-coupon ${canCopy ? '' : 'disabled'}`}
+                      disabled={!canCopy}
                     >
                       Copy Code
                     </button>

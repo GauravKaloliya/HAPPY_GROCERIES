@@ -30,6 +30,8 @@ FRONTEND_DIST_DIR = BASE_DIR / 'frontend' / 'dist'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-happygroceries-dev-key')
 
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development').lower()
+
 # Application definition
 
 DJANGO_APPS = [
@@ -113,11 +115,15 @@ database_url = os.environ['DATABASE_URL']
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
+ssl_require = True
+if 'sslmode=disable' in database_url or ENVIRONMENT == 'development':
+    ssl_require = False
+
 DATABASES = {
     'default': dj_database_url.parse(
         database_url,
         conn_max_age=600,
-        ssl_require=True,
+        ssl_require=ssl_require,
     )
 }
 

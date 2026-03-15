@@ -155,9 +155,8 @@ const AppContent = () => {
         >
           {(t) => (
             <ToastBar toast={t}>
-              {({ icon, message }) => (
+              {({ message }) => (
                 <div className="app-toast-inner">
-                  <span>{icon}</span>
                   <span>{message}</span>
                   <button
                     type="button"
@@ -165,7 +164,7 @@ const AppContent = () => {
                     onClick={() => toast.dismiss(t.id)}
                     aria-label="Close toast"
                   >
-                    x
+                    ✕
                   </button>
                 </div>
               )}
