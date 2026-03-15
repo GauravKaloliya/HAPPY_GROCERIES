@@ -2,26 +2,26 @@ import api from './axios';
 
 export const reviewsAPI = {
   // Get reviews for a product
-  getProductReviews: (productId) => api.get(`/api/reviews/product/${productId}/`),
+  getProductReviews: (productId) => api.get(`/reviews/product/${productId}/`),
 
   // Get review summary for a product
-  getReviewSummary: (productId) => api.get(`/api/reviews/product/${productId}/summary/`),
+  getReviewSummary: (productId) => api.get(`/reviews/product/${productId}/summary/`),
 
   // Create a review
-  createReview: (productId, data) => api.post(`/api/reviews/product/${productId}/`, data),
+  createReview: (productId, data) => api.post(`/reviews/product/${productId}/`, data),
 
   // Update a review
-  updateReview: (reviewId, data) => api.patch(`/api/reviews/${reviewId}/`, data),
+  updateReview: (reviewId, data) => api.patch(`/reviews/${reviewId}/`, data),
 
   // Delete a review
-  deleteReview: (reviewId) => api.delete(`/api/reviews/${reviewId}/`),
+  deleteReview: (reviewId) => api.delete(`/reviews/${reviewId}/`),
 
   // Mark review as helpful
-  markHelpful: (reviewId) => api.post(`/api/reviews/${reviewId}/helpful/`),
+  markHelpful: (reviewId) => api.post(`/reviews/${reviewId}/helpful/`),
 
   // Get user's reviews
-  getMyReviews: () => api.get('/api/reviews/my-reviews/'),
+  getMyReviews: () => api.get('/reviews/my-reviews/'),
 
   // Get pending reviews (purchased but not reviewed)
-  getPendingReviews: () => api.get('/api/reviews/pending/'),
+  getPendingReviews: () => api.get('/reviews/pending/'),
 };

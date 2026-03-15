@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS categories (
     is_deleted    BOOLEAN      NOT NULL DEFAULT FALSE,
     deleted_at    TIMESTAMPTZ,
 
-    CONSTRAINT categories_name_unique UNIQUE (name) DEFERRABLE INITIALLY DEFERRED
+    CONSTRAINT categories_name_unique UNIQUE (name)
 );
 
 CREATE INDEX IF NOT EXISTS categories_name_trgm_idx      ON categories USING GIN (name gin_trgm_ops) WHERE is_deleted = false;
@@ -96,6 +96,12 @@ CREATE TABLE IF NOT EXISTS products (
     name              VARCHAR(150) NOT NULL,
     brand_id          INTEGER      REFERENCES brands(id) ON DELETE SET NULL,
     category_id       INTEGER      NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    price             DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (price >= 0),
+    emoji             VARCHAR(10)  NOT NULL DEFAULT '',
+    rating            DECIMAL(3,2) NOT NULL DEFAULT 0 CHECK (rating BETWEEN 0 AND 5),
+    reviews_count     INTEGER      NOT NULL DEFAULT 0 CHECK (reviews_count >= 0),
+    stock             INTEGER      NOT NULL DEFAULT 0 CHECK (stock >= 0),
+    discount_percent  INTEGER      NOT NULL DEFAULT 0 CHECK (discount_percent >= 0),
     description       TEXT         NOT NULL DEFAULT '',
     search_keywords   TEXT[],
     tags              TEXT[],
@@ -180,15 +186,17 @@ CREATE TABLE IF NOT EXISTS cart_items (
     id BIGSERIAL PRIMARY KEY,
     cart_id BIGINT NOT NULL REFERENCES carts(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
     product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+    variant_id BIGINT REFERENCES product_variants(id) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED,
     quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
     added_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMP WITH TIME ZONE,
-    UNIQUE(cart_id, product_id)
+    UNIQUE(cart_id, product_id, variant_id)
 );
 
 CREATE INDEX cart_items_cart_idx ON cart_items(cart_id);
 CREATE INDEX cart_items_product_idx ON cart_items(product_id);
+CREATE INDEX cart_items_variant_idx ON cart_items(variant_id);
 CREATE INDEX cart_items_cart_is_deleted_idx ON cart_items(cart_id, is_deleted);
 
 -- =====================================================

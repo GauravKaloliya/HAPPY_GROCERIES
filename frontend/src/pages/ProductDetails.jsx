@@ -6,6 +6,7 @@ import { addToCart, selectCartItems } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { fetchReviewSummary, selectReviewSummary } from '../store/slices/reviewsSlice';
+import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import ProductCard from '../components/ProductCard';
@@ -45,17 +46,6 @@ const ProductDetails = () => {
   const [selectedVariantId, setSelectedVariantId] = useState(null);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
-
-  const cartItem = product && cartItems.find(item =>
-    (item.product?.id ?? item.id) === product.id
-  );
-
-  useEffect(() => {
-    if (product && cartItem) {
-      setShowCounter(true);
-      setQuantity(cartItem.quantity || 1);
-    }
-  }, [product, cartItem]);
 
   const logProductView = useCallback((productId, productName) => {
     logCustomActivity('product_view', { product_id: productId, product_name: productName });
@@ -119,7 +109,13 @@ const ProductDetails = () => {
     const addQty = quantity > 0 ? quantity : 1;
     setIsAddingToCart(true);
     try {
-      await dispatch(addToCart({ productId: product.id, quantity: addQty, product })).unwrap();
+      await dispatch(addToCart({
+        productId: product.id,
+        variantId: selectedVariant?.id ?? null,
+        quantity: addQty,
+        product,
+        variant: selectedVariant,
+      })).unwrap();
       toast.success(`Added ${addQty} ${product.name} to cart! 🛒`);
       logCustomActivity('add_to_cart', { product_id: product.id, product_name: product.name, quantity: addQty });
       setShowCounter(true);
@@ -202,6 +198,56 @@ const ProductDetails = () => {
     ));
   };
 
+  const variants = Array.isArray(product?.variants)
+    ? product.variants
+    : (product?.default_variant ? [product.default_variant] : []);
+  const sortedVariants = [...variants].sort((a, b) => {
+    const normalizeUnit = (variant) => {
+      const unitType = (variant.unit_type || '').toLowerCase();
+      const rawValue = Number(variant.unit_value ?? 0);
+      if (unitType === 'kg') return rawValue * 1000;
+      if (unitType === 'liter') return rawValue * 1000;
+      if (unitType === 'l') return rawValue * 1000;
+      if (unitType === 'g') return rawValue;
+      if (unitType === 'ml') return rawValue;
+      return rawValue;
+    };
+    const aUnit = normalizeUnit(a);
+    const bUnit = normalizeUnit(b);
+    if (aUnit !== bUnit) return aUnit - bUnit;
+    const aPrice = Number(a.price ?? 0);
+    const bPrice = Number(b.price ?? 0);
+    return aPrice - bPrice;
+  });
+  const selectedVariant = sortedVariants.find((variant) => variant.id === selectedVariantId)
+    || product?.default_variant
+    || sortedVariants[0]
+    || null;
+  const cartItem = product && cartItems.find(item => {
+    const itemProductId = item.product?.id ?? item.product_id ?? item.id;
+    const itemVariantId = item.variant?.id ?? item.variant_id ?? null;
+    const currentVariantId = selectedVariant?.id ?? null;
+    return itemProductId === product.id && itemVariantId === currentVariantId;
+  });
+  useEffect(() => {
+    if (product && cartItem) {
+      setShowCounter(true);
+      setQuantity(cartItem.quantity || 1);
+    }
+  }, [product, cartItem]);
+  const selectedVariantStock = selectedVariant?.stock_quantity ?? product?.stock ?? 0;
+  const selectedVariantPrice = selectedVariant?.price ?? product?.price ?? 0;
+  const discountPercent = Number(product?.discount_percent) || 0;
+  const hasDiscount = discountPercent > 0;
+  const priceValue = Number(selectedVariantPrice) || 0;
+  const discountedPrice = hasDiscount
+    ? priceValue * (1 - discountPercent / 100)
+    : priceValue;
+  const savings = hasDiscount ? priceValue - discountedPrice : 0;
+  const ratingValue = Number(product?.rating) || 0;
+  const reviewsCount = Number(reviewSummary?.total_reviews ?? product?.reviews_count ?? 0);
+  const stockInfo = getStockInfo(selectedVariantStock);
+
   if (loading) return <PageLoader />;
   if (!product) {
     return (
@@ -211,19 +257,6 @@ const ProductDetails = () => {
       </div>
     );
   }
-
-  const variants = Array.isArray(product.variants) ? product.variants : [];
-  const selectedVariant = variants.find((variant) => variant.id === selectedVariantId) || product.default_variant || variants[0] || null;
-  const selectedVariantStock = selectedVariant?.stock_quantity ?? product.stock ?? 0;
-  const selectedVariantPrice = selectedVariant?.price ?? product.price ?? 0;
-  const hasDiscount = product.discount_percent > 0;
-  const priceValue = parseFloat(selectedVariantPrice) || 0;
-  const discountPercent = parseFloat(product.discount_percent) || 0;
-  const discountedPrice = hasDiscount
-    ? priceValue * (1 - discountPercent / 100)
-    : priceValue;
-  const savings = hasDiscount ? priceValue - discountedPrice : 0;
-  const stockInfo = getStockInfo(selectedVariantStock);
 
   return (
     <div className="container">
@@ -245,7 +278,7 @@ const ProductDetails = () => {
                 role="button"
                 aria-label="View full size image"
               >
-                {product.emoji}
+                {product.emoji || product.category?.emoji || '📦'}
               </div>
               {hasDiscount && (
                 <div className="discount-badge">
@@ -269,11 +302,11 @@ const ProductDetails = () => {
                 </span>
               </div>
 
-              {variants.length > 0 && (
+              {sortedVariants.length > 0 && (
                 <div className="variant-selector">
                   <h4 className="variant-selector-title">Select Variant</h4>
                   <div className="variant-chip-list">
-                    {variants.map((variant) => (
+                    {sortedVariants.map((variant) => (
                       <button
                         key={variant.id}
                         type="button"
@@ -289,11 +322,9 @@ const ProductDetails = () => {
               )}
 
               <div className="product-rating">
+                <span>{renderStars(ratingValue)}</span>
                 <span>
-                  {renderStars(product.rating)}
-                </span>
-                <span>
-                  ({parseFloat(product.rating).toFixed(1)}) • {reviewSummary ? reviewSummary.total_reviews : product.reviews_count || 0} reviews
+                  ({ratingValue.toFixed(1)}) • {reviewsCount} reviews
                 </span>
               </div>
 
@@ -301,13 +332,13 @@ const ProductDetails = () => {
                 {hasDiscount ? (
                   <>
                     <div className="price-with-discount">
-                      <span className="original-price">₹{selectedVariantPrice}</span>
-                      <span className="discounted-price">₹{discountedPrice.toFixed(0)}</span>
+                      <span className="original-price">{formatPrice(selectedVariantPrice)}</span>
+                      <span className="discounted-price">{formatPrice(discountedPrice)}</span>
                     </div>
-                    <div className="savings-amount">You save ₹{savings.toFixed(0)}!</div>
+                    <div className="savings-amount">You save {formatPrice(savings)}!</div>
                   </>
                 ) : (
-                  <div className="product-details-price">₹{selectedVariantPrice}</div>
+                  <div className="product-details-price">{formatPrice(selectedVariantPrice)}</div>
                 )}
               </div>
 
@@ -394,13 +425,7 @@ const ProductDetails = () => {
               <h3>Product Information</h3>
               <div>
                 <div>
-                  <strong>Category:</strong> {product.category?.name || product.category}
-                </div>
-                <div>
-                  <strong>Stock:</strong> {selectedVariantStock} units
-                </div>
-                <div>
-                  <strong>Rating:</strong> {product.rating}/5
+                  <strong>Reviews:</strong> {reviewsCount}
                 </div>
                 {selectedVariant?.variant_name && (
                   <div>
@@ -408,9 +433,14 @@ const ProductDetails = () => {
                   </div>
                 )}
                 {hasDiscount && (
-                  <div>
-                    <strong>Discount:</strong> {product.discount_percent}% off
-                  </div>
+                  <>
+                    <div>
+                      <strong>Effective price:</strong> {formatPrice(discountedPrice)}
+                    </div>
+                    <div>
+                      <strong>Discount amount:</strong> {formatPrice(savings)}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -448,7 +478,7 @@ const ProductDetails = () => {
             ✕
           </button>
           <div className="image-viewer-content" onClick={(e) => e.stopPropagation()}>
-            {product.emoji}
+            {product.emoji || product.category?.emoji || '📦'}
           </div>
         </div>
       )}

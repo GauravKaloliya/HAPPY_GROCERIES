@@ -54,8 +54,8 @@ class ProductSerializer(serializers.ModelSerializer):
     stock = serializers.IntegerField(read_only=True)
     effective_price = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
-    rating = serializers.DecimalField(source='average_rating', max_digits=3, decimal_places=2, read_only=True)
-    reviews_count = serializers.IntegerField(source='review_count', read_only=True)
+    rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+    reviews_count = serializers.IntegerField(read_only=True)
     emoji = serializers.CharField(read_only=True)
     discount_percent = serializers.IntegerField(read_only=True)
 
@@ -110,12 +110,14 @@ class ProductListSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     stock = serializers.IntegerField(read_only=True)
     effective_price = serializers.SerializerMethodField()
-    rating = serializers.DecimalField(source='average_rating', max_digits=3, decimal_places=2, read_only=True)
-    reviews_count = serializers.IntegerField(source='review_count', read_only=True)
+    rating = serializers.DecimalField(max_digits=3, decimal_places=2, read_only=True)
+    reviews_count = serializers.IntegerField(read_only=True)
     emoji = serializers.CharField(read_only=True)
     discount_percent = serializers.IntegerField(read_only=True)
     brand_name = serializers.CharField(source='brand.name', read_only=True, allow_null=True)
     category = CategorySerializer(read_only=True)
+    default_variant = serializers.SerializerMethodField()
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -131,9 +133,44 @@ class ProductListSerializer(serializers.ModelSerializer):
             'reviews_count',
             'stock',
             'discount_percent',
+            'default_variant',
+            'variants',
             'is_featured',
             'is_new_arrival',
         ]
 
     def get_effective_price(self, obj):
         return obj.effective_price
+
+    def get_default_variant(self, obj):
+        variant = obj.default_variant
+        if not variant:
+            return None
+        return {
+            'id': variant.id,
+            'variant_name': variant.variant_name,
+            'price': str(variant.price) if variant.price is not None else None,
+            'stock_quantity': variant.stock_quantity,
+            'low_stock_threshold': variant.low_stock_threshold,
+            'weight': variant.weight,
+            'unit_type': variant.unit_type,
+            'unit_value': str(variant.unit_value) if variant.unit_value is not None else None,
+            'is_default': variant.is_default,
+        }
+
+    def get_variants(self, obj):
+        variants = obj.variants.filter(is_deleted=False).order_by('-is_default', 'id')
+        return [
+            {
+                'id': variant.id,
+                'variant_name': variant.variant_name,
+                'price': str(variant.price) if variant.price is not None else None,
+                'stock_quantity': variant.stock_quantity,
+                'low_stock_threshold': variant.low_stock_threshold,
+                'weight': variant.weight,
+                'unit_type': variant.unit_type,
+                'unit_value': str(variant.unit_value) if variant.unit_value is not None else None,
+                'is_default': variant.is_default,
+            }
+            for variant in variants
+        ]
