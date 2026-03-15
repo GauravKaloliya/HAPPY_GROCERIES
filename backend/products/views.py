@@ -1,4 +1,5 @@
-from django.db.models import DecimalField, OuterRef, Q, Subquery
+from django.db.models import DecimalField, OuterRef, Q, Subquery, F
+from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action
@@ -30,8 +31,45 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description', 'category__name', 'brand__name', 'tags']
-    ordering_fields = ['name', 'average_rating', 'review_count', 'created_at']
+    ordering_fields = [
+        'name',
+        'average_rating',
+        'review_count',
+        'created_at',
+        'default_price',
+        'default_stock',
+        'effective_price_value',
+        'effective_stock_value',
+        'price',
+        'stock',
+        'rating',
+        'reviews_count',
+    ]
     ordering = ['id']
+
+    def get_ordering(self):
+        ordering = self.request.query_params.get('ordering')
+        if not ordering:
+            return self.ordering
+
+        mapping = {
+            'price': 'effective_price_value',
+            '-price': '-effective_price_value',
+            'stock': 'effective_stock_value',
+            '-stock': '-effective_stock_value',
+            'rating': 'average_rating',
+            '-rating': '-average_rating',
+            'reviews_count': 'review_count',
+            '-reviews_count': '-review_count',
+        }
+
+        mapped = []
+        for field in ordering.split(','):
+            field = field.strip()
+            if not field:
+                continue
+            mapped.append(mapping.get(field, field))
+        return mapped or self.ordering
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -51,6 +89,8 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             .annotate(
                 default_price=Subquery(default_variant_qs.values('price')[:1], output_field=DecimalField(max_digits=12, decimal_places=2)),
                 default_stock=Subquery(default_variant_qs.values('stock_quantity')[:1]),
+                effective_price_value=Coalesce('default_price', F('price_db')),
+                effective_stock_value=Coalesce('default_stock', F('stock_db')),
             )
         )
 
@@ -59,11 +99,15 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
 
         category = self.request.query_params.get('category')
         if category and category != 'All':
-            queryset = queryset.filter(category__name=category)
+            category = category.strip()
+            if category:
+                queryset = queryset.filter(category__name__iexact=category)
 
         brand = self.request.query_params.get('brand')
         if brand and brand != 'All':
-            queryset = queryset.filter(brand__name=brand)
+            brand = brand.strip()
+            if brand:
+                queryset = queryset.filter(brand__name__iexact=brand)
 
         search = self.request.query_params.get('search')
         if search:
@@ -78,13 +122,13 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         min_price = self.request.query_params.get('min_price')
         max_price = self.request.query_params.get('max_price')
         if min_price:
-            queryset = queryset.filter(default_price__gte=min_price)
+            queryset = queryset.filter(effective_price_value__gte=min_price)
         if max_price:
-            queryset = queryset.filter(default_price__lte=max_price)
+            queryset = queryset.filter(effective_price_value__lte=max_price)
 
         in_stock = self.request.query_params.get('in_stock')
         if in_stock and in_stock.lower() == 'true':
-            queryset = queryset.filter(default_stock__gt=0)
+            queryset = queryset.filter(effective_stock_value__gt=0)
 
         return queryset
 
@@ -126,8 +170,11 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'])
     def featured(self, request):
-        products = self.get_queryset().filter(is_featured=True).order_by('-average_rating', '-review_count', '-created_at')[:8]
-        serializer = ProductListSerializer(products, many=True)
+        queryset = self.get_queryset()
+        featured = queryset.filter(is_featured=True).order_by('-average_rating', '-review_count', '-created_at')
+        if not featured.exists():
+            featured = queryset.order_by('-average_rating', '-review_count', '-created_at')
+        serializer = ProductListSerializer(featured[:8], many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])

@@ -148,6 +148,33 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
                 cart_total = float(cart_total)
             except (ValueError, TypeError):
                 cart_total = 0
+
+        # Enforce category eligibility if applicable_categories is set
+        if coupon.applicable_categories:
+            cart_items = request.data.get('cart_items') or []
+            cart_categories = set()
+            if isinstance(cart_items, list):
+                for item in cart_items:
+                    try:
+                        category_name = item.get('product', {}).get('category', {}).get('name')
+                    except AttributeError:
+                        category_name = None
+                    if category_name:
+                        cart_categories.add(category_name)
+            if not cart_categories:
+                return Response({
+                    'valid': False,
+                    'message': 'This coupon is not applicable to your cart',
+                    'coupon': CouponSerializer(coupon).data,
+                    'potential_discount': 0
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if not any(cat in cart_categories for cat in coupon.applicable_categories):
+                return Response({
+                    'valid': False,
+                    'message': 'This coupon is only valid for specific categories',
+                    'coupon': CouponSerializer(coupon).data,
+                    'potential_discount': 0
+                }, status=status.HTTP_400_BAD_REQUEST)
         
         # Check minimum order value
         if cart_total < float(coupon.min_order_value):
@@ -223,16 +250,47 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
     def suggested(self, request):
         """Get suggested coupons based on cart."""
         cart_total = request.data.get('cart_total', 0)
+        cart_items = request.data.get('cart_items') or []
         
         try:
             cart_total = float(cart_total)
         except (ValueError, TypeError):
             cart_total = 0
-        
-        # Get valid coupons that meet the minimum order value
-        queryset = self.get_queryset().filter(
-            min_order_value__lte=cart_total
-        ).order_by('-value')[:3]
-        
-        serializer = self.get_serializer(queryset, many=True)
+
+        cart_categories = set()
+        if isinstance(cart_items, list):
+            for item in cart_items:
+                try:
+                    category_name = item.get('product', {}).get('category', {}).get('name')
+                except AttributeError:
+                    category_name = None
+                if category_name:
+                    cart_categories.add(category_name)
+
+        queryset = self.get_queryset()
+        if cart_total > 0:
+            queryset = queryset.filter(min_order_value__lte=cart_total)
+
+        coupons = list(queryset.order_by('-value'))
+
+        # Filter by first-order-only and category applicability.
+        if request.user.is_authenticated:
+            from orders.models import Order
+            has_orders = Order.objects.filter(user=request.user, is_deleted=False).exists()
+        else:
+            has_orders = True
+
+        filtered = []
+        for coupon in coupons:
+            if coupon.first_order_only and has_orders:
+                continue
+            applicable = coupon.applicable_categories or []
+            if applicable:
+                if not cart_categories:
+                    continue
+                if not any(cat in cart_categories for cat in applicable):
+                    continue
+            filtered.append(coupon)
+
+        serializer = self.get_serializer(filtered, many=True)
         return Response(serializer.data)

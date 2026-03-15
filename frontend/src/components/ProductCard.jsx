@@ -42,11 +42,6 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const cartItems = useSelector(selectCartItems);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const cartItem = cartItems.find(item =>
-    (item.product?.id ?? item.id) === product.id
-  );
-  const inCart = !!cartItem;
-  const displayQuantity = cartItem ? cartItem.quantity : 0;
 
   const categoryEmojis = {
     fruits: '🍎',
@@ -102,7 +97,13 @@ const ProductCard = ({ product, showAddToCart = true }) => {
 
     setIsAddingToCart(true);
     try {
-      await dispatch(addToCart({ productId: product.id, quantity: 1, product })).unwrap();
+      await dispatch(addToCart({
+        productId: product.id,
+        variantId: selectedVariant?.id ?? null,
+        quantity: 1,
+        product,
+        variant: selectedVariant,
+      })).unwrap();
       toast.success(`Added ${product.name} to cart! 🛒`);
     } catch (err) {
       toast.error(err || 'Failed to add to cart');
@@ -181,11 +182,65 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     }
   };
 
-  const isOnSale = product.effective_price && parseFloat(product.effective_price) < parseFloat(product.price);
-  const displayPrice = isOnSale ? product.effective_price : product.price;
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const sortedVariants = [...variants].sort((a, b) => {
+    const normalizeUnit = (variant) => {
+      const unitType = (variant.unit_type || '').toLowerCase();
+      const rawValue = Number(variant.unit_value ?? 0);
+      if (unitType === 'kg') return rawValue * 1000;
+      if (unitType === 'liter') return rawValue * 1000;
+      if (unitType === 'l') return rawValue * 1000;
+      if (unitType === 'g') return rawValue;
+      if (unitType === 'ml') return rawValue;
+      return rawValue;
+    };
+    const aUnit = normalizeUnit(a);
+    const bUnit = normalizeUnit(b);
+    if (aUnit !== bUnit) return aUnit - bUnit;
+    const aPrice = Number(a.price ?? 0);
+    const bPrice = Number(b.price ?? 0);
+    return aPrice - bPrice;
+  });
+  const initialVariantId = variants.find((variant) => variant.is_default)?.id
+    || product.default_variant?.id
+    || sortedVariants[0]?.id
+    || null;
+  const [selectedVariantId, setSelectedVariantId] = useState(initialVariantId);
+
+  useEffect(() => {
+    setSelectedVariantId(initialVariantId);
+  }, [product.id, initialVariantId]);
+
+  const selectedVariant = sortedVariants.find((variant) => variant.id === selectedVariantId)
+    || product.default_variant
+    || sortedVariants[0]
+    || null;
+  const cartItem = cartItems.find(item => {
+    const itemProductId = item.product?.id ?? item.product_id ?? item.id;
+    const itemVariantId = item.variant?.id ?? item.variant_id ?? null;
+    const currentVariantId = selectedVariant?.id ?? null;
+    return itemProductId === product.id && itemVariantId === currentVariantId;
+  });
+  const inCart = !!cartItem;
+  const displayQuantity = cartItem ? cartItem.quantity : 0;
+
+  const basePrice = Number(selectedVariant?.price ?? product.price ?? 0);
+  const discountPercentValue = Number(product.discount_percent ?? 0);
+  const effectivePrice = discountPercentValue > 0
+    ? basePrice * (1 - discountPercentValue / 100)
+    : basePrice;
+  const isOnSale = discountPercentValue > 0 && effectivePrice < basePrice;
+  const displayPrice = isOnSale ? effectivePrice : basePrice;
+  const discountPercent = isOnSale ? Math.round((1 - effectivePrice / basePrice) * 100) : 0;
+  const stockValue = Number(selectedVariant?.stock_quantity ?? product.stock ?? 0);
   const categoryName = product.category?.name || product.category || '';
   const brandName = product.brand?.name || product.brand_name || '';
-  const defaultVariantLabel = product.default_variant?.variant_name || '';
+  const defaultVariantLabel = selectedVariant?.variant_name || '';
+  const unitValue = selectedVariant?.unit_value ?? '';
+  const unitType = selectedVariant?.unit_type ?? '';
+  const unitLabel = unitValue && unitType
+    ? `${unitValue} ${unitType}`
+    : (unitType && unitType !== 'piece' ? unitType : '');
 
   const renderStars = (rating) => {
     const fullStars = Math.round(rating || 0);
@@ -237,6 +292,24 @@ const ProductCard = ({ product, showAddToCart = true }) => {
         </div>
       )}
 
+      {sortedVariants.length > 0 && (
+        <div className="product-variant-select">
+          <label htmlFor={`variant-${product.id}`}>Size</label>
+          <select
+            id={`variant-${product.id}`}
+            value={selectedVariantId || ''}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => setSelectedVariantId(Number(e.target.value))}
+          >
+            {sortedVariants.map((variant) => (
+              <option key={variant.id} value={variant.id}>
+                {variant.variant_name} • {formatPrice(variant.price)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="product-rating">
         {renderStars(product.rating)}
       </div>
@@ -246,18 +319,20 @@ const ProductCard = ({ product, showAddToCart = true }) => {
           <>
             <span className="product-price">
               {formatPrice(displayPrice)}
-              <span className="discount-badge">
-                -{Math.round((1 - parseFloat(displayPrice) / parseFloat(product.price)) * 100)}%
-              </span>
+              {discountPercent > 0 && (
+                <span className="discount-badge">
+                  -{discountPercent}%
+                </span>
+              )}
             </span>
-            <span className="product-price-original">{formatPrice(product.price)}</span>
+            <span className="product-price-original">{formatPrice(basePrice)}</span>
           </>
         ) : (
-          <span className="product-price">{formatPrice(product.price)}</span>
+          <span className="product-price">{formatPrice(basePrice)}</span>
         )}
       </div>
 
-      {showAddToCart && product.stock > 0 && (
+      {showAddToCart && stockValue > 0 && (
         <div className="product-actions">
           {inCart ? (
             <>
@@ -297,7 +372,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
             <button
               className="btn-add-cart"
               onClick={handleAddToCart}
-              disabled={isAddingToCart}
+              disabled={isAddingToCart || stockValue <= 0}
             >
               {isAddingToCart ? 'Adding...' : 'Add to Cart'}
             </button>

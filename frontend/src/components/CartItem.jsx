@@ -9,13 +9,32 @@ const CartItem = ({ item }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const product = item.product || {};
-  const price = parseFloat(product.price || item.price || 0);
-  const effectivePrice = parseFloat(product.effective_price || price);
-  const isOnSale = effectivePrice < price;
-  const displayPrice = isOnSale ? effectivePrice : price;
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const sortedVariants = [...variants].sort((a, b) => {
+    const normalizeUnit = (variant) => {
+      const unitType = (variant.unit_type || '').toLowerCase();
+      const rawValue = Number(variant.unit_value ?? 0);
+      if (unitType === 'kg' || unitType === 'liter' || unitType === 'l') return rawValue * 1000;
+      return rawValue;
+    };
+    const aUnit = normalizeUnit(a);
+    const bUnit = normalizeUnit(b);
+    if (aUnit !== bUnit) return aUnit - bUnit;
+    return Number(a.price ?? 0) - Number(b.price ?? 0);
+  });
+  const selectedVariant = item.variant
+    || sortedVariants.find((v) => v.id === item.variant_id)
+    || product.default_variant
+    || sortedVariants[0]
+    || null;
+  const basePrice = parseFloat(selectedVariant?.price || product.price || item.price || 0);
+  const discountPercent = parseFloat(product.discount_percent || 0) || 0;
+  const effectivePrice = discountPercent > 0 ? basePrice * (1 - discountPercent / 100) : basePrice;
+  const isOnSale = effectivePrice < basePrice;
+  const displayPrice = isOnSale ? effectivePrice : basePrice;
   const categoryName = product.category?.name || product.category || '';
   const brandName = product.brand?.name || product.brand_name || '';
-  const defaultVariantLabel = product.default_variant?.variant_name || '';
+  const defaultVariantLabel = selectedVariant?.variant_name || '';
 
   const handleUpdateQuantity = async (newQuantity) => {
     if (isUpdating) return;
@@ -24,14 +43,15 @@ const CartItem = ({ item }) => {
       await handleRemove();
       return;
     }
-    if (newQuantity > product.stock) {
+    const maxStock = selectedVariant?.stock_quantity ?? product.stock;
+    if (maxStock !== undefined && maxStock !== null && newQuantity > maxStock) {
       toast.error('Maximum stock reached!');
       return;
     }
 
     setIsUpdating(true);
     try {
-      await dispatch(updateCartItem({ itemId: item.id, quantity: newQuantity })).unwrap();
+      await dispatch(updateCartItem({ itemId: item.id, quantity: newQuantity, variantId: selectedVariant?.id ?? null })).unwrap();
     } catch (err) {
       toast.error(err || 'Failed to update quantity');
     } finally {
@@ -49,6 +69,22 @@ const CartItem = ({ item }) => {
     } catch (err) {
       toast.error(err || 'Failed to remove item');
       setIsRemoving(false);
+    }
+  };
+
+  const handleVariantChange = async (variantId) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+      await dispatch(updateCartItem({
+        itemId: item.id,
+        quantity: item.quantity,
+        variantId,
+      })).unwrap();
+    } catch (err) {
+      toast.error(err || 'Failed to update variant');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -76,16 +112,34 @@ const CartItem = ({ item }) => {
         <div className="cart-item-price">
           {isOnSale ? (
             <>
-              <span className="original-price">{formatPrice(price)}</span>
+              <span className="original-price">{formatPrice(basePrice)}</span>
               {formatPrice(displayPrice)}
               <span className="item-discount-badge">
-                -{Math.round((1 - displayPrice / price) * 100)}%
+                -{Math.round((1 - displayPrice / basePrice) * 100)}%
               </span>
             </>
           ) : (
-            formatPrice(price)
+            formatPrice(basePrice)
           )}
         </div>
+
+        {sortedVariants.length > 0 && (
+          <div className="cart-variant-select">
+            <label htmlFor={`cart-variant-${item.id}`}>Size</label>
+            <select
+              id={`cart-variant-${item.id}`}
+              value={selectedVariant?.id || ''}
+              onChange={(e) => handleVariantChange(Number(e.target.value))}
+              disabled={isUpdating}
+            >
+              {sortedVariants.map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                  {variant.variant_name} • {formatPrice(variant.price)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="quantity-controls cart-item-qty-controls">
           <button
@@ -104,7 +158,7 @@ const CartItem = ({ item }) => {
           <button
             className="qty-btn"
             onClick={() => handleUpdateQuantity(item.quantity + 1)}
-            disabled={item.quantity >= product.stock || isUpdating}
+            disabled={isUpdating || (selectedVariant?.stock_quantity ?? product.stock) <= item.quantity}
           >
             +
           </button>

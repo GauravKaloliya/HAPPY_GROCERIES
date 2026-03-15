@@ -6,18 +6,33 @@ import { logout } from './authSlice';
 
 const GUEST_CART_KEY = 'guestCart';
 
+const normalizeGuestItems = (items) => {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => {
+    const productId = item?.product?.id ?? item?.product_id ?? item?.id ?? item?.productId;
+    const variantId = item?.variant?.id ?? item?.variant_id ?? item?.variantId ?? 'default';
+    const cartKey = item?.cart_key || `${productId}:${variantId}`;
+    return {
+      ...item,
+      id: cartKey,
+      cart_key: cartKey,
+      variant_id: item?.variant?.id ?? item?.variant_id ?? item?.variantId ?? null,
+    };
+  });
+};
+
 const getGuestCart = () => {
   try {
     const stored = localStorage.getItem(GUEST_CART_KEY);
     const parsed = stored ? JSON.parse(stored) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    return normalizeGuestItems(parsed);
   } catch {
     return [];
   }
 };
 
 const saveGuestCart = (items) => {
-  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(normalizeGuestItems(items)));
 };
 
 const getInitialItems = () => {
@@ -25,7 +40,12 @@ const getInitialItems = () => {
   return accessToken ? [] : getGuestCart();
 };
 
-const getCartProductId = (item) => item?.product?.id ?? item?.id;
+const getCartItemKey = (item) => {
+  if (item?.cart_key) return item.cart_key;
+  const productId = item?.product?.id ?? item?.product_id ?? item?.id ?? item?.productId;
+  const variantId = item?.variant?.id ?? item?.variant_id ?? item?.variantId ?? 'default';
+  return `${productId}:${variantId}`;
+};
 
 const initialState = {
   items: getInitialItems(),
@@ -54,12 +74,13 @@ export const fetchCart = createAsyncThunk(
 
 export const addToCart = createAsyncThunk(
   'cart/addToCart',
-  async ({ productId, quantity = 1, product }, { rejectWithValue, getState }) => {
+  async ({ productId, variantId = null, quantity = 1, product, variant }, { rejectWithValue, getState }) => {
     try {
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         const items = getGuestCart();
-        const existingItemIndex = items.findIndex((item) => getCartProductId(item) === productId);
+        const cartKey = `${productId}:${variantId || 'default'}`;
+        const existingItemIndex = items.findIndex((item) => getCartItemKey(item) === cartKey);
         let productData = product || (existingItemIndex >= 0 ? items[existingItemIndex].product : null);
 
         if (!productData) {
@@ -67,7 +88,14 @@ export const addToCart = createAsyncThunk(
           productData = response.data;
         }
 
-        const maxQuantity = productData?.stock ? Math.min(productData.stock, 99) : 99;
+        const selectedVariant = variant
+          || productData?.variants?.find((v) => v.id === variantId)
+          || productData?.default_variant
+          || null;
+        const variantStock = selectedVariant?.stock_quantity;
+        const maxQuantity = variantStock !== undefined && variantStock !== null
+          ? Math.min(variantStock, 99)
+          : (productData?.stock ? Math.min(productData.stock, 99) : 99);
 
         if (existingItemIndex >= 0) {
           // Update existing item immutably
@@ -77,8 +105,11 @@ export const addToCart = createAsyncThunk(
           };
         } else {
           items.push({
-            id: productData.id,
+            id: cartKey,
+            cart_key: cartKey,
             product: productData,
+            variant: selectedVariant,
+            variant_id: selectedVariant?.id ?? variantId ?? null,
             quantity: Math.min(quantity, maxQuantity),
           });
         }
@@ -87,7 +118,7 @@ export const addToCart = createAsyncThunk(
         return { items };
       }
 
-      const response = await cartAPI.addItem(productId, quantity);
+      const response = await cartAPI.addItem(productId, quantity, variantId);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to add to cart');
@@ -97,12 +128,12 @@ export const addToCart = createAsyncThunk(
 
 export const updateCartItem = createAsyncThunk(
   'cart/updateCartItem',
-  async ({ itemId, quantity }, { rejectWithValue, getState }) => {
+  async ({ itemId, quantity, variantId = null }, { rejectWithValue, getState }) => {
     try {
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
         const items = getGuestCart();
-        const itemIndex = items.findIndex((item) => getCartProductId(item) === itemId);
+        const itemIndex = items.findIndex((item) => getCartItemKey(item) === itemId);
         if (itemIndex === -1) {
           return rejectWithValue('Cart item not found');
         }
@@ -111,19 +142,48 @@ export const updateCartItem = createAsyncThunk(
           items.splice(itemIndex, 1);
         } else {
           const item = items[itemIndex];
-          const maxQuantity = item.product?.stock ? Math.min(item.product.stock, 99) : 99;
-          // Update immutably
-          items[itemIndex] = {
-            ...item,
-            quantity: Math.min(quantity, maxQuantity)
-          };
+          const selectedVariant = variantId
+            ? item.product?.variants?.find((v) => v.id === variantId)
+            : item.variant;
+          const variantStock = selectedVariant?.stock_quantity;
+          const maxQuantity = variantStock !== undefined && variantStock !== null
+            ? Math.min(variantStock, 99)
+            : (item.product?.stock ? Math.min(item.product.stock, 99) : 99);
+
+          if (variantId && (!item.variant || item.variant.id !== variantId)) {
+            const newKey = `${item.product?.id}:${variantId || 'default'}`;
+            const existingIndex = items.findIndex((candidate, idx) =>
+              idx !== itemIndex && getCartItemKey(candidate) === newKey
+            );
+            if (existingIndex >= 0) {
+              items[existingIndex] = {
+                ...items[existingIndex],
+                quantity: Math.min(items[existingIndex].quantity + quantity, maxQuantity),
+              };
+              items.splice(itemIndex, 1);
+            } else {
+              items[itemIndex] = {
+                ...item,
+                id: newKey,
+                cart_key: newKey,
+                variant: selectedVariant || item.variant,
+                variant_id: variantId,
+                quantity: Math.min(quantity, maxQuantity),
+              };
+            }
+          } else {
+            items[itemIndex] = {
+              ...item,
+              quantity: Math.min(quantity, maxQuantity)
+            };
+          }
         }
 
         saveGuestCart(items);
         return { items };
       }
 
-      const response = await cartAPI.updateItem(itemId, quantity);
+      const response = await cartAPI.updateItem(itemId, quantity, variantId);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.response?.data?.error || 'Failed to update cart');
@@ -137,7 +197,7 @@ export const removeFromCart = createAsyncThunk(
     try {
       const isAuthenticated = getState().auth.isAuthenticated;
       if (!isAuthenticated) {
-        const items = getGuestCart().filter((item) => getCartProductId(item) !== itemId);
+        const items = getGuestCart().filter((item) => getCartItemKey(item) !== itemId);
         saveGuestCart(items);
         return { items };
       }
@@ -170,9 +230,9 @@ export const clearCart = createAsyncThunk(
 
 export const validateCoupon = createAsyncThunk(
   'cart/validateCoupon',
-  async ({ code, cartTotal }, { rejectWithValue }) => {
+  async ({ code, cartTotal, cartItems }, { rejectWithValue }) => {
     try {
-      const response = await couponsAPI.validate(code, cartTotal);
+      const response = await couponsAPI.validate(code, cartTotal, cartItems);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Invalid coupon code');
@@ -304,11 +364,18 @@ export const selectAppliedCoupon = (state) => state.cart.appliedCoupon;
 export const selectCartSubtotal = (state) => {
   const items = state.cart?.items || [];
   return items.reduce((total, item) => {
-    const regularPrice = parseFloat(item?.product?.price || item?.price || 0) || 0;
-    const effectivePrice = parseFloat(item?.product?.effective_price || regularPrice) || regularPrice;
-    const itemPrice = effectivePrice < regularPrice ? effectivePrice : regularPrice;
+    if (item?.total !== undefined && item?.total !== null) {
+      return total + (parseFloat(item.total) || 0);
+    }
+    const variantPrice = parseFloat(item?.variant?.price || 0);
+    const productPrice = parseFloat(item?.product?.price || item?.price || 0) || 0;
+    const basePrice = variantPrice || productPrice;
+    const discountPercent = parseFloat(item?.product?.discount_percent || 0) || 0;
+    const effectivePrice = discountPercent > 0
+      ? basePrice * (1 - discountPercent / 100)
+      : basePrice;
     const quantity = item?.quantity || 0;
-    return total + itemPrice * quantity;
+    return total + effectivePrice * quantity;
   }, 0);
 };
 
