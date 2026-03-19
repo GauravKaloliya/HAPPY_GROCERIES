@@ -234,7 +234,6 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const discountPercent = isOnSale ? Math.round((1 - effectivePrice / basePrice) * 100) : 0;
   const stockValue = Number(selectedVariant?.stock_quantity ?? product.stock ?? 0);
   const categoryName = product.category?.name || product.category || '';
-  const brandName = product.brand?.name || product.brand_name || '';
   const defaultVariantLabel = selectedVariant?.variant_name || '';
   const unitValue = selectedVariant?.unit_value ?? '';
   const unitType = selectedVariant?.unit_type ?? '';
@@ -285,9 +284,8 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       </div>
 
       <h3 className="product-name">{product.name}</h3>
-      {(brandName || defaultVariantLabel) && (
+      {defaultVariantLabel && (
         <div className="product-meta-line">
-          {brandName && <span className="product-brand-badge">{brandName}</span>}
           {defaultVariantLabel && <span className="product-variant-badge">{defaultVariantLabel}</span>}
         </div>
       )}

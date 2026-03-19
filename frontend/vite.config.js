@@ -17,54 +17,6 @@ export default defineConfig(({ mode }) => {
           target: backendTarget,
           changeOrigin: true,
         },
-        '/auth': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/products': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/cart': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/orders': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/coupons': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/wishlist': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/activity-logs': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/contact': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/config': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/reviews': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/health': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
-        '/status': {
-          target: backendTarget,
-          changeOrigin: true,
-        },
         '/media': {
           target: backendTarget,
           changeOrigin: true,

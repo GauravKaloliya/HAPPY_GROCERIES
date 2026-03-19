@@ -4,20 +4,12 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .brand import Brand
 from .category import Category
 
 
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=150, db_index=True)
-    brand = models.ForeignKey(
-        Brand,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='products',
-    )
     category = models.ForeignKey(
         Category,
         on_delete=models.RESTRICT,

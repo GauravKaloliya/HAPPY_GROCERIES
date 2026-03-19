@@ -6,16 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from .models import Brand, Category, Product, ProductVariant
-from .serializers import BrandSerializer, CategorySerializer, ProductListSerializer, ProductSerializer
-
-
-class BrandViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Brand.objects.filter(is_deleted=False, is_active=True).order_by('name')
-    serializer_class = BrandSerializer
-    permission_classes = [AllowAny]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name', 'description']
+from .models import Category, Product, ProductVariant
+from .serializers import CategorySerializer, ProductListSerializer, ProductSerializer
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -30,7 +22,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'description', 'category__name', 'brand__name', 'tags']
+    search_fields = ['name', 'description', 'category__name', 'tags']
     ordering_fields = [
         'name',
         'average_rating',
@@ -84,7 +76,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
 
         return (
             Product.objects.filter(is_active=True, is_deleted=False)
-            .select_related('category', 'brand')
+            .select_related('category')
             .prefetch_related('variants')
             .annotate(
                 default_price=Subquery(default_variant_qs.values('price')[:1], output_field=DecimalField(max_digits=12, decimal_places=2)),
@@ -103,19 +95,12 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
             if category:
                 queryset = queryset.filter(category__name__iexact=category)
 
-        brand = self.request.query_params.get('brand')
-        if brand and brand != 'All':
-            brand = brand.strip()
-            if brand:
-                queryset = queryset.filter(brand__name__iexact=brand)
-
         search = self.request.query_params.get('search')
         if search:
             queryset = queryset.filter(
                 Q(name__icontains=search)
                 | Q(description__icontains=search)
                 | Q(category__name__icontains=search)
-                | Q(brand__name__icontains=search)
                 | Q(tags__overlap=[search])
             )
 

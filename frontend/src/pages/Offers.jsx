@@ -177,7 +177,7 @@ const Offers = () => {
   if (loading) return <PageLoader />;
 
   return (
-    <div className="container">
+    <div className="container offers-container offers-page">
       <h1 className="section-title">🎉 Offers & Coupons</h1>
 
       {/* Hero Banner */}

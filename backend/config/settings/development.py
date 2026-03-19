@@ -17,7 +17,9 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
-# Redis configuration uses REDIS_URL from base settings.
+# Use local Redis by default in development.
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CACHES['default']['LOCATION'] = REDIS_URL
 
 # Development logging
 LOGGING['loggers']['django']['level'] = 'DEBUG'
