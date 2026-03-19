@@ -118,7 +118,7 @@ class SecurityMiddleware:
             "form-action 'self'"
         )
 
-        if request.path.startswith(("/auth/", "/products/", "/combos/", "/cart/", "/orders/", "/coupons/", "/wishlist/", "/activity-logs/", "/contact/", "/config/", "/reviews/")):
+        if request.path.startswith(("/auth/", "/products/", "/cart/", "/orders/", "/coupons/", "/wishlist/", "/activity-logs/", "/contact/", "/config/", "/reviews/")):
             remaining = self._remaining_limit(request)
             if remaining is not None:
                 response["X-RateLimit-Limit"] = str(self._route_limit(request.path))
@@ -185,7 +185,7 @@ class SecurityMiddleware:
     def _invalid_content_type(self, request: HttpRequest) -> bool:
         if request.method not in {"POST", "PUT", "PATCH"}:
             return False
-        if not request.path.startswith(("/auth/", "/products/", "/combos/", "/cart/", "/orders/", "/coupons/", "/wishlist/", "/activity-logs/", "/contact/", "/config/", "/reviews/")):
+        if not request.path.startswith(("/auth/", "/products/", "/cart/", "/orders/", "/coupons/", "/wishlist/", "/activity-logs/", "/contact/", "/config/", "/reviews/")):
             return False
         content_type = (request.META.get("CONTENT_TYPE") or "").lower()
         if not content_type:

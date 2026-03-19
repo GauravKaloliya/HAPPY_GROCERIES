@@ -1,12 +1,6 @@
 from rest_framework import serializers
 
-from .models import Brand, Category, Product, ProductVariant
-
-
-class BrandSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Brand
-        fields = ['id', 'name', 'description', 'logo_url']
+from .models import Category, Product, ProductVariant
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -40,14 +34,6 @@ class ProductSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
-    brand = BrandSerializer(read_only=True)
-    brand_id = serializers.PrimaryKeyRelatedField(
-        queryset=Brand.objects.filter(is_deleted=False),
-        source='brand',
-        write_only=True,
-        required=False,
-        allow_null=True,
-    )
     variants = serializers.SerializerMethodField()
     default_variant = serializers.SerializerMethodField()
     price = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
@@ -64,8 +50,6 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'brand',
-            'brand_id',
             'category',
             'category_id',
             'description',
@@ -114,7 +98,6 @@ class ProductListSerializer(serializers.ModelSerializer):
     reviews_count = serializers.IntegerField(read_only=True)
     emoji = serializers.CharField(read_only=True)
     discount_percent = serializers.IntegerField(read_only=True)
-    brand_name = serializers.CharField(source='brand.name', read_only=True, allow_null=True)
     category = CategorySerializer(read_only=True)
     default_variant = serializers.SerializerMethodField()
     variants = serializers.SerializerMethodField()
@@ -127,7 +110,6 @@ class ProductListSerializer(serializers.ModelSerializer):
             'price',
             'effective_price',
             'emoji',
-            'brand_name',
             'category',
             'rating',
             'reviews_count',

@@ -259,7 +259,7 @@ const ProductDetails = () => {
   }
 
   return (
-    <div className="container">
+    <div className="container product-page">
       <div className="product-details-header">
         <Link to="/shop" className="btn-md btn-secondary">← Back to Shop</Link>
         <div className="share-actions">
@@ -287,9 +287,8 @@ const ProductDetails = () => {
               )}
             </div>
 
-            <div>
+              <div>
               <h1 className="product-details-name">{product.name}</h1>
-              {product.brand?.name && <p className="product-brand-name">{product.brand.name}</p>}
 
               <div className="product-details-meta">
                 <span
