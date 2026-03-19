@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from product_combos.models import ProductCombo
 from products.serializers import ProductListSerializer, ProductVariantSerializer
 from .models import Cart, CartItem
 
@@ -40,47 +39,21 @@ class CartSerializer(serializers.ModelSerializer):
 class AddToCartSerializer(serializers.Serializer):
     """Serializer for adding items to cart."""
 
-    product_id = serializers.IntegerField(required=False)
-    combo_id = serializers.IntegerField(required=False)
+    product_id = serializers.IntegerField(required=True)
     variant_id = serializers.IntegerField(required=False)
     quantity = serializers.IntegerField(min_value=1, max_value=99, default=1)
 
     def validate(self, attrs):
-        product_id = attrs.get('product_id')
-        combo_id = attrs.get('combo_id')
-        if bool(product_id) == bool(combo_id):
-            raise serializers.ValidationError('Provide exactly one of product_id or combo_id')
-        return attrs
-
-    def validate_product_id(self, value):
         from products.models import Product
-        if not Product.objects.filter(id=value, is_active=True, is_deleted=False).exists():
-            raise serializers.ValidationError("Product not found or not available")
-        return value
-
-    def validate_variant_id(self, value):
-        from products.models import ProductVariant
-        if not ProductVariant.objects.filter(id=value, is_deleted=False).exists():
-            raise serializers.ValidationError("Variant not found or not available")
-        return value
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
         product_id = attrs.get('product_id')
         variant_id = attrs.get('variant_id')
-        combo_id = attrs.get('combo_id')
-        if combo_id and variant_id:
-            raise serializers.ValidationError("Variant cannot be used with combo items")
+        if not Product.objects.filter(id=product_id, is_active=True, is_deleted=False).exists():
+            raise serializers.ValidationError("Product not found or not available")
         if product_id and variant_id:
             from products.models import ProductVariant
             if not ProductVariant.objects.filter(id=variant_id, product_id=product_id, is_deleted=False).exists():
                 raise serializers.ValidationError("Variant does not belong to product")
         return attrs
-
-    def validate_combo_id(self, value):
-        if not ProductCombo.objects.filter(id=value, is_active=True, is_deleted=False).exists():
-            raise serializers.ValidationError("Combo not found or not available")
-        return value
 
 
 class UpdateCartItemSerializer(serializers.Serializer):

@@ -279,7 +279,173 @@ const Checkout = () => {
 
   return (
     <div className="container">
-    <div className="checkout-container">
+    <div className="checkout-mobile">
+      <div className="checkout-mobile-topbar">
+        <Link to="/cart" className="checkout-mobile-back">←</Link>
+        <div className="checkout-mobile-title">
+          <span>Checkout</span>
+          <small>Verify delivery & pay</small>
+        </div>
+        <div className="checkout-mobile-pill">{formatPrice(computedTotal)}</div>
+      </div>
+
+      <div className="checkout-mobile-card checkout-mobile-address">
+        <div className="checkout-mobile-card-head">
+          <h3>Delivery Details</h3>
+          <button
+            type="button"
+            onClick={handleGetLocation}
+            disabled={fetchingLocation}
+            className="checkout-mobile-location-btn"
+          >
+            {fetchingLocation ? '⏳' : '📍'}
+          </button>
+        </div>
+
+        <div className="checkout-mobile-grid">
+          <label className="checkout-mobile-field">
+            <span>Full Name</span>
+            <input
+              type="text"
+              name="name"
+              value={deliveryInfo.name}
+              onChange={handleInputChange}
+              placeholder="Your full name"
+            />
+            {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
+          </label>
+
+          <label className="checkout-mobile-field">
+            <span>Phone</span>
+            <input
+              type="tel"
+              name="phone"
+              value={deliveryInfo.phone}
+              onChange={handleInputChange}
+              placeholder="10-digit phone"
+              maxLength="10"
+            />
+            {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
+          </label>
+        </div>
+
+        <label className="checkout-mobile-field">
+          <span>Address</span>
+          <textarea
+            name="address"
+            value={deliveryInfo.address}
+            onChange={handleInputChange}
+            placeholder="House, Street, Landmark"
+            rows="3"
+          />
+          {fieldErrors.address && <div className="field-error">{fieldErrors.address}</div>}
+        </label>
+
+        <label className="checkout-mobile-field">
+          <span>City</span>
+          <input
+            type="text"
+            name="city"
+            value={deliveryInfo.city}
+            onChange={handleInputChange}
+            placeholder="Your city"
+          />
+          {fieldErrors.city && <div className="field-error">{fieldErrors.city}</div>}
+        </label>
+      </div>
+
+      <div className="checkout-mobile-card checkout-mobile-delivery">
+        <h3>Delivery Speed</h3>
+        <div className="checkout-mobile-options">
+          <label className={`checkout-mobile-option ${deliveryInfo.deliveryType === 'standard' ? 'selected' : ''}`}>
+            <input
+              type="radio"
+              name="deliveryType"
+              value="standard"
+              checked={deliveryInfo.deliveryType === 'standard'}
+              onChange={handleInputChange}
+            />
+            <span>
+              <strong>Standard</strong>
+              <small>{subtotal >= freeDeliveryThreshold ? 'Free delivery' : `₹${baseDelivery} delivery charge`}</small>
+            </span>
+            <em>30-45 mins</em>
+          </label>
+          <label className={`checkout-mobile-option ${deliveryInfo.deliveryType === 'express' ? 'selected' : ''}`}>
+            <input
+              type="radio"
+              name="deliveryType"
+              value="express"
+              checked={deliveryInfo.deliveryType === 'express'}
+              onChange={handleInputChange}
+            />
+            <span>
+              <strong>Express</strong>
+              <small>+₹{expressCharge} delivery charge</small>
+            </span>
+            <em>10-15 mins</em>
+          </label>
+        </div>
+      </div>
+
+      <div className="checkout-mobile-card checkout-mobile-items-card">
+        <h3>Your Items</h3>
+        <div className="checkout-mobile-items">
+          {items.map((item) => (
+            <div key={item.id} className="checkout-mobile-item">
+              <div className="checkout-mobile-item-left">
+                <span className="checkout-mobile-item-emoji">{item.product?.emoji || '🛒'}</span>
+                <div>
+                  <strong>{item.product.name}</strong>
+                  <div className="checkout-mobile-item-meta">
+                    x{item.quantity} • {item.product?.default_variant?.variant_name || 'Default'}
+                  </div>
+                </div>
+              </div>
+              <span className="checkout-mobile-item-price">
+                {formatPrice((item.product.effective_price || item.product.price) * item.quantity)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="checkout-mobile-card checkout-mobile-summary">
+        <h3>Payment Summary</h3>
+        <div className="checkout-mobile-row">
+          <span>Subtotal</span>
+          <span>{formatPrice(subtotal)}</span>
+        </div>
+        {discount > 0 && (
+          <div className="checkout-mobile-row discount-row">
+            <span>Discount</span>
+            <span>-{formatPrice(discount)}</span>
+          </div>
+        )}
+        <div className="checkout-mobile-row">
+          <span>Tax (8%)</span>
+          <span>{formatPrice(tax)}</span>
+        </div>
+        <div className="checkout-mobile-row">
+          <span>Delivery</span>
+          <span>{deliveryCharge === 0 ? 'FREE' : formatPrice(deliveryCharge)}</span>
+        </div>
+        <div className="checkout-mobile-row total">
+          <span>Total</span>
+          <span>{formatPrice(computedTotal)}</span>
+        </div>
+      </div>
+
+      <button
+        onClick={handlePlaceOrder}
+        className="checkout-mobile-cta"
+        disabled={loading || !isFormValid()}
+      >
+        {loading ? 'Placing Order...' : `Place Order • ${formatPrice(computedTotal)}`}
+      </button>
+    </div>
+
+    <div className="checkout-container checkout-desktop">
       <div className="checkout-form">
         <h2>Delivery Information</h2>
 

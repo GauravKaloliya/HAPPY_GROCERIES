@@ -14,7 +14,6 @@ class GlobalErrorMiddleware:
     API_PREFIXES = (
         '/auth/',
         '/products/',
-        '/combos/',
         '/cart/',
         '/orders/',
         '/coupons/',
