@@ -54,7 +54,6 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'users',
     'products',
-    'product_combos',
     'system_tables',
     'cart',
     'orders',

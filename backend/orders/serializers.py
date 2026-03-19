@@ -79,16 +79,13 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderItemInputSerializer(serializers.Serializer):
     """Serializer for order item input."""
-    product_id = serializers.IntegerField(required=False)
-    combo_id = serializers.IntegerField(required=False)
+    product_id = serializers.IntegerField(required=True)
     quantity = serializers.IntegerField(min_value=1)
     price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
 
     def validate(self, attrs):
-        has_product = attrs.get('product_id') is not None
-        has_combo = attrs.get('combo_id') is not None
-        if has_product == has_combo:
-            raise serializers.ValidationError('Each item must include exactly one of product_id or combo_id')
+        if attrs.get('product_id') is None:
+            raise serializers.ValidationError('product_id is required')
         return attrs
 
 

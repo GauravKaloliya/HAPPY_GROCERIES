@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -41,7 +42,8 @@ class CartItem(models.Model):
     def effective_unit_price(self):
         discount = getattr(self.product, 'discount_percent', 0) or 0
         if discount > 0:
-            return self.unit_price * (1 - (discount / 100))
+            discount_rate = Decimal(str(discount)) / Decimal('100')
+            return self.unit_price * (Decimal('1') - discount_rate)
         return self.unit_price
 
     @property

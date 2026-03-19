@@ -12,6 +12,7 @@ const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mobileSearch, setMobileSearch] = useState('');
   const navigate = useNavigate();
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
@@ -51,6 +52,84 @@ const Home = () => {
 
   return (
     <main>
+      <section className="home-mobile">
+        <div className="home-mobile-topbar">
+          <div className="home-mobile-location">
+            <span className="home-mobile-dot" />
+            <span>Home</span>
+            <span className="home-mobile-chevron">▾</span>
+          </div>
+          <button className="home-mobile-profile" aria-label="Profile">
+            👤
+          </button>
+        </div>
+        <div className="home-mobile-promo">
+          <div>
+            <p>Delivering to you in</p>
+            <strong>7 mins</strong>
+          </div>
+          <span className="home-mobile-promo-emoji">🥕</span>
+        </div>
+        <div className="home-mobile-search">
+          <div className="search-input-wrapper">
+            <input
+              type="text"
+              value={mobileSearch}
+              onChange={(e) => setMobileSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  navigate(`/shop?search=${encodeURIComponent(mobileSearch)}`);
+                }
+              }}
+              onBlur={(e) => setMobileSearch(e.target.value)}
+              placeholder="Search"
+            />
+            {!mobileSearch && (
+              <div className="search-placeholder" aria-hidden="true">
+                <span className="search-placeholder-label">Search</span>
+                <span className="search-placeholder-rotator">
+                  <span className="rotator-track">
+                    {['Apples', 'Bananas', 'Milk', 'Chips', 'Tomatoes'].map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="home-mobile-section">
+          <div className="home-mobile-section-header">
+            <h3>Trending Near You</h3>
+            <Link to="/shop">See All</Link>
+          </div>
+          <p>We satisfy your daily needs</p>
+          <div className="home-mobile-grid">
+            {featuredProducts.slice(0, 4).map((product) => (
+              <ProductCard key={`m-${product.id}`} product={product} />
+            ))}
+          </div>
+        </div>
+        <div className="home-mobile-section">
+          <div className="home-mobile-section-header">
+            <h3>Categories</h3>
+            <Link to="/categories">See All</Link>
+          </div>
+          <div className="home-mobile-categories">
+            {categories.slice(0, 6).map((category) => (
+              <button
+                key={category.id || category.name}
+                onClick={() => navigate(`/categories?category=${category.name}`)}
+                className="home-mobile-category-card"
+              >
+                <span>{category.emoji || getCategoryEmoji(category.name)}</span>
+                <strong>{category.name}</strong>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="hero">
         <div className="hero-content">
           <div className="floating-icons">

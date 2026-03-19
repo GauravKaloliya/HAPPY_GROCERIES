@@ -12,11 +12,8 @@ API_CONTRACTS = [
     {'path': '/auth/stats/', 'method': 'GET', 'auth_required': True, 'expected_statuses': {401, 403}},
 
     {'path': '/products/', 'method': 'GET', 'auth_required': False, 'expected_statuses': {200}},
-    {'path': '/products/brands/', 'method': 'GET', 'auth_required': False, 'expected_statuses': {200}},
     {'path': '/products/featured/', 'method': 'GET', 'auth_required': False, 'expected_statuses': {200}},
     {'path': '/products/categories/', 'method': 'GET', 'auth_required': False, 'expected_statuses': {200}},
-    {'path': '/combos/', 'method': 'GET', 'auth_required': False, 'expected_statuses': {200}},
-    {'path': '/combos/featured/', 'method': 'GET', 'auth_required': False, 'expected_statuses': {200}},
 
     {'path': '/cart/', 'method': 'GET', 'auth_required': True, 'expected_statuses': {401, 403}},
     {'path': '/cart/add/', 'method': 'POST', 'auth_required': True, 'expected_statuses': {401, 403}},

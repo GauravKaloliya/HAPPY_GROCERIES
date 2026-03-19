@@ -13,7 +13,6 @@ from .health_views import health_check, api_status
 api_urlpatterns = [
     path('auth/', include('users.urls')),
     path('products/', include('products.urls')),
-    path('combos/', include('product_combos.urls')),
     path('cart/', include('cart.urls')),
     path('orders/', include('orders.urls')),
     path('coupons/', include('coupons.urls')),
@@ -39,7 +38,6 @@ else:
     urlpatterns += [
         path('auth/', include('users.urls')),
         path('products/', include('products.urls')),
-        path('combos/', include('product_combos.urls')),
         path('cart/', include('cart.urls')),
         path('orders/', include('orders.urls')),
         path('coupons/', include('coupons.urls')),
@@ -57,7 +55,7 @@ if getattr(settings, 'FRONTEND_DIST_DIR', None) and settings.FRONTEND_DIST_DIR.e
     # Match any path that doesn't start with known backend prefixes.
     urlpatterns += [
         re_path(
-            r'^(?!api/|auth/|products/|combos/|cart/|orders/|coupons/|wishlist/|activity-logs/|contact/|config/|reviews/|health/|status/|admin/|static/|media/).*$',
+            r'^(?!api/|auth/|products/|cart/|orders/|coupons/|wishlist/|activity-logs/|contact/|config/|reviews/|health/|status/|admin/|static/|media/).*$',
             TemplateView.as_view(template_name='index.html')
         )
     ]

@@ -131,7 +131,6 @@ const MyReviews = () => {
                     </div>
                     <div className="review-item-meta-line">
                       {[
-                        productObj?.brand?.name || productObj?.brand_name,
                         productObj?.default_variant?.variant_name,
                         productObj?.default_variant?.sku && `SKU: ${productObj.default_variant.sku}`,
                         productObj?.default_variant?.unit_type && productObj?.default_variant?.unit_value
@@ -199,7 +198,6 @@ const MyReviews = () => {
                     </div>
                     <div className="review-item-meta-line">
                       {[
-                        product.brand?.name || product.brand_name,
                         product.default_variant?.variant_name,
                         product.default_variant?.sku && `SKU: ${product.default_variant.sku}`,
                         product.default_variant?.unit_type && product.default_variant?.unit_value

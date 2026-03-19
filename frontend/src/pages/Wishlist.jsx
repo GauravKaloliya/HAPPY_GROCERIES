@@ -92,7 +92,6 @@ const Wishlist = () => {
             const product = item.product;
             const isOnSale = product.effective_price && parseFloat(product.effective_price) < parseFloat(product.price);
             const displayPrice = isOnSale ? product.effective_price : product.price;
-            const brandName = product.brand?.name || product.brand_name || '';
             const variantName = product.default_variant?.variant_name || '';
 
             return (
@@ -114,9 +113,9 @@ const Wishlist = () => {
                 >
                   <div className="product-image">{product.emoji || '📦'}</div>
                   <h3 className="product-name">{product.name}</h3>
-                  {(brandName || variantName) && (
+                  {variantName && (
                     <p className="wishlist-product-meta">
-                      {[brandName, variantName].filter(Boolean).join(' • ')}
+                      {variantName}
                     </p>
                   )}
                   <span

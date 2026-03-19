@@ -13,7 +13,6 @@ const Shop = () => {
   const { logCustomActivity } = useActivityLog('page_view', { section: 'shop' });
   const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -26,7 +25,6 @@ const Shop = () => {
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
-  const [selectedBrand, setSelectedBrand] = useState(searchParams.get('brand') || '');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || '');
   const [minPrice, setMinPrice] = useState(searchParams.get('min_price') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('max_price') || '');
@@ -58,7 +56,6 @@ const Shop = () => {
       const params = {
         search: searchQuery,
         category: selectedCategory === 'All' ? '' : selectedCategory,
-        brand: selectedBrand === 'All' ? '' : selectedBrand,
         ordering: sortBy,
         min_price: minPrice,
         max_price: maxPrice,
@@ -77,12 +74,6 @@ const Shop = () => {
 
       setAllProducts(results);
       setTotalCount(productsRes.data.count ?? results.length);
-      const uniqueBrands = Array.from(new Set(
-        (results || [])
-          .map((item) => item.brand_name || item.brand?.name)
-          .filter(Boolean)
-      )).sort((a, b) => a.localeCompare(b));
-      setBrands(uniqueBrands);
 
       // Log search/filter activity
       if (searchQuery) {
@@ -90,9 +81,6 @@ const Shop = () => {
       }
       if (selectedCategory) {
         logCustomActivity('filter_apply', { type: 'category', value: selectedCategory });
-      }
-      if (selectedBrand) {
-        logCustomActivity('filter_apply', { type: 'brand', value: selectedBrand });
       }
       if (sortBy) {
         logCustomActivity('filter_apply', { type: 'sort', value: sortBy });
@@ -105,7 +93,7 @@ const Shop = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, selectedBrand, sortBy, minPrice, maxPrice, inStock, logCustomActivity, PRODUCTS_LIMIT]);
+  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock, logCustomActivity, PRODUCTS_LIMIT]);
 
   const handleViewMore = async () => {
     if (isFetchingMore) return;
@@ -114,7 +102,6 @@ const Shop = () => {
       const params = {
         search: searchQuery,
         category: selectedCategory === 'All' ? '' : selectedCategory,
-        brand: selectedBrand === 'All' ? '' : selectedBrand,
         ordering: sortBy,
         min_price: minPrice,
         max_price: maxPrice,
@@ -152,7 +139,6 @@ const Shop = () => {
     const params = {};
     if (searchQuery) params.search = searchQuery;
     if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory;
-    if (selectedBrand && selectedBrand !== 'All') params.brand = selectedBrand;
     if (sortBy) params.sort = sortBy;
     if (minPrice) params.min_price = minPrice;
     if (maxPrice) params.max_price = maxPrice;
@@ -160,26 +146,117 @@ const Shop = () => {
 
     setSearchParams(params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedCategory, selectedBrand, sortBy, minPrice, maxPrice, inStock]);
+  }, [searchQuery, selectedCategory, sortBy, minPrice, maxPrice, inStock]);
 
   const clearFilters = () => {
     setSearchInput('');
     setSearchQuery('');
     setSelectedCategory('');
-    setSelectedBrand('');
     setSortBy('');
     setMinPrice('');
     setMaxPrice('');
     setInStock(false);
   };
 
-  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || (selectedBrand && selectedBrand !== 'All') || sortBy || minPrice || maxPrice || inStock;
+  const hasFilters = searchQuery || (selectedCategory && selectedCategory !== 'All') || sortBy || minPrice || maxPrice || inStock;
   const hasMoreProducts = allProducts.length < totalCount;
+  const mobileTitle = selectedCategory && selectedCategory !== 'All' ? selectedCategory : 'All Products';
 
   if (loading && allProducts.length === 0) return <PageLoader />;
 
   return (
     <div className="container">
+      <div className="shop-mobile-header">
+        <div className="shop-mobile-topbar">
+          <button className="shop-mobile-back" onClick={() => window.history.back()} aria-label="Go back">
+            ←
+          </button>
+          <div className="shop-mobile-title">
+            <h2>{mobileTitle}</h2>
+            <p>{totalCount} items</p>
+          </div>
+          <button className="shop-mobile-search-btn" aria-label="Search">
+            🔍
+          </button>
+        </div>
+        <div className="shop-mobile-search">
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearchQuery(e.target.value);
+              }
+            }}
+            onBlur={(e) => {
+              setSearchQuery(e.target.value);
+            }}
+            placeholder="Search groceries"
+          />
+        </div>
+        <div className="shop-mobile-controls">
+          <div className="shop-chip-group" aria-label="Sort products">
+            <button
+              type="button"
+              className={`shop-chip ${!sortBy ? 'active' : ''}`}
+              onClick={() => setSortBy('')}
+            >
+              Default
+            </button>
+            {sortOptions.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                className={`shop-chip ${sortBy === option.value ? 'active' : ''}`}
+                onClick={() => setSortBy(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="shop-mobile-layout">
+        <aside className="shop-mobile-categories">
+          <button
+            className={`shop-mobile-category ${!selectedCategory || selectedCategory === 'All' ? 'active' : ''}`}
+            onClick={() => setSelectedCategory('All')}
+          >
+            <span className="shop-mobile-category-emoji">🛍️</span>
+            <span>All</span>
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category.id || category.name}
+              className={`shop-mobile-category ${selectedCategory === category.name ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(category.name)}
+            >
+              <span className="shop-mobile-category-emoji">{category.emoji || '🛒'}</span>
+              <span>{category.name}</span>
+            </button>
+          ))}
+        </aside>
+        <section className="shop-mobile-products">
+          <div className="shop-mobile-banner">
+            <div>
+              <strong>100% Fresh & Tasty</strong>
+              <p>Quality checked • Farm fresh</p>
+            </div>
+            <span className="shop-mobile-banner-emoji">🥗</span>
+          </div>
+          {allProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+
+          {hasMoreProducts && (
+            <button className="btn-secondary" onClick={handleViewMore} disabled={isFetchingMore}>
+              {isFetchingMore ? 'Loading...' : 'View More'}
+            </button>
+          )}
+        </section>
+      </div>
       <div className="shop-layout">
         <aside className="shop-sidebar">
           <div className="sidebar-section">
@@ -232,27 +309,6 @@ const Shop = () => {
                   className={`category-filter-btn ${selectedCategory === cat.name ? 'active' : ''}`}
                 >
                   {cat.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="sidebar-section">
-            <h3 className="sidebar-title">Brands</h3>
-            <div className="category-filters">
-              <button
-                onClick={() => setSelectedBrand('')}
-                className={`category-filter-btn all-option ${!selectedBrand ? 'active' : ''}`}
-              >
-                All Brands
-              </button>
-              {brands.map((brand) => (
-                <button
-                  key={brand}
-                  onClick={() => setSelectedBrand(brand)}
-                  className={`category-filter-btn ${selectedBrand === brand ? 'active' : ''}`}
-                >
-                  {brand}
                 </button>
               ))}
             </div>

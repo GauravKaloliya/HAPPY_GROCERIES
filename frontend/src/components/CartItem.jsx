@@ -33,7 +33,6 @@ const CartItem = ({ item }) => {
   const isOnSale = effectivePrice < basePrice;
   const displayPrice = isOnSale ? effectivePrice : basePrice;
   const categoryName = product.category?.name || product.category || '';
-  const brandName = product.brand?.name || product.brand_name || '';
   const defaultVariantLabel = selectedVariant?.variant_name || '';
 
   const handleUpdateQuantity = async (newQuantity) => {
@@ -104,9 +103,9 @@ const CartItem = ({ item }) => {
 
       <div className="cart-item-details">
         <h3>{product.name || 'Product'}</h3>
-        {(brandName || defaultVariantLabel) && (
+        {defaultVariantLabel && (
           <p className="cart-item-meta">
-            {[brandName, defaultVariantLabel].filter(Boolean).join(' • ')}
+            {defaultVariantLabel}
           </p>
         )}
         <div className="cart-item-price">
