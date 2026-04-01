@@ -166,7 +166,7 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="container">
-        <div className="empty-state">
+        <div className="empty-state cart-empty-state">
           <div className="empty-state-icon">🛒</div>
           <h3>Your cart is empty!</h3>
           <p>Looks like you haven't added anything yet.</p>
