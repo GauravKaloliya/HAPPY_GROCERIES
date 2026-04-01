@@ -12,6 +12,12 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q, F
 
+from config.admin_auth import (
+    get_admin_password,
+    get_admin_username,
+    issue_admin_token,
+    is_admin_request,
+)
 from config.error_handling import BadRequestError, UnauthorizedError, ServiceUnavailableError
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
@@ -99,6 +105,35 @@ class RegisterView(generics.CreateAPIView):
         )
 
         return response
+
+
+class AdminLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = (request.data.get('username') or '').strip()
+        password = request.data.get('password') or ''
+
+        if username != get_admin_username() or password != get_admin_password():
+            raise UnauthorizedError('Invalid admin credentials.')
+
+        return Response({
+            'token': issue_admin_token(),
+            'username': get_admin_username(),
+        }, status=status.HTTP_200_OK)
+
+
+class AdminSessionView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        if not is_admin_request(request):
+            raise UnauthorizedError('Admin authentication required.')
+
+        return Response({
+            'authenticated': True,
+            'username': get_admin_username(),
+        }, status=status.HTTP_200_OK)
 
 
 class LoginView(APIView):

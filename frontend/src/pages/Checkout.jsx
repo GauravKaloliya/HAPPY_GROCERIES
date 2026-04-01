@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ordersAPI } from '../api/orders';
 import {
+  fetchCart,
   selectCartItems,
+  selectCartLoading,
   selectCartSubtotal,
   selectCartTax,
   selectDeliveryCharge,
   selectDiscount,
   clearCartState,
   selectAppliedCoupon,
+  clearCoupon,
 } from '../store/slices/cartSlice';
 import { selectUser } from '../store/slices/authSlice';
 import { selectExpressDeliveryCharge, selectFreeDeliveryThreshold } from '../store/slices/configSlice';
@@ -17,6 +20,32 @@ import { formatPrice } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import useActivityLog from '../hooks/useActivityLog';
+
+const CHECKOUT_SESSION_KEY = 'checkout-delivery-session';
+const initialDeliveryInfo = {
+  name: '',
+  phone: '',
+  address: '',
+  city: '',
+  deliveryType: 'standard',
+};
+
+const getInitialDeliveryInfo = () => {
+  try {
+    const raw = sessionStorage.getItem(CHECKOUT_SESSION_KEY);
+    if (!raw) {
+      return initialDeliveryInfo;
+    }
+
+    const parsed = JSON.parse(raw);
+    return {
+      ...initialDeliveryInfo,
+      ...parsed,
+    };
+  } catch {
+    return initialDeliveryInfo;
+  }
+};
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -26,9 +55,12 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [cartReady, setCartReady] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const user = useSelector(selectUser);
   const items = useSelector(selectCartItems);
+  const cartLoading = useSelector(selectCartLoading);
   const subtotal = useSelector(selectCartSubtotal);
   const tax = useSelector(selectCartTax);
   const baseDelivery = useSelector(selectDeliveryCharge);
@@ -39,13 +71,23 @@ const Checkout = () => {
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'checkout' });
 
-  const [deliveryInfo, setDeliveryInfo] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    city: '',
-    deliveryType: 'standard',
-  });
+  const [deliveryInfo, setDeliveryInfo] = useState(getInitialDeliveryInfo);
+
+  useEffect(() => {
+    let active = true;
+
+    dispatch(fetchCart())
+      .catch(() => null)
+      .finally(() => {
+        if (active) {
+          setCartReady(true);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     if (user) {
@@ -56,6 +98,10 @@ const Checkout = () => {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify(deliveryInfo));
+  }, [deliveryInfo]);
 
   const deliveryCharge = deliveryInfo.deliveryType === 'express'
     ? expressCharge
@@ -69,6 +115,15 @@ const Checkout = () => {
     const base = sub + taxAmt - disc;
     return Math.max(0, base + delCharge);
   })();
+
+  const appliedCouponMinOrder = Number(appliedCoupon?.min_order_value ?? 0);
+  const hasValidAppliedCoupon = Boolean(
+    appliedCoupon?.code && (parseFloat(subtotal) || 0) >= appliedCouponMinOrder
+  );
+
+  if ((!cartReady || cartLoading) && !orderSuccess) {
+    return <PageLoader />;
+  }
 
   if (items.length === 0 && !orderSuccess) {
     return (
@@ -193,59 +248,56 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
+    if (loading || isSubmittingRef.current) return;
+
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
 
-    // Validate items before placing order
-    const validItems = items.filter(item => {
-      const productId = item.product?.id || item.id;
-      return productId && item.quantity > 0;
-    });
-
-    if (validItems.length === 0) {
+    if (!items.length) {
       toast.error('No valid items in cart. Please add items to your cart.');
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
     try {
+      if (appliedCoupon?.code && !hasValidAppliedCoupon) {
+        dispatch(clearCoupon());
+        toast('Coupon removed because your order is below its minimum amount.');
+      }
+
       const orderData = {
-        items: validItems.map(item => {
-          const productId = item.product?.id || item.id;
-          const price = parseFloat(item.product?.effective_price || item.product?.price || 0);
-          return {
-            product_id: productId,
-            quantity: item.quantity,
-            price: price,
-          };
-        }),
+        // Let backend use authenticated user's cart snapshot.
         delivery_address: `${deliveryInfo.address}, ${deliveryInfo.city}`,
         delivery_phone: deliveryInfo.phone,
         delivery_name: deliveryInfo.name,
         delivery_type: deliveryInfo.deliveryType,
-        subtotal: parseFloat(subtotal) || 0,
-        tax: parseFloat(tax) || 0,
-        delivery_charge: parseFloat(deliveryCharge) || 0,
-        discount: parseFloat(discount) || 0,
-        total: parseFloat(computedTotal) || 0,
-        coupon_code: appliedCoupon?.code || null,
+        coupon_code: hasValidAppliedCoupon ? appliedCoupon.code : null,
       };
 
       const response = await ordersAPI.create(orderData);
       setOrderId(response.data.id || response.data.order_id);
       setOrderSuccess(true);
+      sessionStorage.removeItem(CHECKOUT_SESSION_KEY);
       dispatch(clearCartState());
-      logCustomActivity('checkout', { order_id: response.data.id, total: computedTotal, items_count: validItems.length });
-      toast.success('Order placed successfully! 🎉');
+      void logCustomActivity('checkout', { order_id: response.data.id, total: computedTotal, items_count: items.length });
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.response?.data?.detail || 'Failed to place order';
+      const responseData = error.response?.data;
+      const errorMsg =
+        responseData?.error?.message
+        || responseData?.error
+        || responseData?.detail
+        || responseData?.message
+        || (typeof responseData === 'string' ? responseData : null)
+        || 'Failed to place order';
       toast.error(errorMsg);
       console.error('Order error:', error.response?.data);
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -262,8 +314,8 @@ const Checkout = () => {
     return (
       <div className="modal show">
         <div className="modal-content">
-          <div className="modal-icon">🎉</div>
-          <h2>Order Placed Successfully!</h2>
+          <div className="modal-icon">🥳</div>
+          <h2>hurrah your order successfully placed !</h2>
           <p>Thank you for your order.</p>
           <p>Order ID: <strong>{orderId}</strong></p>
           <p>We'll deliver your groceries with love! 💚</p>

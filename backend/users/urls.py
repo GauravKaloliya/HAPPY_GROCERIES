@@ -2,10 +2,12 @@ from django.urls import path
 from .views import (
     RegisterView, LoginView, LogoutView, RefreshTokenView,
     ProfileView, ChangePasswordView, check_username, check_email, check_phone,
-    UserStatsView
+    UserStatsView, AdminLoginView, AdminSessionView
 )
 
 urlpatterns = [
+    path('admin/login/', AdminLoginView.as_view(), name='admin-login'),
+    path('admin/session/', AdminSessionView.as_view(), name='admin-session'),
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),

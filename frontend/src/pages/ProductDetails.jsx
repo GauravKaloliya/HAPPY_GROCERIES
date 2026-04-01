@@ -6,7 +6,7 @@ import { addToCart, selectCartItems } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { fetchReviewSummary, selectReviewSummary } from '../store/slices/reviewsSlice';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getProductEmoji } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../components/LoadingSpinner';
 import ProductCard from '../components/ProductCard';
@@ -44,6 +44,8 @@ const ProductDetails = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState(null);
+  const [imageFailed, setImageFailed] = useState(false);
+  const [viewerImageFailed, setViewerImageFailed] = useState(false);
 
   const { logCustomActivity } = useActivityLog('page_view', { section: 'product_details' });
 
@@ -52,26 +54,32 @@ const ProductDetails = () => {
   }, [logCustomActivity]);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchProduct = async () => {
       try {
         setLoading(true);
         setProduct(null);
+        setRelatedProducts([]);
+        setIsWishlisted(false);
 
-        const [productRes, relatedRes] = await Promise.all([
-          productsAPI.getById(id),
-          productsAPI.getRelated(id),
-        ]);
+        const productRes = await productsAPI.getById(id);
 
         if (!productRes.data || !productRes.data.id) {
           throw new Error('Product not found');
         }
 
-        setProduct(productRes.data);
+        if (cancelled) {
+          return;
+        }
+
+        const nextProduct = productRes.data;
+        setProduct(nextProduct);
+        setImageFailed(false);
+        setViewerImageFailed(false);
         const variants = Array.isArray(productRes.data.variants) ? productRes.data.variants : [];
         const defaultVariant = productRes.data.default_variant || variants.find((variant) => variant.is_default) || variants[0];
         setSelectedVariantId(defaultVariant?.id || null);
-        const relatedData = relatedRes.data?.results || relatedRes.data;
-        setRelatedProducts(Array.isArray(relatedData) ? relatedData.slice(0, 4) : []);
 
         if (productRes.data.name) {
           logProductView(id, productRes.data.name);
@@ -79,10 +87,28 @@ const ProductDetails = () => {
 
         dispatch(fetchReviewSummary(productRes.data.id));
 
+        productsAPI.getRelated(id)
+          .then((relatedRes) => {
+            if (cancelled) {
+              return;
+            }
+            const relatedData = relatedRes.data?.results || relatedRes.data;
+            setRelatedProducts(Array.isArray(relatedData) ? relatedData.slice(0, 4) : []);
+          })
+          .catch((error) => {
+            console.error('Error fetching related products:', error);
+            if (!cancelled) {
+              setRelatedProducts([]);
+            }
+          });
+
         if (isAuthenticated) {
           try {
             const wishlistRes = await wishlistAPI.getWishlist();
             const wishlistItems = wishlistRes.data.results || wishlistRes.data;
+            if (cancelled) {
+              return;
+            }
             if (Array.isArray(wishlistItems)) {
               const wishlistIds = wishlistItems.map(item => item.product?.id);
               setIsWishlisted(wishlistIds.includes(parseInt(id, 10)));
@@ -93,14 +119,22 @@ const ProductDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching product:', error);
-        toast.error('Product not found');
-        navigate('/shop');
+        if (!cancelled) {
+          toast.error('Product not found');
+          navigate('/shop');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProduct();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id, navigate, isAuthenticated, logProductView, dispatch]);
 
   const handleAddToCart = async () => {
@@ -247,6 +281,15 @@ const ProductDetails = () => {
   const ratingValue = Number(product?.rating) || 0;
   const reviewsCount = Number(reviewSummary?.total_reviews ?? product?.reviews_count ?? 0);
   const stockInfo = getStockInfo(selectedVariantStock);
+  const productEmoji = getProductEmoji(product);
+  const productFacts = [
+    { label: 'Category', value: product?.category?.name || product?.category || 'Fresh groceries' },
+    { label: 'Reviews', value: reviewsCount },
+    selectedVariant?.variant_name ? { label: 'Variant', value: selectedVariant.variant_name } : null,
+    { label: 'Stock', value: stockInfo.label },
+    { label: 'Effective price', value: formatPrice(discountedPrice) },
+    hasDiscount ? { label: 'Discount amount', value: formatPrice(savings) } : null,
+  ].filter(Boolean);
 
   if (loading) return <PageLoader />;
   if (!product) {
@@ -278,7 +321,16 @@ const ProductDetails = () => {
                 role="button"
                 aria-label="View full size image"
               >
-                {product.emoji || product.category?.emoji || '📦'}
+                {product.image_url && !imageFailed ? (
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className="product-card-image"
+                    onError={() => setImageFailed(true)}
+                  />
+                ) : (
+                  <span className="product-details-fallback-emoji">{productEmoji}</span>
+                )}
               </div>
               {hasDiscount && (
                 <div className="discount-badge">
@@ -287,7 +339,7 @@ const ProductDetails = () => {
               )}
             </div>
 
-              <div>
+              <div className="product-details-content">
               <h1 className="product-details-name">{product.name}</h1>
 
               <div className="product-details-meta">
@@ -423,24 +475,11 @@ const ProductDetails = () => {
             <div className="product-specs">
               <h3>Product Information</h3>
               <div>
-                <div>
-                  <strong>Reviews:</strong> {reviewsCount}
-                </div>
-                {selectedVariant?.variant_name && (
-                  <div>
-                    <strong>Variant:</strong> {selectedVariant.variant_name}
+                {productFacts.map((item) => (
+                  <div key={item.label} className="product-spec-row">
+                    <strong>{item.label}:</strong> {item.value}
                   </div>
-                )}
-                {hasDiscount && (
-                  <>
-                    <div>
-                      <strong>Effective price:</strong> {formatPrice(discountedPrice)}
-                    </div>
-                    <div>
-                      <strong>Discount amount:</strong> {formatPrice(savings)}
-                    </div>
-                  </>
-                )}
+                ))}
               </div>
             </div>
           </div>
@@ -477,7 +516,16 @@ const ProductDetails = () => {
             ✕
           </button>
           <div className="image-viewer-content" onClick={(e) => e.stopPropagation()}>
-            {product.emoji || product.category?.emoji || '📦'}
+            {product.image_url && !viewerImageFailed ? (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                className="product-card-image"
+                onError={() => setViewerImageFailed(true)}
+              />
+            ) : (
+              productEmoji
+            )}
           </div>
         </div>
       )}

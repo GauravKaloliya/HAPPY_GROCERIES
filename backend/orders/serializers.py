@@ -98,7 +98,7 @@ class CreateOrderSerializer(serializers.Serializer):
     delivery_instructions = serializers.CharField(required=False, allow_blank=True, default='')
     delivery_type = serializers.ChoiceField(choices=Order.DELIVERY_TYPES, default='standard')
     coupon_code = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
-    items = OrderItemInputSerializer(many=True)
+    items = OrderItemInputSerializer(many=True, required=False, allow_empty=True, default=list)
     subtotal = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     tax = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     delivery_charge = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
