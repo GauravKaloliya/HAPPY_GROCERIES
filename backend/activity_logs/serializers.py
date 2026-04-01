@@ -20,11 +20,24 @@ class ActivityLogSerializer(serializers.ModelSerializer):
 class ActivityLogCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating activity logs from frontend."""
 
+    ACTION_ALIASES = {
+        'login_success': 'login',
+        'register_success': 'signup',
+    }
+    action = serializers.CharField()
+
     class Meta:
         model = ActivityLog
         fields = [
             'action', 'page', 'details', 'session_id'
         ]
+
+    def validate_action(self, value):
+        normalized = self.ACTION_ALIASES.get(value, value)
+        valid_actions = {choice for choice, _ in ActivityLog.ACTION_CHOICES}
+        if normalized not in valid_actions:
+            raise serializers.ValidationError('Unsupported activity action')
+        return normalized
 
     def create(self, validated_data):
         request = self.context.get('request')

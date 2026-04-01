@@ -23,7 +23,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['name', 'description', 'category__name', 'tags']
     ordering_fields = [
         'name',
@@ -161,7 +161,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if in_stock and in_stock.lower() == 'true':
             queryset = queryset.filter(effective_stock_value__gt=0)
 
-        return queryset
+        return queryset.order_by(*self.get_ordering())
 
     def list(self, request, *args, **kwargs):
         limit = request.query_params.get('limit')
