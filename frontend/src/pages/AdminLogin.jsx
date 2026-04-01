@@ -54,11 +54,15 @@ const AdminLogin = () => {
   return (
     <div className="admin-auth-screen">
       <div className="admin-auth-card">
-        <div className="admin-auth-icon">
-          <span role="img" aria-label="cart">🛒</span>
+        <div className="admin-auth-header">
+          <div className="admin-auth-icon">
+            <span role="img" aria-label="cart">🛒</span>
+          </div>
+          <div className="admin-auth-copy">
+            <h1>Admin Access</h1>
+            <p>Use the protected admin credentials to manage products securely.</p>
+          </div>
         </div>
-        <h1>Admin Access</h1>
-        <p>Use the protected admin credentials to manage products securely.</p>
 
         <form className="admin-auth-form" onSubmit={handleSubmit}>
           <label htmlFor="admin-username">Username</label>

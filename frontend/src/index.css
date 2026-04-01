@@ -1213,6 +1213,12 @@ h1, h2, h3, h4, h5, h6 {
     padding: 4rem 2rem;
 }
 
+.cart-empty-state {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
 .empty-state-icon {
     font-size: 5rem;
     margin-bottom: 1rem;
@@ -5290,6 +5296,12 @@ body.dark-mode select {
   color: var(--text-dark);
 }
 
+body.dark-mode .product-variant-badge {
+  background: rgba(255, 214, 170, 0.16);
+  color: #ffd7b0;
+  border: 1px solid rgba(255, 214, 170, 0.22);
+}
+
 .variant-selector {
   margin: 0.8rem 0 1rem;
 }
@@ -5401,18 +5413,35 @@ body.dark-mode select {
   .nav-container {
     padding: max(0.7rem, env(safe-area-inset-top)) 0.9rem 0.7rem;
     gap: 0.5rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
   }
 
   .nav-menu {
     display: none;
   }
 
+  .nav-logo {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .nav-logo a {
+    min-width: 0;
+    width: 100%;
+  }
+
   .nav-logo-text {
     font-size: 1.08rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .nav-actions {
+    flex: 0 0 auto;
     gap: 0.45rem;
+    flex-wrap: nowrap;
   }
 
   .theme-toggle,
@@ -7407,6 +7436,13 @@ body.dark-mode select {
   padding: 28px 20px;
 }
 
+.admin-auth-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+
 .admin-auth-icon {
   width: 56px;
   height: 56px;
@@ -7416,6 +7452,19 @@ body.dark-mode select {
   border-radius: 0;
   background: transparent;
   color: inherit;
+}
+
+.admin-auth-copy {
+  min-width: 0;
+}
+
+.admin-auth-copy h1,
+.admin-auth-copy p {
+  margin: 0;
+}
+
+.admin-auth-copy p {
+  margin-top: 10px;
 }
 
 .admin-auth-form {
@@ -7651,6 +7700,11 @@ body.dark-mode select {
   .admin-loading-card,
   .admin-stats-card {
     border-radius: 16px;
+  }
+
+  .admin-auth-header {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 }
 

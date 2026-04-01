@@ -128,7 +128,7 @@ const Checkout = () => {
   if (items.length === 0 && !orderSuccess) {
     return (
       <div className="container">
-        <div className="empty-state">
+        <div className="empty-state cart-empty-state">
           <div className="empty-state-icon">🛒</div>
           <h3>Your cart is empty</h3>
           <p>Add some items before checking out</p>
