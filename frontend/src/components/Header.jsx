@@ -79,15 +79,23 @@ const Header = () => {
     dispatch(toggleTheme());
   };
 
-  const isActive = (path) => location.pathname === path ? 'active' : '';
+  const isActive = (path) => {
+    if (path === '/admin') {
+      return location.pathname.startsWith('/admin') ? 'active' : '';
+    }
+    return location.pathname === path ? 'active' : '';
+  };
 
-  const navItems = config?.navItems || [
+  const baseNavItems = config?.navItems || [
     { label: 'Home', href: '/' },
     { label: 'Shop', href: '/shop' },
     { label: 'Categories', href: '/categories' },
     { label: '🎉 Offers', href: '/offers' },
     { label: 'About', href: '/about' },
   ];
+  const navItems = baseNavItems.some((item) => item.href === '/admin')
+    ? baseNavItems
+    : [...baseNavItems, { label: 'Admin', href: '/admin' }];
 
   const userMenuItems = config?.userMenuItems || [
     { icon: '👤', label: 'Profile', href: '/profile' },

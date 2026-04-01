@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { updateCartItem, removeFromCart } from '../store/slices/cartSlice';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getProductEmoji } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 const CartItem = ({ item }) => {
   const dispatch = useDispatch();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const product = item.product || {};
   const variants = Array.isArray(product.variants) ? product.variants : [];
   const sortedVariants = [...variants].sort((a, b) => {
@@ -32,7 +33,6 @@ const CartItem = ({ item }) => {
   const effectivePrice = discountPercent > 0 ? basePrice * (1 - discountPercent / 100) : basePrice;
   const isOnSale = effectivePrice < basePrice;
   const displayPrice = isOnSale ? effectivePrice : basePrice;
-  const categoryName = product.category?.name || product.category || '';
   const defaultVariantLabel = selectedVariant?.variant_name || '';
 
   const handleUpdateQuantity = async (newQuantity) => {
@@ -87,18 +87,19 @@ const CartItem = ({ item }) => {
     }
   };
 
-  const categoryEmojis = {
-    fruits: '🍎',
-    vegetables: '🥬',
-    dairy: '🥛',
-    snacks: '🍪',
-    beverages: '🧃',
-  };
-
   return (
     <div className="cart-item">
       <div className="cart-item-image">
-        {product.emoji || categoryEmojis[categoryName?.toLowerCase?.()] || '📦'}
+        {product.image_url && !imageFailed ? (
+          <img
+            src={product.image_url}
+            alt={product.name || 'Product'}
+            className="product-card-image"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          getProductEmoji(product)
+        )}
       </div>
 
       <div className="cart-item-details">

@@ -14,6 +14,8 @@ import Footer from './components/Footer';
 import MobileTabBar from './components/MobileTabBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import ConnectivityCheck from './components/ConnectivityCheck';
+import AdminRoute from './components/AdminRoute';
+import AdminLayout from './components/AdminLayout';
 
 // Pages
 import Home from './pages/Home';
@@ -32,6 +34,9 @@ import About from './pages/About';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminProductForm from './pages/AdminProductForm';
 
 // Initialize theme and config
 store.dispatch(initializeTheme());
@@ -62,6 +67,15 @@ const AppContent = () => {
     <Router>
       <ConnectivityCheck>
         <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route element={<AdminRoute />}>
+            <Route element={<AdminLayout />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products/new" element={<AdminProductForm />} />
+              <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
+            </Route>
+          </Route>
+
           {/* Routes with Header + Footer */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
@@ -128,17 +142,25 @@ const AppContent = () => {
         </Routes>
 
         <Toaster
-          position="bottom-right"
+          position="bottom-center"
+          gutter={12}
+          containerStyle={{
+            bottom: '16px',
+            left: '16px',
+            right: '16px',
+          }}
           toastOptions={{
             duration: 3000,
             className: 'app-toast',
             style: {
               background: 'var(--primary-green)',
               color: 'var(--text-dark)',
-              borderRadius: '15px',
+              borderRadius: '14px',
               padding: '12px 14px',
               boxShadow: 'var(--shadow-hover)',
               fontWeight: 600,
+              width: 'min(90vw, 420px)',
+              maxWidth: '90vw',
             },
             success: {
               style: {

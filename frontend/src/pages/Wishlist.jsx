@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { wishlistAPI } from '../api/wishlist';
 import { PageLoader } from '../components/LoadingSpinner';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getProductEmoji } from '../utils/helpers';
 import toast from 'react-hot-toast';
 import useActivityLog from '../hooks/useActivityLog';
 
@@ -111,7 +111,7 @@ const Wishlist = () => {
                   to={`/product/${product.id}`}
                   className="product-card-link"
                 >
-                  <div className="product-image">{product.emoji || '📦'}</div>
+                  <div className="product-image">{getProductEmoji(product)}</div>
                   <h3 className="product-name">{product.name}</h3>
                   {variantName && (
                     <p className="wishlist-product-meta">

@@ -18,7 +18,7 @@ const initialState = {
   user,
   accessToken,
   refreshToken,
-  isAuthenticated: !!accessToken,
+  isAuthenticated: !!(accessToken || refreshToken),
   loading: false,
   error: null,
 };

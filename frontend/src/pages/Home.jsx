@@ -167,11 +167,19 @@ const Home = () => {
       <section className="featured-section">
         <div className="container">
           <h2 className="section-title">✨ Featured Products</h2>
-          <div className="products-grid">
-            {featuredProducts.slice(0, 8).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {featuredProducts.length > 0 ? (
+            <div className="products-grid">
+              {featuredProducts.slice(0, 8).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-state-icon">⭐</div>
+              <h3>No featured products yet</h3>
+              <p>New products will still appear in their categories and in the shop.</p>
+            </div>
+          )}
         </div>
       </section>
 
