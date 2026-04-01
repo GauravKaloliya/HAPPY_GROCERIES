@@ -1,10 +1,180 @@
 from decimal import Decimal
+import re
 
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from .category import Category
+
+
+def _normalize_emoji_text(*parts):
+    combined = ' '.join(
+        ' '.join(part) if isinstance(part, (list, tuple, set)) else str(part)
+        for part in parts
+        if part
+    ).lower()
+    combined = re.sub(r'[^a-z0-9]+', ' ', combined)
+    combined = re.sub(r'\s+', ' ', combined).strip()
+    return f' {combined} ' if combined else ''
+
+
+def infer_product_emoji(name='', description='', tags=None):
+    value = _normalize_emoji_text(name, description, tags)
+    compact_value = value.replace(' ', '')
+
+    emoji_keywords = [
+        (('dragon fruit', 'dragonfruit', 'dragon'), '🐉'),
+        (('pineapple',), '🍍'),
+        (('strawberry', 'strawberries', 'berries'), '🍓'),
+        (('watermelon',), '🍉'),
+        (('banana', 'bananas'), '🍌'),
+        (('orange', 'oranges', 'mandarin', 'tangerine'), '🍊'),
+        (('kiwi', 'kivi'), '🥝'),
+        (('grape', 'grapes'), '🍇'),
+        (('mango',), '🥭'),
+        (('lemon',), '🍋'),
+        (('apple', 'apples', 'pomegranate'), '🍎'),
+        (('pear',), '🍐'),
+        (('peach',), '🍑'),
+        (('cherry',), '🍒'),
+        (('melon',), '🍈'),
+        (('coconut',), '🥥'),
+        (('avocado',), '🥑'),
+        (('tomato',), '🍅'),
+        (('carrot',), '🥕'),
+        (('corn', 'maize'), '🌽'),
+        (('pepper', 'capsicum', 'chili', 'chilli'), '🫑'),
+        (('leaf', 'lettuce', 'cabbage', 'spinach'), '🥬'),
+        (('broccoli',), '🥦'),
+        (('cucumber',), '🥒'),
+        (('potato',), '🥔'),
+        (('sweet potato',), '🍠'),
+        (('onion',), '🧅'),
+        (('garlic',), '🧄'),
+        (('ginger',), '🫚'),
+        (('mushroom',), '🍄'),
+        (('eggplant', 'brinjal', 'bringal', 'bringle', 'aubergine'), '🍆'),
+        (('beans', 'bean', 'peas', 'pea', 'lentil', 'dal', 'pulse'), '🫘'),
+        (('bread', 'bun', 'toast'), '🍞'),
+        (('croissant',), '🥐'),
+        (('bagel',), '🥯'),
+        (('cheese', 'paneer', 'butter'), '🧀'),
+        (('milk',), '🥛'),
+        (('yogurt', 'yoghurt', 'curd'), '🥣'),
+        (('egg',), '🥚'),
+        (('rice',), '🍚'),
+        (('salad',), '🥗'),
+        (('juice',), '🧃'),
+        (('coffee',), '☕'),
+        (('tea',), '🍵'),
+        (('smoothie', 'shake', 'milkshake'), '🥤'),
+        (('soda', 'cola', 'soft drink'), '🥤'),
+        (('honey',), '🍯'),
+        (('chocolate', 'cocoa'), '🍫'),
+        (('cookie', 'biscuit'), '🍪'),
+        (('cake',), '🍰'),
+        (('ice cream',), '🍨'),
+        (('chips', 'crisps'), '🥔'),
+        (('pizza',), '🍕'),
+        (('burger',), '🍔'),
+        (('sandwich',), '🥪'),
+        (('noodle', 'noodles', 'pasta', 'spaghetti'), '🍝'),
+        (('fish',), '🐟'),
+        (('chicken',), '🍗'),
+        (('meat', 'mutton', 'beef'), '🥩'),
+        (('shrimp', 'prawn'), '🍤'),
+        (('egg',), '🥚'),
+    ]
+
+    for keywords, emoji in emoji_keywords:
+        matched = False
+        for keyword in keywords:
+            normalized_keyword = _normalize_emoji_text(keyword)
+            compact_keyword = normalized_keyword.replace(' ', '')
+            bare_keyword = normalized_keyword.strip()
+
+            if not bare_keyword:
+                continue
+
+            if normalized_keyword in value or compact_keyword in compact_value:
+                matched = True
+                break
+
+            # Allow common admin typos/prefix variants like "bringle"/"brinjal".
+            if len(bare_keyword) >= 5 and bare_keyword[:5] in compact_value:
+                matched = True
+                break
+
+        if matched:
+            return emoji
+
+    return '🛒'
+
+
+def infer_product_category_name(name=''):
+    value = (name or '').strip().lower()
+    if not value:
+        return None
+
+    category_keywords = {
+        'Fruits': (
+            'dragon fruit',
+            'dragonfruit',
+            'apple',
+            'banana',
+            'orange',
+            'grape',
+            'grapes',
+            'strawberry',
+            'watermelon',
+            'mango',
+            'pineapple',
+            'kiwi',
+            'papaya',
+            'guava',
+            'pomegranate',
+            'blueberry',
+            'peach',
+            'cherry',
+            'avocado',
+            'pear',
+            'lemon',
+            'lime',
+            'coconut',
+            'melon',
+        ),
+        'Vegetables': (
+            'carrot',
+            'tomato',
+            'broccoli',
+            'cucumber',
+            'potato',
+            'corn',
+            'spinach',
+            'cauliflower',
+            'cabbage',
+            'onion',
+            'garlic',
+            'bell pepper',
+            'capsicum',
+            'sweet potato',
+            'peas',
+            'beans',
+            'mushroom',
+            'eggplant',
+            'brinjal',
+            'bringal',
+            'bringle',
+            'lettuce',
+        ),
+    }
+
+    for category_name, keywords in category_keywords.items():
+        if any(keyword in value for keyword in keywords):
+            return category_name
+
+    return None
 
 
 class Product(models.Model):
@@ -103,10 +273,21 @@ class Product(models.Model):
 
     @property
     def emoji(self):
-        if self.attributes and self.attributes.get('emoji'):
-            return self.attributes.get('emoji')
+        attribute_emoji = (self.attributes or {}).get('emoji', '')
+        if attribute_emoji and attribute_emoji != '🛒':
+            return attribute_emoji
+
+        inferred = infer_product_emoji(self.name, self.description, self.tags)
+        if inferred != '🛒':
+            return inferred
+        if self.emoji_db and self.emoji_db != '🛒':
+            return self.emoji_db
+        if self.category and self.category.emoji:
+            return self.category.emoji
         if self.emoji_db:
             return self.emoji_db
+        if attribute_emoji:
+            return attribute_emoji
         return '🛒'
 
     @property

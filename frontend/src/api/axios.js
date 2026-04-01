@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getAdminToken } from '../utils/adminAuth';
 
 const explicitApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
 
@@ -44,6 +45,11 @@ api.interceptors.request.use(
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    const adminToken = getAdminToken();
+    if (adminToken) {
+      config.headers['X-Admin-Token'] = adminToken;
     }
 
     return config;

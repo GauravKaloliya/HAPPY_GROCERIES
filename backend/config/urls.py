@@ -29,7 +29,7 @@ urlpatterns = [
     path('', api_documentation, name='api-docs'),
     path('health/', health_check, name='health-check'),
     path('status/', api_status, name='api-status'),
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),
 ]
 
 if settings.DEBUG:
@@ -55,7 +55,7 @@ if getattr(settings, 'FRONTEND_DIST_DIR', None) and settings.FRONTEND_DIST_DIR.e
     # Match any path that doesn't start with known backend prefixes.
     urlpatterns += [
         re_path(
-            r'^(?!api/|auth/|products/|cart/|orders/|coupons/|wishlist/|activity-logs/|contact/|config/|reviews/|health/|status/|admin/|static/|media/).*$',
+            r'^(?!api/|auth/|products/|cart/|orders/|coupons/|wishlist/|activity-logs/|contact/|config/|reviews/|health/|status/|django-admin/|static/|media/).*$',
             TemplateView.as_view(template_name='index.html')
         )
     ]

@@ -103,6 +103,27 @@ export const getCategoryEmoji = (category) => {
 };
 
 /**
+ * Get the display emoji for a product when no image URL exists.
+ * @param {object} product - Product object
+ * @returns {string} Emoji
+ */
+export const getProductEmoji = (product) => {
+  if (!product || typeof product !== 'object') {
+    return '📦';
+  }
+
+  if (product.emoji) {
+    return product.emoji;
+  }
+
+  if (product.category && typeof product.category === 'object' && product.category.emoji) {
+    return product.category.emoji;
+  }
+
+  return '📦';
+};
+
+/**
  * Debounce function
  * @param {Function} func - Function to debounce
  * @param {number} wait - Wait time in ms

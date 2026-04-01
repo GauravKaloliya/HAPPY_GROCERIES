@@ -50,6 +50,14 @@ class OrderViewSet(viewsets.ModelViewSet):
             raise BadRequestError(str(exc)) from exc
 
         return Response(
-            OrderSerializer(order).data,
+            {
+                'id': order.id,
+                'order_id': order.order_id,
+                'status': order.status,
+                'delivery_type': order.delivery_type,
+                'total': order.total,
+                'estimated_delivery': order.estimated_delivery,
+                'message': 'Order placed successfully.',
+            },
             status=status.HTTP_201_CREATED
         )

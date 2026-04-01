@@ -47,6 +47,12 @@ const getCartItemKey = (item) => {
   return `${productId}:${variantId}`;
 };
 
+const coerceCartItems = (payload) => {
+  const raw = payload?.items ?? payload;
+  if (!Array.isArray(raw)) return [];
+  return raw;
+};
+
 const initialState = {
   items: getInitialItems(),
   loading: false,
@@ -269,7 +275,7 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.items || action.payload;
+        state.items = coerceCartItems(action.payload);
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
@@ -285,7 +291,7 @@ const cartSlice = createSlice({
         // For guest users, action.payload.items contains the items
         if (action.payload && action.payload.items) {
           // Full cart response from API or guest cart
-          state.items = action.payload.items || [];
+          state.items = coerceCartItems(action.payload);
         } else if (action.payload && action.payload.id) {
           // Single item response - check if it already exists
           const payloadProductId = action.payload.product?.id;
@@ -309,7 +315,7 @@ const cartSlice = createSlice({
       // Update Cart Item
       .addCase(updateCartItem.fulfilled, (state, action) => {
         if (action.payload.items) {
-          state.items = action.payload.items;
+          state.items = coerceCartItems(action.payload);
           return;
         }
         const updatedItem = action.payload;
@@ -321,14 +327,14 @@ const cartSlice = createSlice({
       // Remove from Cart
       .addCase(removeFromCart.fulfilled, (state, action) => {
         if (action.payload?.items) {
-          state.items = action.payload.items;
+          state.items = coerceCartItems(action.payload);
           return;
         }
         state.items = state.items.filter(item => item.id !== action.payload);
       })
       // Clear Cart
       .addCase(clearCart.fulfilled, (state, action) => {
-        state.items = action.payload?.items || [];
+        state.items = coerceCartItems(action.payload);
         state.coupon = null;
         state.appliedCoupon = null;
       })
@@ -355,7 +361,9 @@ const cartSlice = createSlice({
 });
 
 // Selectors
-export const selectCartItems = (state) => state.cart.items || [];
+export const selectCartItems = (state) => (
+  Array.isArray(state.cart?.items) ? state.cart.items : []
+);
 export const selectCartLoading = (state) => state.cart.loading;
 export const selectCartError = (state) => state.cart.error;
 export const selectCartCount = (state) => (state.cart.items || []).length;

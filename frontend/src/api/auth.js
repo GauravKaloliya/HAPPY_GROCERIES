@@ -1,6 +1,8 @@
 import api from './axios';
 
 export const authAPI = {
+  adminLogin: (data) => api.post('/auth/admin/login/', data),
+  getAdminSession: () => api.get('/auth/admin/session/'),
   register: (data) => api.post('/auth/register/', data),
   login: (data) => api.post('/auth/login/', data),
   logout: () => api.post('/auth/logout/'),
