@@ -77,6 +77,11 @@ class CouponViewSet(viewsets.ReadOnlyModelViewSet):
                 'Coupon functionality is unavailable because required schema objects are missing',
                 code='schema_mismatch',
             ) from exc
+
+    @action(detail=False, methods=['get'], url_path='public')
+    def public(self, request, *args, **kwargs):
+        """Backward-compatible public coupons endpoint."""
+        return self.list(request, *args, **kwargs)
     
     @action(detail=False, methods=['post'])
     def validate(self, request):
