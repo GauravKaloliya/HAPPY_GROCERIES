@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart, updateCartItem, removeFromCart, selectCartItems } from '../store/slices/cartSlice';
 import { wishlistAPI } from '../api/wishlist';
 import { selectIsAuthenticated } from '../store/slices/authSlice';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, getProductEmoji } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 const WISHLIST_CACHE_KEY = 'wishlistProductIds';
@@ -37,19 +37,11 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isUpdatingQuantity, setIsUpdatingQuantity] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const cartItems = useSelector(selectCartItems);
   const isAuthenticated = useSelector(selectIsAuthenticated);
-
-
-  const categoryEmojis = {
-    fruits: '🍎',
-    vegetables: '🥕',
-    dairy: '🥛',
-    snacks: '🍪',
-    beverages: '🧃',
-  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -83,6 +75,10 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     fetchWishlistStatus();
     return () => { cancelled = true; };
   }, [isAuthenticated, product.id]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [product.id, product.image_url]);
 
   const handleCardClick = (e) => {
     if (e.target.closest('button') || e.target.closest('.quantity-controls') || e.target.closest('a')) {
@@ -151,7 +147,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       toast.error('Maximum quantity reached!');
       return;
     }
-    const itemId = isAuthenticated ? cartItem.id : (cartItem.product?.id || cartItem.id);
+    const itemId = cartItem.id;
     setIsUpdatingQuantity(true);
     try {
       await dispatch(updateCartItem({ itemId, quantity: newQuantity })).unwrap();
@@ -166,7 +162,7 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     e.stopPropagation();
     if (!inCart || !cartItem || isUpdatingQuantity) return;
     const newQuantity = displayQuantity - 1;
-    const itemId = isAuthenticated ? cartItem.id : (cartItem.product?.id || cartItem.id);
+    const itemId = cartItem.id;
     setIsUpdatingQuantity(true);
     try {
       if (newQuantity <= 0) {
@@ -215,12 +211,17 @@ const ProductCard = ({ product, showAddToCart = true }) => {
     || product.default_variant
     || sortedVariants[0]
     || null;
-  const cartItem = cartItems.find(item => {
+  const exactCartItem = cartItems.find(item => {
     const itemProductId = item.product?.id ?? item.product_id ?? item.id;
     const itemVariantId = item.variant?.id ?? item.variant_id ?? null;
     const currentVariantId = selectedVariant?.id ?? null;
     return itemProductId === product.id && itemVariantId === currentVariantId;
   });
+  const fallbackCartItem = cartItems.find((item) => {
+    const itemProductId = item.product?.id ?? item.product_id ?? item.id;
+    return itemProductId === product.id;
+  });
+  const cartItem = exactCartItem || fallbackCartItem || null;
   const inCart = !!cartItem;
   const displayQuantity = cartItem ? cartItem.quantity : 0;
 
@@ -233,13 +234,8 @@ const ProductCard = ({ product, showAddToCart = true }) => {
   const displayPrice = isOnSale ? effectivePrice : basePrice;
   const discountPercent = isOnSale ? Math.round((1 - effectivePrice / basePrice) * 100) : 0;
   const stockValue = Number(selectedVariant?.stock_quantity ?? product.stock ?? 0);
-  const categoryName = product.category?.name || product.category || '';
   const defaultVariantLabel = selectedVariant?.variant_name || '';
-  const unitValue = selectedVariant?.unit_value ?? '';
-  const unitType = selectedVariant?.unit_type ?? '';
-  const unitLabel = unitValue && unitType
-    ? `${unitValue} ${unitType}`
-    : (unitType && unitType !== 'piece' ? unitType : '');
+  const fallbackVisual = getProductEmoji(product);
 
   const renderStars = (rating) => {
     const fullStars = Math.round(rating || 0);
@@ -280,7 +276,16 @@ const ProductCard = ({ product, showAddToCart = true }) => {
       </button>
 
       <div className="product-image">
-        {product.emoji || categoryEmojis[categoryName?.toLowerCase?.()] || '📦'}
+        {product.image_url && !imageFailed ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="product-card-image"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          fallbackVisual
+        )}
       </div>
 
       <h3 className="product-name">{product.name}</h3>

@@ -40,7 +40,7 @@ class AddToCartSerializer(serializers.Serializer):
     """Serializer for adding items to cart."""
 
     product_id = serializers.IntegerField(required=True)
-    variant_id = serializers.IntegerField(required=False)
+    variant_id = serializers.IntegerField(required=False, allow_null=True)
     quantity = serializers.IntegerField(min_value=1, max_value=99, default=1)
 
     def validate(self, attrs):
@@ -60,4 +60,4 @@ class UpdateCartItemSerializer(serializers.Serializer):
     """Serializer for updating cart item quantity."""
 
     quantity = serializers.IntegerField(min_value=0, max_value=99)
-    variant_id = serializers.IntegerField(required=False)
+    variant_id = serializers.IntegerField(required=False, allow_null=True)
