@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 import dj_database_url
+from corsheaders.defaults import default_headers
 
 # Parse comma-separated env values into a clean list.
 def parse_csv_env(name, default=''):
@@ -223,6 +224,9 @@ CORS_ALLOWED_ORIGINS = parse_csv_env(
     'https://happygroceries.shop,https://www.happygroceries.shop,http://localhost:5173,http://localhost:3000'
 )
 CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_HEADERS = tuple(default_headers) + (
+    'x-admin-token',
+)
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'
